@@ -62,6 +62,19 @@ def _shape_contour(params):
     return _get_oval_contour(l_val, w_val, re, rs)
 
 
+def _shape_contour_inner(params):
+    shape, is_modified, w_val, l_val, land, re, rs = shape_params(params)
+    if land <= 1e-9:
+        return _shape_contour(params)
+    if shape == "round":
+        return _get_circle_contour(max(0.01, w_val / 2 - land))
+    if shape == "capsule" and not is_modified:
+        return _get_capsule_contour(max(0.1, l_val - 2 * land), max(0.1, w_val - 2 * land))
+    re_in = max(0.01, re - land)
+    rs_in = max(0.01, rs - land)
+    return _get_oval_contour(max(0.1, l_val - 2 * land), max(0.1, w_val - 2 * land), re_in, rs_in)
+
+
 def _boundary_radius_from_contour(x_c, y_c, theta_query):
     theta_c = np.mod(np.arctan2(y_c, x_c), 2 * np.pi)
     r_c = np.hypot(x_c, y_c)
@@ -102,6 +115,76 @@ def _interp_bilinear(z_arr, x_grid, y_grid, xq, yq):
         + (1 - tx) * ty * z12
         + tx * ty * z22
     )
+
+
+def _extract_iso_segments(field, x_grid, y_grid, level):
+    nx = len(x_grid)
+    ny = len(y_grid)
+    seg_x = []
+    seg_y = []
+
+    def interp(p1, p2, v1, v2):
+        if abs(v2 - v1) < 1e-12:
+            return ((p1[0] + p2[0]) * 0.5, (p1[1] + p2[1]) * 0.5)
+        t = (level - v1) / (v2 - v1)
+        t = min(1.0, max(0.0, t))
+        return (p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1]))
+
+    for iy in range(ny - 1):
+        y0 = y_grid[iy]
+        y1 = y_grid[iy + 1]
+        for ix in range(nx - 1):
+            x0 = x_grid[ix]
+            x1 = x_grid[ix + 1]
+
+            v0 = field[iy, ix]
+            v1v = field[iy, ix + 1]
+            v2 = field[iy + 1, ix + 1]
+            v3 = field[iy + 1, ix]
+
+            if np.isnan(v0) or np.isnan(v1v) or np.isnan(v2) or np.isnan(v3):
+                continue
+
+            b0 = v0 >= level
+            b1 = v1v >= level
+            b2 = v2 >= level
+            b3 = v3 >= level
+            if (b0 == b1) and (b1 == b2) and (b2 == b3):
+                continue
+
+            p0 = (x0, y0)
+            p1 = (x1, y0)
+            p2 = (x1, y1)
+            p3 = (x0, y1)
+
+            pts = []
+            if b0 != b1:
+                pts.append(interp(p0, p1, v0, v1v))
+            if b1 != b2:
+                pts.append(interp(p1, p2, v1v, v2))
+            if b2 != b3:
+                pts.append(interp(p2, p3, v2, v3))
+            if b3 != b0:
+                pts.append(interp(p3, p0, v3, v0))
+
+            if len(pts) == 2:
+                seg_x.extend([pts[0][0], pts[1][0], None])
+                seg_y.extend([pts[0][1], pts[1][1], None])
+            elif len(pts) == 4:
+                seg_x.extend([pts[0][0], pts[1][0], None, pts[2][0], pts[3][0], None])
+                seg_y.extend([pts[0][1], pts[1][1], None, pts[2][1], pts[3][1], None])
+
+    return np.asarray(seg_x, dtype=object), np.asarray(seg_y, dtype=object)
+
+
+def _shrink_xy(x_line, y_line, delta):
+    if delta <= 0:
+        return x_line, y_line
+    r = np.hypot(x_line, y_line)
+    scale = np.ones_like(r)
+    mask = r > 1e-9
+    scale[mask] = np.maximum(0.0, (r[mask] - delta) / r[mask])
+    return x_line * scale, y_line * scale
 
 
 def render_tablet_3d(mesh_data, params):
@@ -204,6 +287,66 @@ def render_tablet_3d(mesh_data, params):
             lighting=lighting_bot, lightposition=vector_light # <--- ПРИМЕНЯЕМ ВЕКТОР
         )
     )
+
+    # Edge lines: body, cup boundary (land), and bisect transitions
+    edge_color = "#111111"
+    max_span = max(float(np.max(np.abs(x_grid))), float(np.max(np.abs(y_grid))), 1.0)
+    edge_inset = 0.004 * max_span
+    z_eps = 0.0015 * max_span
+
+    def add_line(x_line, y_line, z_line, width=4):
+        fig.add_trace(
+            go.Scatter3d(
+                x=x_line,
+                y=y_line,
+                z=z_line,
+                mode="lines",
+                line=dict(color=edge_color, width=width),
+                hoverinfo="skip",
+                showlegend=False,
+            )
+        )
+
+    # Outer body top/bottom edges
+    xo, yo = _shape_contour(params)
+    xo_in, yo_in = _shrink_xy(xo, yo, edge_inset)
+    add_line(xo_in, yo_in, np.full_like(xo_in, hb / 2 + z_eps), width=4)
+    add_line(xo_in, yo_in, np.full_like(xo_in, -hb / 2 - z_eps), width=4)
+
+    # Inner cup boundary edge (land transition)
+    xi, yi = _shape_contour_inner(params)
+    xi_in, yi_in = _shrink_xy(xi, yi, edge_inset * 0.6)
+    zc = _interp_bilinear(z_top_grid, x_grid, y_grid, xi_in, yi_in) + hb / 2
+    add_line(xi_in, yi_in, zc + z_eps, width=4)
+    add_line(xi_in, yi_in, -zc - z_eps, width=4)
+
+    # Bisect transition edges on top cup (universal for all shapes)
+    b_type = (params.get("b_type", "none") or "none").lower()
+    b_depth = float(params.get("b_depth", 0.0) or 0.0)
+    if b_type != "none" and b_depth > 0:
+        z = mesh_data["Z"]
+        z_g = mesh_data["Z_groove"]
+        mask_cup = mesh_data["mask_cup"]
+        diff = np.where(mask_cup, z - z_g, np.nan)
+        sx, sy = _extract_iso_segments(diff, x_grid, y_grid, level=0.0)
+        if len(sx) > 0:
+            valid = np.array([v is not None for v in sx], dtype=bool)
+            xq = sx[valid].astype(float)
+            yq = sy[valid].astype(float)
+            zq = _interp_bilinear(z_top_grid, x_grid, y_grid, xq, yq) + hb / 2
+            sz = np.full_like(sx, None, dtype=object)
+            sz[valid] = zq
+            fig.add_trace(
+                go.Scatter3d(
+                    x=sx,
+                    y=sy,
+                    z=sz,
+                    mode="lines",
+                    line=dict(color=edge_color, width=4),
+                    hoverinfo="skip",
+                    showlegend=False,
+                )
+            )
 
     shape, _, w_val, l_val, _, _, _ = shape_params(params)
     
