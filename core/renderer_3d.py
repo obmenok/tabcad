@@ -214,113 +214,64 @@ def render_tablet_3d(mesh_data, params):
     yb = np.tile(r_boundary * np.sin(theta), (len(z_line), 1))
     zb = np.tile(z_line[:, None], (1, len(theta)))
 
-    # --- РАЗДЕЛЬНАЯ НАСТРОЙКА СВЕТА ---
-    
-    # 1. Для лицевой части (Верхняя чаша) оставляем тени контрастными
-    lighting_top = dict(
-        ambient=0.1,
-        diffuse=0.2,
-        specular=0.15,
-        roughness=0.7,
-        fresnel=0.1
-    )
-    
-    # 2. Для борта и дна принудительно задираем базовую освещенность (ambient), 
-    # чтобы они не проваливались в темноту, когда отвернуты от камеры
-    lighting_sides_bottom = dict(
-        ambient=0.8,     # Делаем "теневые" участки светлее
-        diffuse=0.5,     # Чуть меньше реагируют на прямые лучи
-        specular=0.1,    # Почти без бликов
-        roughness=0.8,
-        fresnel=0.2
-    )
-    
-    # === НАСТРОЙКИ МАТЕРИАЛА ===
-    # Базовый цвет делаем достаточно темным (матовый серый металл/пластик),
-    # чтобы бликам от света было на чем контрастно выделяться
-    cad_colorscale = [[0, "#db7b3b"], [1, "#db7b3b"]] 
-
-    # Вектор света: бьет из левого верхнего угла вашего монитора
-    # Чуть-чуть направлен вглубь экрана (z=0.2)
-    vector_light = dict(x=-1, y=1, z=0.2)
-
-    # 1. Свет для Лицевой чаши (Top)
-    # Делаем контрастные тени, чтобы риска (Bisect) читалась идеально
-    lighting_top = dict(
-        ambient=0.4,     # Базовая освещенность (не слишком высоко, чтобы были тени)
-        diffuse=0.8,     # Резкость теней от углублений
-        specular=0.3,    # Умеренный матовый блик (без пересвета)
-        roughness=0.6,   # Шероховатость прессованной таблетки
-        fresnel=0.1      # Подсветка контуров
-    )
-    
-    # 2. Свет для Дна и Борта (Bottom & Band)
-    # Выкручиваем ambient, чтобы они не проваливались во мрак,
-    # когда отвернуты от нашего левого-верхнего "прожектора"
-    lighting_bot = dict(
-        ambient=0.7,     # Делаем теневую сторону искусственно светлее
-        diffuse=0.4,
-        specular=0.1,
-        roughness=0.8,
-        fresnel=0.2
-    )
+    # Sketch style
+    cad_colorscale = [[0, "#f3f3f3"], [1, "#d9d9d9"]]
+    vector_light = dict(x=-0.8, y=0.9, z=0.4)
+    lighting_top = dict(ambient=0.35, diffuse=0.85, specular=0.06, roughness=0.9, fresnel=0.03)
+    lighting_bot = dict(ambient=0.28, diffuse=0.75, specular=0.04, roughness=0.92, fresnel=0.03)
 
     fig = go.Figure()
     fig.add_trace(
         go.Surface(
             x=x_s, y=y_s, z=zt_s,
             colorscale=cad_colorscale, showscale=False, hoverinfo="skip", name="Top",
-            lighting=lighting_top, lightposition=vector_light # <--- ПРИМЕНЯЕМ ВЕКТОР
+            lighting=lighting_top, lightposition=vector_light, opacity=1.0
         )
     )
     fig.add_trace(
         go.Surface(
             x=x_s, y=y_s, z=zb_s,
             colorscale=cad_colorscale, showscale=False, hoverinfo="skip", name="Bottom",
-            lighting=lighting_bot, lightposition=vector_light # <--- ПРИМЕНЯЕМ ВЕКТОР
+            lighting=lighting_bot, lightposition=vector_light, opacity=1.0
         )
     )
     fig.add_trace(
         go.Surface(
             x=xb, y=yb, z=zb,
             colorscale=cad_colorscale, showscale=False, hoverinfo="skip", name="Band",
-            lighting=lighting_bot, lightposition=vector_light # <--- ПРИМЕНЯЕМ ВЕКТОР
+            lighting=lighting_bot, lightposition=vector_light, opacity=1.0
         )
     )
 
-    # Edge lines: body, cup boundary (land), and bisect transitions
     edge_color = "#111111"
     max_span = max(float(np.max(np.abs(x_grid))), float(np.max(np.abs(y_grid))), 1.0)
-    edge_inset = 0.004 * max_span
+    edge_inset = 0.001 * max_span
     z_eps = 0.0015 * max_span
 
-    def add_line(x_line, y_line, z_line, width=4):
+    def add_line(x_line, y_line, z_line, width=3, color=edge_color):
         fig.add_trace(
             go.Scatter3d(
                 x=x_line,
                 y=y_line,
                 z=z_line,
                 mode="lines",
-                line=dict(color=edge_color, width=width),
+                line=dict(color=color, width=width),
                 hoverinfo="skip",
                 showlegend=False,
             )
         )
 
-    # Outer body top/bottom edges
     xo, yo = _shape_contour(params)
     xo_in, yo_in = _shrink_xy(xo, yo, edge_inset)
     add_line(xo_in, yo_in, np.full_like(xo_in, hb / 2 + z_eps), width=4)
     add_line(xo_in, yo_in, np.full_like(xo_in, -hb / 2 - z_eps), width=4)
 
-    # Inner cup boundary edge (land transition)
     xi, yi = _shape_contour_inner(params)
-    xi_in, yi_in = _shrink_xy(xi, yi, edge_inset * 0.6)
+    xi_in, yi_in = _shrink_xy(xi, yi, edge_inset * 0.4)
     zc = _interp_bilinear(z_top_grid, x_grid, y_grid, xi_in, yi_in) + hb / 2
-    add_line(xi_in, yi_in, zc + z_eps, width=4)
-    add_line(xi_in, yi_in, -zc - z_eps, width=4)
+    add_line(xi_in, yi_in, zc + z_eps, width=3)
+    add_line(xi_in, yi_in, -zc - z_eps, width=3)
 
-    # Bisect transition edges on top cup (universal for all shapes)
     b_type = (params.get("b_type", "none") or "none").lower()
     b_depth = float(params.get("b_depth", 0.0) or 0.0)
     if b_type != "none" and b_depth > 0:
@@ -336,20 +287,55 @@ def render_tablet_3d(mesh_data, params):
             zq = _interp_bilinear(z_top_grid, x_grid, y_grid, xq, yq) + hb / 2
             sz = np.full_like(sx, None, dtype=object)
             sz[valid] = zq
-            fig.add_trace(
-                go.Scatter3d(
-                    x=sx,
-                    y=sy,
-                    z=sz,
-                    mode="lines",
-                    line=dict(color=edge_color, width=4),
-                    hoverinfo="skip",
-                    showlegend=False,
-                )
-            )
+            add_line(sx, sy, sz, width=3)
+
+        b_angle = float(params.get("b_angle", 90.0) or 90.0)
+        b_ri = float(params.get("b_Ri", 0.06) or 0.06)
+        x_ti = b_ri * np.sin(np.radians(b_angle / 2.0))
+        if x_ti > 1e-4:
+            shape_name = params.get("shape", "round")
+            cut_field = np.abs(mesh_data["Y"]) if shape_name == "round" else np.abs(mesh_data["X"])
+            ti_field = np.where(mask_cup, cut_field - x_ti, np.nan)
+            tx, ty = _extract_iso_segments(ti_field, x_grid, y_grid, level=0.0)
+            if len(tx) > 0:
+                valid_t = np.array([v is not None for v in tx], dtype=bool)
+                xqt = tx[valid_t].astype(float)
+                yqt = ty[valid_t].astype(float)
+                zqt = _interp_bilinear(z_top_grid, x_grid, y_grid, xqt, yqt) + hb / 2
+                tz = np.full_like(tx, None, dtype=object)
+                tz[valid_t] = zqt
+                add_line(tx, ty, tz, width=2)
+
+    z_top_mask = np.where(mesh_data["mask_cup"], z_top_grid, np.nan)
+    z_bot_mask = np.where(mesh_data["mask_cup"], z_bot_grid, np.nan)
+    top_max = float(np.nanmax(z_top_mask)) if np.any(np.isfinite(z_top_mask)) else 0.0
+    bot_max = float(np.nanmax(z_bot_mask)) if np.any(np.isfinite(z_bot_mask)) else 0.0
+    if top_max > 1e-5:
+        for lv in np.linspace(top_max * 0.3, top_max * 0.85, 3):
+            sx, sy = _extract_iso_segments(z_top_mask, x_grid, y_grid, level=lv)
+            if len(sx) == 0:
+                continue
+            sz = np.full_like(sx, None, dtype=object)
+            valid = np.array([v is not None for v in sx], dtype=bool)
+            sz[valid] = lv + hb / 2
+            add_line(sx, sy, sz, width=1, color="#2e2e2e")
+    if bot_max > 1e-5:
+        for lv in np.linspace(bot_max * 0.35, bot_max * 0.8, 2):
+            sx, sy = _extract_iso_segments(z_bot_mask, x_grid, y_grid, level=lv)
+            if len(sx) == 0:
+                continue
+            sz = np.full_like(sx, None, dtype=object)
+            valid = np.array([v is not None for v in sx], dtype=bool)
+            sz[valid] = -lv - hb / 2
+            add_line(sx, sy, sz, width=1, color="#2e2e2e")
+
+    for a in np.linspace(0, 2 * np.pi, 6, endpoint=False):
+        rb = _boundary_radius_from_contour(x_c, y_c, np.array([a]))[0]
+        xv = np.full_like(z_line, rb * np.cos(a))
+        yv = np.full_like(z_line, rb * np.sin(a))
+        add_line(xv, yv, z_line, width=1, color="#2e2e2e")
 
     shape, _, w_val, l_val, _, _, _ = shape_params(params)
-    
     if shape == "round":
         r_lim = max(w_val, l_val) / 2 + 1.0
         z_lim = hb / 2 + max(float(np.nanmax(z_top_grid)), float(np.nanmax(z_bot_grid))) + 1.0
@@ -373,8 +359,8 @@ def render_tablet_3d(mesh_data, params):
     fig.update_layout(
         margin=dict(l=0, r=0, b=0, t=10),
         scene=scene_config,
-        paper_bgcolor="white",
-        plot_bgcolor="white",
+        paper_bgcolor="#f5f5f5",
+        plot_bgcolor="#f5f5f5",
         showlegend=False,
     )
     return fig

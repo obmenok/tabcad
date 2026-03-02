@@ -1,13 +1,14 @@
 import dash
-from dash import Input, Output, State, callback, html
+from dash import Input, Output, State, callback, html, dcc
 import dash_bootstrap_components as dbc
 from core.engine import generate_mesh
 from core.renderer import render_tablet
 from core.renderer_3d import render_tablet_3d
+from core.renderer_3d_vtk import render_tablet_3d_vtk
 
 
 @callback(
-    [Output("tablet-drawing", "src"), Output("calc-output", "children"), Output("tablet-3d", "figure")],
+    [Output("tablet-drawing", "src"), Output("calc-output", "children"), Output("tablet-3d", "children")],
     Input("btn-generate", "n_clicks"),
     [
         State("shape-dropdown", "value"),
@@ -102,7 +103,16 @@ def generate_graphics(
 
     mesh_data = generate_mesh(params)
     img_src = render_tablet(mesh_data, params)
-    fig_3d = render_tablet_3d(mesh_data, params)
+    try:
+        fig_3d = render_tablet_3d_vtk(mesh_data, params)
+    except Exception:
+        # Fallback: still show interactive plotly if VTK view fails
+        fig = render_tablet_3d(mesh_data, params)
+        fig_3d = dcc.Graph(
+            figure=fig,
+            style={"height": "80vh"},
+            config={"displaylogo": False, "responsive": True},
+        )
     m = mesh_data["metrics"]
     calc_html = html.Div(
         [

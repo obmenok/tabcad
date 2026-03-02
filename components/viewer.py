@@ -18,11 +18,7 @@ def create_viewer():
                     ),
                     dbc.Col(
                         html.Div(
-                            dcc.Graph(
-                                id="tablet-3d",
-                                style={"height": "80vh"},
-                                config={"displaylogo": False, "responsive": True},
-                            ),
+                            html.Div(id="tablet-3d", style={"height": "80vh"}),
                             className="border rounded bg-white",
                             style={"height": "80vh"},
                         ),
