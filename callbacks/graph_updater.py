@@ -4,12 +4,20 @@ import dash_bootstrap_components as dbc
 from core.engine import generate_mesh
 from core.renderer import render_tablet
 from core.renderer_3d import render_tablet_3d
-from core.renderer_3d_vtk import render_tablet_3d_vtk
 
 
 @callback(
-    [Output("tablet-drawing", "src"), Output("calc-output", "children"), Output("tablet-3d", "children")],
-    Input("btn-generate", "n_clicks"),
+    [
+        Output("tablet-drawing", "src"),
+        Output("calc-output", "children"),
+        Output("tablet-3d", "children"),
+    ],
+    [
+        Input("btn-generate", "n_clicks"),
+        Input("plotly-view-preset", "value"),
+        Input("plotly-show-edges", "value"),
+        Input("plotly-show-bbox", "value"),
+    ],
     [
         State("shape-dropdown", "value"),
         State("profile-dropdown", "value"),
@@ -42,6 +50,9 @@ from core.renderer_3d_vtk import render_tablet_3d_vtk
 )
 def generate_graphics(
     n_clicks,
+    view_preset,
+    show_edges,
+    show_bbox,
     shape,
     profile,
     is_mod,
@@ -99,20 +110,21 @@ def generate_graphics(
         "b_depth": b_depth,
         "b_angle": b_angle,
         "b_Ri": b_ri,
+        "view_preset": view_preset or "isometric",
+        "render_mode": "edges" if (show_edges and "on" in show_edges) else "shaded",
+        "show_bbox": bool(show_bbox and "on" in show_bbox),
     }
 
     mesh_data = generate_mesh(params)
     img_src = render_tablet(mesh_data, params)
-    try:
-        fig_3d = render_tablet_3d_vtk(mesh_data, params)
-    except Exception:
-        # Fallback: still show interactive plotly if VTK view fails
-        fig = render_tablet_3d(mesh_data, params)
-        fig_3d = dcc.Graph(
-            figure=fig,
-            style={"height": "80vh"},
-            config={"displaylogo": False, "responsive": True},
-        )
+    fig = render_tablet_3d(mesh_data, params)
+    fig_3d = dcc.Graph(
+        figure=fig,
+        style={"height": "80vh"},
+        config={"displaylogo": False, "displayModeBar": False, "responsive": True},
+        id="tablet-3d-graph",
+    )
+
     m = mesh_data["metrics"]
     calc_html = html.Div(
         [

@@ -210,10 +210,7 @@ def generate_mesh(params):
     shape, _, w_val, l_val, _, _, _ = shape_params(params)
     dc = max(0.0, params.get("Dc", 1.5))
 
-    b_type = (params.get("b_type", "none") or "none").lower()
-    b_depth = float(params.get("b_depth", 0.0) or 0.0)
-    mesh_n = 520 if (b_type != "none" and b_depth > 0) else 300
-
+    mesh_n = 300
     x_grid = np.linspace(-l_val / 2, l_val / 2, mesh_n)
     y_grid = np.linspace(-w_val / 2, w_val / 2, mesh_n)
     x_arr, y_arr, z, rho, mask_cup, perimeter, die_hole_sa = build_surface(params, x_grid, y_grid)
