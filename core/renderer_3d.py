@@ -53,6 +53,19 @@ def _shape_contour(params):
     return _get_oval_contour(l_val, w_val, re, rs)
 
 
+def _shape_contour_inner(params):
+    shape, is_modified, w_val, l_val, land, re, rs = shape_params(params)
+    if land <= 1e-9:
+        return _shape_contour(params)
+    if shape == "round":
+        return _get_circle_contour(max(0.01, w_val / 2 - land))
+    if shape == "capsule" and not is_modified:
+        return _get_capsule_contour(max(0.1, l_val - 2 * land), max(0.1, w_val - 2 * land))
+    re_in = max(0.01, re - land)
+    rs_in = max(0.01, rs - land)
+    return _get_oval_contour(max(0.1, l_val - 2 * land), max(0.1, w_val - 2 * land), re_in, rs_in)
+
+
 def _boundary_radius_from_contour(x_c, y_c, theta_query):
     theta_c = np.mod(np.arctan2(y_c, x_c), 2 * np.pi)
     r_c = np.hypot(x_c, y_c)
@@ -82,6 +95,66 @@ def _interp_bilinear(z_arr, x_grid, y_grid, xq, yq):
     z21 = z_arr[iy, ix + 1]
     z22 = z_arr[iy + 1, ix + 1]
     return (1 - tx) * (1 - ty) * z11 + tx * (1 - ty) * z21 + (1 - tx) * ty * z12 + tx * ty * z22
+
+
+def _extract_iso_segments(field, x_grid, y_grid, level):
+    nx = len(x_grid)
+    ny = len(y_grid)
+    seg_x = []
+    seg_y = []
+
+    def interp(p1, p2, v1, v2):
+        if abs(v2 - v1) < 1e-12:
+            return ((p1[0] + p2[0]) * 0.5, (p1[1] + p2[1]) * 0.5)
+        t = (level - v1) / (v2 - v1)
+        t = min(1.0, max(0.0, t))
+        return (p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1]))
+
+    for iy in range(ny - 1):
+        y0 = y_grid[iy]
+        y1 = y_grid[iy + 1]
+        for ix in range(nx - 1):
+            x0 = x_grid[ix]
+            x1 = x_grid[ix + 1]
+
+            v0 = field[iy, ix]
+            v1v = field[iy, ix + 1]
+            v2 = field[iy + 1, ix + 1]
+            v3 = field[iy + 1, ix]
+
+            if np.isnan(v0) or np.isnan(v1v) or np.isnan(v2) or np.isnan(v3):
+                continue
+
+            b0 = v0 >= level
+            b1 = v1v >= level
+            b2 = v2 >= level
+            b3 = v3 >= level
+            if (b0 == b1) and (b1 == b2) and (b2 == b3):
+                continue
+
+            p0 = (x0, y0)
+            p1 = (x1, y0)
+            p2 = (x1, y1)
+            p3 = (x0, y1)
+
+            pts = []
+            if b0 != b1:
+                pts.append(interp(p0, p1, v0, v1v))
+            if b1 != b2:
+                pts.append(interp(p1, p2, v1v, v2))
+            if b2 != b3:
+                pts.append(interp(p2, p3, v2, v3))
+            if b3 != b0:
+                pts.append(interp(p3, p0, v3, v0))
+
+            if len(pts) == 2:
+                seg_x.extend([pts[0][0], pts[1][0], None])
+                seg_y.extend([pts[0][1], pts[1][1], None])
+            elif len(pts) == 4:
+                seg_x.extend([pts[0][0], pts[1][0], None, pts[2][0], pts[3][0], None])
+                seg_y.extend([pts[0][1], pts[1][1], None, pts[2][1], pts[3][1], None])
+
+    return np.asarray(seg_x, dtype=object), np.asarray(seg_y, dtype=object)
 
 
 def _camera_from_preset(bounds, preset):
@@ -191,8 +264,61 @@ def render_tablet_3d(mesh_data, params):
     if render_mode in ("edges", "wireframe"):
         eps = max(1e-6, max(np.ptp(xb), np.ptp(yb), np.ptp(zt_s), np.ptp(zb_s)) * 0.0008)
         edge_line = dict(color="#101010", width=3)
-        fig.add_trace(go.Scatter3d(x=xb[0], y=yb[0], z=np.full_like(xb[0], zt_s.max() + eps), mode="lines", line=edge_line, hoverinfo="skip", showlegend=False))
-        fig.add_trace(go.Scatter3d(x=xb[0], y=yb[0], z=np.full_like(xb[0], zb_s.min() - eps), mode="lines", line=edge_line, hoverinfo="skip", showlegend=False))
+
+        def add_edge(x_line, y_line, z_line, width=3):
+            fig.add_trace(
+                go.Scatter3d(
+                    x=x_line, y=y_line, z=z_line, mode="lines",
+                    line=dict(color="#101010", width=width), hoverinfo="skip", showlegend=False
+                )
+            )
+
+        # 1) Outer transition lines: top<->band and bottom<->band
+        add_edge(xb[0], yb[0], np.full_like(xb[0], hb / 2 + eps), width=3)
+        add_edge(xb[0], yb[0], np.full_like(xb[0], -hb / 2 - eps), width=3)
+
+        # 2) Inner land/cup transitions (top and bottom)
+        xi, yi = _shape_contour_inner(params)
+        z_top_i = _interp_bilinear(z_top_grid, x_grid, y_grid, xi, yi) + hb / 2
+        z_bot_i = -_interp_bilinear(z_bot_grid, x_grid, y_grid, xi, yi) - hb / 2
+        add_edge(xi, yi, z_top_i + eps, width=2)
+        add_edge(xi, yi, z_bot_i - eps, width=2)
+
+        # 3) Groove feature lines (where groove intersects top face)
+        z = mesh_data["Z"]
+        z_g = mesh_data["Z_groove"]
+        mask_cup = mesh_data["mask_cup"]
+        diff = np.where(mask_cup, z - z_g, np.nan)
+        sx, sy = _extract_iso_segments(diff, x_grid, y_grid, level=0.0)
+        if len(sx) > 0:
+            valid = np.array([v is not None for v in sx], dtype=bool)
+            xq = sx[valid].astype(float)
+            yq = sy[valid].astype(float)
+            zq = _interp_bilinear(z_top_grid, x_grid, y_grid, xq, yq) + hb / 2
+            sz = np.full_like(sx, None, dtype=object)
+            sz[valid] = zq + eps
+            add_edge(sx, sy, sz, width=2)
+
+        # 4) Inner tangent line of groove corner radius
+        b_type = (params.get("b_type", "none") or "none").lower()
+        b_depth = float(params.get("b_depth", 0.0) or 0.0)
+        if b_type != "none" and b_depth > 0:
+            b_angle = float(params.get("b_angle", 90.0) or 90.0)
+            b_ri = float(params.get("b_Ri", 0.06) or 0.06)
+            x_ti = b_ri * np.sin(np.radians(b_angle / 2.0))
+            if x_ti > 1e-4:
+                shape_name = params.get("shape", "round")
+                cut_field = np.abs(mesh_data["Y"]) if shape_name == "round" else np.abs(mesh_data["X"])
+                ti_field = np.where(mask_cup, cut_field - x_ti, np.nan)
+                tx, ty = _extract_iso_segments(ti_field, x_grid, y_grid, level=0.0)
+                if len(tx) > 0:
+                    valid_t = np.array([v is not None for v in tx], dtype=bool)
+                    xqt = tx[valid_t].astype(float)
+                    yqt = ty[valid_t].astype(float)
+                    zqt = _interp_bilinear(z_top_grid, x_grid, y_grid, xqt, yqt) + hb / 2
+                    tz = np.full_like(tx, None, dtype=object)
+                    tz[valid_t] = zqt + eps
+                    add_edge(tx, ty, tz, width=2)
 
     x_min, x_max = float(np.nanmin(xb)), float(np.nanmax(xb))
     y_min, y_max = float(np.nanmin(yb)), float(np.nanmax(yb))
