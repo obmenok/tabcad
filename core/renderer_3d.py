@@ -284,11 +284,41 @@ def render_tablet_3d(mesh_data, params):
         add_edge(xi, yi, z_top_i + eps, width=2)
         add_edge(xi, yi, z_bot_i - eps, width=2)
 
+        # 2.1) FFBE: edge of the upper flat cup lid (Ref. Flat).
+        profile_name = (params.get("profile", "") or "").lower()
+        if profile_name in ("ffbe", "ffre"):
+            dc = max(0.0, float(params.get("Dc", 0.0) or 0.0))
+            if dc > 1e-6:
+                lvl = max(0.0, dc - max(1e-4, dc * 1e-3))
+                z_top_mask = np.where(mesh_data["mask_cup"], z_top_grid, np.nan)
+                fx, fy = _extract_iso_segments(z_top_mask, x_grid, y_grid, level=lvl)
+                if len(fx) > 0:
+                    valid_f = np.array([v is not None for v in fx], dtype=bool)
+                    xqf = fx[valid_f].astype(float)
+                    yqf = fy[valid_f].astype(float)
+                    zqf = _interp_bilinear(z_top_grid, x_grid, y_grid, xqf, yqf) + hb / 2
+                    fz = np.full_like(fx, None, dtype=object)
+                    fz[valid_f] = zqf + eps
+                    add_edge(fx, fy, fz, width=2)
+
+                # Bottom cup mirror line of the same flat lid boundary.
+                z_bot_mask = np.where(mesh_data["mask_cup"], z_bot_grid, np.nan)
+                bx, by = _extract_iso_segments(z_bot_mask, x_grid, y_grid, level=lvl)
+                if len(bx) > 0:
+                    valid_b = np.array([v is not None for v in bx], dtype=bool)
+                    xqb = bx[valid_b].astype(float)
+                    yqb = by[valid_b].astype(float)
+                    zqb = -_interp_bilinear(z_bot_grid, x_grid, y_grid, xqb, yqb) - hb / 2
+                    bz = np.full_like(bx, None, dtype=object)
+                    bz[valid_b] = zqb - eps
+                    add_edge(bx, by, bz, width=2)
+
         # 3) Groove feature lines (where groove intersects top face)
         z = mesh_data["Z"]
         z_g = mesh_data["Z_groove"]
         mask_cup = mesh_data["mask_cup"]
         diff = np.where(mask_cup, z - z_g, np.nan)
+        groove_visible = np.where(mask_cup, (z_g < z - 1e-6) & (z_g > 1e-6), False)
         sx, sy = _extract_iso_segments(diff, x_grid, y_grid, level=0.0)
         if len(sx) > 0:
             valid = np.array([v is not None for v in sx], dtype=bool)
@@ -302,6 +332,14 @@ def render_tablet_3d(mesh_data, params):
         # 4) Inner tangent line of groove corner radius
         b_type = (params.get("b_type", "none") or "none").lower()
         b_depth = float(params.get("b_depth", 0.0) or 0.0)
+        z_g_masked = np.where(mask_cup, z_g, np.nan)
+        gx0, gy0 = _extract_iso_segments(z_g_masked, x_grid, y_grid, level=0.0)
+        if len(gx0) > 0:
+            valid0 = np.array([v is not None for v in gx0], dtype=bool)
+            gz0 = np.full_like(gx0, None, dtype=object)
+            gz0[valid0] = hb / 2 + eps
+            add_edge(gx0, gy0, gz0, width=2)
+
         if b_type != "none" and b_depth > 0:
             b_angle = float(params.get("b_angle", 90.0) or 90.0)
             b_ri = float(params.get("b_Ri", 0.06) or 0.06)
@@ -309,7 +347,8 @@ def render_tablet_3d(mesh_data, params):
             if x_ti > 1e-4:
                 shape_name = params.get("shape", "round")
                 cut_field = np.abs(mesh_data["Y"]) if shape_name == "round" else np.abs(mesh_data["X"])
-                ti_field = np.where(mask_cup, cut_field - x_ti, np.nan)
+                # Draw inner groove radius/vee transition only where groove is actually visible.
+                ti_field = np.where(groove_visible, cut_field - x_ti, np.nan)
                 tx, ty = _extract_iso_segments(ti_field, x_grid, y_grid, level=0.0)
                 if len(tx) > 0:
                     valid_t = np.array([v is not None for v in tx], dtype=bool)
@@ -369,6 +408,7 @@ def render_tablet_3d(mesh_data, params):
         zaxis=dict(**base_axis_cfg),
         aspectmode="data",
         camera=camera,
+        dragmode="orbit",
     )
 
     # Unified framing for all views/presets to keep scale and centering consistent.
