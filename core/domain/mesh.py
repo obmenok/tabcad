@@ -224,6 +224,7 @@ def generate_mesh(params):
 
     b_type = params.get("b_type", "none")
     b_depth = params.get("b_depth", 0.0) or 0.0
+    b_cruciform = bool(params.get("b_cruciform", False))
     b_double_sided = bool(params.get("b_double_sided", False))
     if b_type != "none" and b_depth > 0:
         b_angle = params.get("b_angle", 90.0)
@@ -232,35 +233,42 @@ def generate_mesh(params):
         d_sharp = b_ri / np.sin(alpha) - b_ri if (b_ri > 0 and alpha > 0) else 0.0
         x_ti = b_ri * np.sin(alpha)
 
-        if shape == "round":
-            cut_axis, along_axis = np.abs(y_arr), np.abs(x_arr)
-        else:
-            cut_axis, along_axis = np.abs(x_arr), np.abs(y_arr)
-
         span = minor_span(params)
         profile = params.get("profile", "concave")
-        
-        if shape == "oval" and profile in ["compound", "compound_cup"]:
-            params_along = dict(params)
-            params_along["profile"] = "compound"
-            params_along["R_maj_maj"] = params.get("R_min_maj", 12.7)
-            params_along["R_maj_min"] = params.get("R_min_min", 3.81)
-            z_centerline = eval_profile_1d(along_axis, params_along, span, dc)
-        else:
-            z_centerline = eval_profile_1d(along_axis, params, span, dc)
 
-        if b_type == "standard":
-            z_bottom = z_centerline - b_depth
-        elif b_type == "cut_through":
-            z_bottom = np.full_like(z, dc - b_depth)
-        elif b_type == "decreasing":
-            z_bottom = z_centerline - b_depth * np.maximum(0, 1 - (along_axis / max(1e-6, span)) ** 2)
-        else:
-            z_bottom = z_centerline - b_depth
+        def _groove_from_axes(cut_axis, along_axis):
+            if shape == "oval" and profile in ["compound", "compound_cup"]:
+                params_along = dict(params)
+                params_along["profile"] = "compound"
+                params_along["R_maj_maj"] = params.get("R_min_maj", 12.7)
+                params_along["R_maj_min"] = params.get("R_min_min", 3.81)
+                z_centerline = eval_profile_1d(along_axis, params_along, span, dc)
+            else:
+                z_centerline = eval_profile_1d(along_axis, params, span, dc)
 
-        z_v = z_bottom - d_sharp + cut_axis / np.tan(alpha)
-        z_inner = z_bottom + b_ri - np.sqrt(np.maximum(0, b_ri**2 - cut_axis**2))
-        z_groove = np.where(cut_axis <= x_ti, z_inner, z_v)
+            if b_type == "standard":
+                z_bottom = z_centerline - b_depth
+            elif b_type == "cut_through":
+                z_bottom = np.full_like(z, dc - b_depth)
+            elif b_type == "decreasing":
+                z_bottom = z_centerline - b_depth * np.maximum(0, 1 - (along_axis / max(1e-6, span)) ** 2)
+            else:
+                z_bottom = z_centerline - b_depth
+
+            z_v = z_bottom - d_sharp + cut_axis / np.tan(alpha)
+            z_inner = z_bottom + b_ri - np.sqrt(np.maximum(0, b_ri**2 - cut_axis**2))
+            return np.where(cut_axis <= x_ti, z_inner, z_v)
+
+        if shape == "round":
+            z_groove_main = _groove_from_axes(np.abs(y_arr), np.abs(x_arr))
+            if b_cruciform:
+                z_groove_cross = _groove_from_axes(np.abs(x_arr), np.abs(y_arr))
+                z_groove = np.minimum(z_groove_main, z_groove_cross)
+            else:
+                z_groove = z_groove_main
+        else:
+            z_groove = _groove_from_axes(np.abs(x_arr), np.abs(y_arr))
+
         z_cup_top = np.maximum(0, np.minimum(z, z_groove))
         if b_double_sided:
             z_cup_bottom = np.maximum(0, np.minimum(z, z_groove))

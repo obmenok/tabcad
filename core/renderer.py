@@ -215,6 +215,7 @@ def render_tablet(mesh_data, params):
     b_type = p_get(params, "b_type", "none")
     b_depth = p_get(params, "b_depth", 0.0)
     b_double_sided = bool(p_get(params, "b_double_sided", False))
+    b_cruciform = bool(p_get(params, "b_cruciform", False))
     b_angle = p_get(params, "b_angle", 90.0)
     b_ri = p_get(params, "b_Ri", 0.06)
     bev_a = p_get(params, "Bev_A", 40.0)
@@ -359,18 +360,17 @@ def render_tablet(mesh_data, params):
         x_ti = b_ri * np.sin(np.radians(b_angle / 2.0))
         if x_ti > 0.005:
             if shape == "round":
-                idx = np.argmin(np.abs(y_grid - x_ti))
-                cond = (z - z_groove)[idx, :]
+                vis = z - z_groove
                 if b_type == "standard":
-                    # Match Natoli source logic: for Standard bisect clip by groove floor
-                    # so inner longitudinal lines stop at triangular ends.
-                    cond = np.minimum(cond, z_groove[idx, :])
-                cond = np.where(mask_cup[idx, :], cond, -1.0)
-                v_idx = np.where(cond >= 0)[0]
-                if len(v_idx) > 0:
-                    x_s, x_e = x_grid[v_idx[0]], x_grid[v_idx[-1]]
-                    ax.plot([x_s + cx_top, x_e + cx_top], [x_ti + cy_top, x_ti + cy_top], "k-", lw=0.6)
-                    ax.plot([x_s + cx_top, x_e + cx_top], [-x_ti + cy_top, -x_ti + cy_top], "k-", lw=0.6)
+                    # For Standard, use Natoli clipping by groove floor at ends.
+                    vis = np.minimum(vis, z_groove)
+                vis_mask = np.where(mask_cup, vis >= 0, False)
+
+                ti_field_y = np.where(vis_mask, np.abs(mesh_data["Y"]) - x_ti, np.nan)
+                ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, ti_field_y, levels=[0], colors="k", linewidths=0.6)
+                if b_cruciform:
+                    ti_field_x = np.where(vis_mask, np.abs(mesh_data["X"]) - x_ti, np.nan)
+                    ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, ti_field_x, levels=[0], colors="k", linewidths=0.6)
             else:
                 idx_x = np.argmin(np.abs(x_grid - x_ti))
                 cond = (z - z_groove)[:, idx_x]

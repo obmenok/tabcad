@@ -45,6 +45,7 @@ from core.renderer_3d import render_tablet_3d
         State("input-b-depth", "value"),
         State("input-b-angle", "value"),
         State("input-b-ri", "value"),
+        State("bisect-cruciform", "value"),
         State("bisect-double-sided", "value"),
     ],
     prevent_initial_call=True,
@@ -80,6 +81,7 @@ def generate_graphics(
     b_depth,
     b_angle,
     b_ri,
+    b_cruciform,
     b_double_sided,
 ):
     if w is None or dc is None:
@@ -112,6 +114,7 @@ def generate_graphics(
         "b_depth": b_depth,
         "b_angle": b_angle,
         "b_Ri": b_ri,
+        "b_cruciform": bool(b_cruciform and "on" in b_cruciform),
         "b_double_sided": bool(b_double_sided and "on" in b_double_sided),
         "view_preset": view_preset or "isometric",
         "render_mode": "edges" if (show_edges and "on" in show_edges) else "shaded",

@@ -75,6 +75,17 @@ def create_sidebar():
         ),
         html.Div(
             dbc.Checklist(
+                options=[{"label": "Cruciform", "value": "on"}],
+                value=[],
+                id="bisect-cruciform",
+                switch=True,
+                className="mb-2",
+            ),
+            id="div-bisect-cruciform",
+            style={"display": "none"},
+        ),
+        html.Div(
+            dbc.Checklist(
                 options=[{"label": "Double-sided", "value": "on"}],
                 value=[],
                 id="bisect-double-sided",

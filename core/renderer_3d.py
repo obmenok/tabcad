@@ -353,6 +353,7 @@ def render_tablet_3d(mesh_data, params):
         if b_type != "none" and b_depth > 0:
             b_angle = float(params.get("b_angle", 90.0) or 90.0)
             b_ri = float(params.get("b_Ri", 0.06) or 0.06)
+            b_cruciform = bool(params.get("b_cruciform", False))
             x_ti = b_ri * np.sin(np.radians(b_angle / 2.0))
             if x_ti > 1e-4:
                 shape_name = params.get("shape", "round")
@@ -373,6 +374,22 @@ def render_tablet_3d(mesh_data, params):
                         tbz = np.full_like(tx, None, dtype=object)
                         tbz[valid_t] = zqbt - eps
                         add_edge(tx, ty, tbz, width=2)
+                if shape_name == "round" and b_cruciform:
+                    ti_field_cross = np.where(groove_visible, np.abs(mesh_data["X"]) - x_ti, np.nan)
+                    tx2, ty2 = _extract_iso_segments(ti_field_cross, x_grid, y_grid, level=0.0)
+                    if len(tx2) > 0:
+                        valid_t2 = np.array([v is not None for v in tx2], dtype=bool)
+                        xqt2 = tx2[valid_t2].astype(float)
+                        yqt2 = ty2[valid_t2].astype(float)
+                        zqt2 = _interp_bilinear(z_top_grid, x_grid, y_grid, xqt2, yqt2) + hb / 2
+                        tz2 = np.full_like(tx2, None, dtype=object)
+                        tz2[valid_t2] = zqt2 + eps
+                        add_edge(tx2, ty2, tz2, width=2)
+                        if b_double_sided:
+                            zqbt2 = -_interp_bilinear(z_bot_grid, x_grid, y_grid, xqt2, yqt2) - hb / 2
+                            tbz2 = np.full_like(tx2, None, dtype=object)
+                            tbz2[valid_t2] = zqbt2 - eps
+                            add_edge(tx2, ty2, tbz2, width=2)
 
     x_min, x_max = float(np.nanmin(xb)), float(np.nanmax(xb))
     y_min, y_max = float(np.nanmin(yb)), float(np.nanmax(yb))

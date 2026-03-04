@@ -88,6 +88,18 @@ def toggle_double_sided_bisect(shape, b_type, current_value):
 
 
 @callback(
+    [Output("div-bisect-cruciform", "style"), Output("bisect-cruciform", "value")],
+    [Input("shape-dropdown", "value"), Input("bisect-type", "value")],
+    [State("bisect-cruciform", "value")],
+)
+def toggle_cruciform_bisect(shape, b_type, current_value):
+    show = shape == "round" and (b_type or "none") != "none"
+    if show:
+        return {"display": "block"}, (current_value or [])
+    return {"display": "none"}, []
+
+
+@callback(
     [
         Output("label-input-w", "children"),
         Output("label-input-rc-min", "children"),
