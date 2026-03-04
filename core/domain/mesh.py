@@ -219,10 +219,12 @@ def generate_mesh(params):
     d_a = dx * dy
 
     z_cup_top = z.copy()
+    z_cup_bottom = z.copy()
     z_groove = np.full_like(z, dc * 5.0)
 
     b_type = params.get("b_type", "none")
     b_depth = params.get("b_depth", 0.0) or 0.0
+    b_double_sided = bool(params.get("b_double_sided", False))
     if b_type != "none" and b_depth > 0:
         b_angle = params.get("b_angle", 90.0)
         b_ri = params.get("b_Ri", 0.061)
@@ -260,15 +262,17 @@ def generate_mesh(params):
         z_inner = z_bottom + b_ri - np.sqrt(np.maximum(0, b_ri**2 - cut_axis**2))
         z_groove = np.where(cut_axis <= x_ti, z_inner, z_v)
         z_cup_top = np.maximum(0, np.minimum(z, z_groove))
+        if b_double_sided:
+            z_cup_bottom = np.maximum(0, np.minimum(z, z_groove))
 
     cup_vol_top = np.sum(z_cup_top) * d_a
     dzdx_top = np.gradient(z_cup_top, dx, axis=1)
     dzdy_top = np.gradient(z_cup_top, dy, axis=0)
     cup_sa_top = np.sum(np.sqrt(1 + dzdx_top**2 + dzdy_top**2)[mask_cup]) * d_a
 
-    cup_vol_bottom = np.sum(z) * d_a
-    dzdx_bot = np.gradient(z, dx, axis=1)
-    dzdy_bot = np.gradient(z, dy, axis=0)
+    cup_vol_bottom = np.sum(z_cup_bottom) * d_a
+    dzdx_bot = np.gradient(z_cup_bottom, dx, axis=1)
+    dzdy_bot = np.gradient(z_cup_bottom, dy, axis=0)
     cup_sa_bottom = np.sum(np.sqrt(1 + dzdx_bot**2 + dzdy_bot**2)[mask_cup]) * d_a
 
     land_sa = max(0.0, die_hole_sa - np.sum(mask_cup) * d_a)
@@ -281,6 +285,7 @@ def generate_mesh(params):
         "X": x_arr,
         "Y": y_arr,
         "Z": z,
+        "Z_cup_bottom": z_cup_bottom,
         "Z_groove": z_groove,
         "Z_cup_top": z_cup_top,
         "mask_cup": mask_cup,

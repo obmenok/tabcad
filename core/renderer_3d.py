@@ -204,7 +204,7 @@ def render_tablet_3d(mesh_data, params):
     x_grid = mesh_data["x_grid"]
     y_grid = mesh_data["y_grid"]
     z_top_grid = mesh_data["Z_cup_top"]
-    z_bot_grid = mesh_data["Z"]
+    z_bot_grid = mesh_data.get("Z_cup_bottom", mesh_data["Z"])
 
     theta = np.linspace(0, 2 * np.pi, 320)
     rr = np.linspace(0, 1, 160)
@@ -234,6 +234,7 @@ def render_tablet_3d(mesh_data, params):
     render_mode = (params.get("render_mode", "shaded") or "shaded").lower()
     show_bbox = bool(params.get("show_bbox", False))
     view_preset = params.get("view_preset", "isometric")
+    b_double_sided = bool(params.get("b_double_sided", False))
     top_opacity, bottom_opacity, band_opacity = 1.0, 1.0, 1.0
     hide_surface = False
     if render_mode == "transparent":
@@ -328,6 +329,11 @@ def render_tablet_3d(mesh_data, params):
             sz = np.full_like(sx, None, dtype=object)
             sz[valid] = zq + eps
             add_edge(sx, sy, sz, width=2)
+            if b_double_sided:
+                zbq = -_interp_bilinear(z_bot_grid, x_grid, y_grid, xq, yq) - hb / 2
+                sbz = np.full_like(sx, None, dtype=object)
+                sbz[valid] = zbq - eps
+                add_edge(sx, sy, sbz, width=2)
 
         # 4) Inner tangent line of groove corner radius
         b_type = (params.get("b_type", "none") or "none").lower()
@@ -339,6 +345,10 @@ def render_tablet_3d(mesh_data, params):
             gz0 = np.full_like(gx0, None, dtype=object)
             gz0[valid0] = hb / 2 + eps
             add_edge(gx0, gy0, gz0, width=2)
+            if b_double_sided:
+                gbz0 = np.full_like(gx0, None, dtype=object)
+                gbz0[valid0] = -hb / 2 - eps
+                add_edge(gx0, gy0, gbz0, width=2)
 
         if b_type != "none" and b_depth > 0:
             b_angle = float(params.get("b_angle", 90.0) or 90.0)
@@ -358,6 +368,11 @@ def render_tablet_3d(mesh_data, params):
                     tz = np.full_like(tx, None, dtype=object)
                     tz[valid_t] = zqt + eps
                     add_edge(tx, ty, tz, width=2)
+                    if b_double_sided:
+                        zqbt = -_interp_bilinear(z_bot_grid, x_grid, y_grid, xqt, yqt) - hb / 2
+                        tbz = np.full_like(tx, None, dtype=object)
+                        tbz[valid_t] = zqbt - eps
+                        add_edge(tx, ty, tbz, width=2)
 
     x_min, x_max = float(np.nanmin(xb)), float(np.nanmax(xb))
     y_min, y_max = float(np.nanmin(yb)), float(np.nanmax(yb))

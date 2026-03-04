@@ -76,6 +76,18 @@ def update_bisect_options(profile, current_type):
 
 
 @callback(
+    [Output("div-bisect-double-sided", "style"), Output("bisect-double-sided", "value")],
+    [Input("shape-dropdown", "value"), Input("bisect-type", "value")],
+    [State("bisect-double-sided", "value")],
+)
+def toggle_double_sided_bisect(shape, b_type, current_value):
+    show = shape in ("capsule", "oval") and (b_type or "none") != "none"
+    if show:
+        return {"display": "block"}, (current_value or [])
+    return {"display": "none"}, []
+
+
+@callback(
     [
         Output("label-input-w", "children"),
         Output("label-input-rc-min", "children"),

@@ -73,6 +73,17 @@ def create_sidebar():
             ],
             value='standard', clearable=False, className="mb-2"
         ),
+        html.Div(
+            dbc.Checklist(
+                options=[{"label": "Double-sided", "value": "on"}],
+                value=[],
+                id="bisect-double-sided",
+                switch=True,
+                className="mb-2",
+            ),
+            id="div-bisect-double-sided",
+            style={"display": "none"},
+        ),
         make_input('input-b-width', 'Width', 2.25),
         make_input('input-b-depth', 'Depth', 1.12),
         make_input('input-b-angle', 'Angle', 90.0),

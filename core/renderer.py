@@ -214,6 +214,7 @@ def render_tablet(mesh_data, params):
     profile = p_get(params, "profile", "concave")
     b_type = p_get(params, "b_type", "none")
     b_depth = p_get(params, "b_depth", 0.0)
+    b_double_sided = bool(p_get(params, "b_double_sided", False))
     b_angle = p_get(params, "b_angle", 90.0)
     b_ri = p_get(params, "b_Ri", 0.06)
     bev_a = p_get(params, "Bev_A", 40.0)
@@ -402,7 +403,7 @@ def render_tablet(mesh_data, params):
     x_maj = np.linspace(-span, span, 400)
     z_up_maj_base = _major_profile_x(x_maj, params, shape, is_modified, l_val, w_val, land, dc)
     z_up_maj = apply_1d_groove(x_maj, z_up_maj_base, params, max(0.001, span))
-    z_down_maj = z_up_maj_base
+    z_down_maj = apply_1d_groove(x_maj, z_up_maj_base, params, max(0.001, span)) if b_double_sided else z_up_maj_base
 
     l_prof = np.concatenate(
         [
@@ -538,6 +539,8 @@ def render_tablet(mesh_data, params):
             z_bottom_line = z_up_min - b_depth
         valid = (z_bottom_line > 0) & (z_bottom_line < z_up_min)
         ax.plot(y_min_cup[valid] + cx_front, z_bottom_line[valid] + hb / 2 + cy_front, "k--", lw=0.8)
+        if b_double_sided:
+            ax.plot(y_min_cup[valid] + cx_front, -(z_bottom_line[valid] + hb / 2) + cy_front, "k--", lw=0.8)
 
     if land > 0:
         l_land_coord = span_front
