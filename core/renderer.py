@@ -7,6 +7,8 @@ import numpy as np
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Arc
+from matplotlib.path import Path
+from matplotlib.patches import PathPatch
 
 from core.engine import get_1d_z_engine, get_compound_profile
 
@@ -18,6 +20,53 @@ ARR_STYLE_SINGLE = "-|>,head_length=1,head_width=0.175"
 def p_get(params, key, default):
     val = params.get(key)
     return val if val is not None else default
+
+
+def _draw_shaded_polygon(ax, x_poly, y_poly, base_rgb=(0.86, 0.78, 0.73), alpha=1.0):
+    x = np.asarray(x_poly, dtype=float)
+    y = np.asarray(y_poly, dtype=float)
+    if len(x) < 3 or len(y) < 3:
+        return
+    if not (np.isclose(x[0], x[-1]) and np.isclose(y[0], y[-1])):
+        x = np.append(x, x[0])
+        y = np.append(y, y[0])
+
+    verts = np.column_stack([x, y])
+    codes = np.full(len(verts), Path.LINETO, dtype=np.uint8)
+    codes[0] = Path.MOVETO
+    codes[-1] = Path.CLOSEPOLY
+    patch = PathPatch(Path(verts, codes), facecolor="none", edgecolor="none", transform=ax.transData)
+    ax.add_patch(patch)
+
+    xmin, xmax = float(np.min(x)), float(np.max(x))
+    ymin, ymax = float(np.min(y)), float(np.max(y))
+    if xmax - xmin < 1e-6 or ymax - ymin < 1e-6:
+        return
+
+    nx, ny = 260, 260
+    xx = np.linspace(xmin, xmax, nx)
+    yy = np.linspace(ymin, ymax, ny)
+    X, Y = np.meshgrid(xx, yy)
+
+    xn = 2.0 * (X - xmin) / (xmax - xmin) - 1.0
+    yn = 2.0 * (Y - ymin) / (ymax - ymin) - 1.0
+
+    light = 0.62 - 0.26 * xn + 0.18 * yn
+    spec = np.exp(-((xn + 0.15) ** 2 / 0.05 + (yn - 0.1) ** 2 / 0.2))
+    shade = np.clip(light + 0.25 * spec, 0.0, 1.0)
+
+    base = np.array(base_rgb, dtype=float).reshape(1, 1, 3)
+    rgb = np.clip(base * (0.74 + 0.46 * shade[:, :, None]), 0.0, 1.0)
+    rgba = np.dstack([rgb, np.full((ny, nx), alpha)])
+
+    im = ax.imshow(
+        rgba,
+        extent=[xmin, xmax, ymin, ymax],
+        origin="lower",
+        interpolation="bilinear",
+        zorder=0.2,
+    )
+    im.set_clip_path(patch)
 
 
 def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, offset=(0, 0)):
@@ -212,6 +261,7 @@ def render_tablet(mesh_data, params):
     dc = p_get(params, "Dc", 1.5)
     tt = p_get(params, "Tt", hb + 2 * dc)
     profile = p_get(params, "profile", "concave")
+    render_2d_shaded = bool(p_get(params, "render_2d_shaded", False))
     b_type = p_get(params, "b_type", "none")
     b_depth = p_get(params, "b_depth", 0.0)
     b_double_sided = bool(p_get(params, "b_double_sided", False))
@@ -236,6 +286,8 @@ def render_tablet(mesh_data, params):
 
     if shape == "round":
         x_out, y_out = get_circle_contour(w_val / 2)
+        if render_2d_shaded:
+            _draw_shaded_polygon(ax, x_out + cx_top, y_out + cy_top, base_rgb=(0.87, 0.79, 0.74), alpha=0.95)
         ax.plot(x_out + cx_top, y_out + cy_top, "k-", linewidth=1.2)
         r_c = max(0.01, w_val / 2 - land)
         if land > 0:
@@ -263,6 +315,8 @@ def render_tablet(mesh_data, params):
         draw_ext(ax, cx_top - w_val / 2, cy_top + w_val / 2, cx_top - w_val / 2, cy_top - w_val / 2, -4.5, 0, f"{w_val:g}\nDiameter")
     elif shape == "capsule" and not is_modified:
         x_out, y_out = get_capsule_contour(l_val, w_val)
+        if render_2d_shaded:
+            _draw_shaded_polygon(ax, y_out + cx_top, x_out + cy_top, base_rgb=(0.87, 0.79, 0.74), alpha=0.95)
         ax.plot(y_out + cx_top, x_out + cy_top, "k-", linewidth=1.2)
         if land > 0:
             x_in, y_in = get_capsule_contour(max(0.1, l_val - 2 * land), max(0.1, w_val - 2 * land))
@@ -296,6 +350,8 @@ def render_tablet(mesh_data, params):
         draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, f"{l_val:g}\nMajor Axis")
     else:
         x_out, y_out = get_oval_contour(l_val, w_val, re, rs)
+        if render_2d_shaded:
+            _draw_shaded_polygon(ax, y_out + cx_top, x_out + cy_top, base_rgb=(0.87, 0.79, 0.74), alpha=0.95)
         ax.plot(y_out + cx_top, x_out + cy_top, "k-", linewidth=1.2)
         if land > 0 and re > land and rs > land:
             x_in, y_in = get_oval_contour(l_val - 2 * land, w_val - 2 * land, re - land, rs - land)
@@ -431,6 +487,8 @@ def render_tablet(mesh_data, params):
             [-hb / 2],
         ]
     )
+    if render_2d_shaded:
+        _draw_shaded_polygon(ax, t_prof + cx_side, l_prof + cy_side, base_rgb=(0.82, 0.74, 0.70), alpha=0.95)
     ax.plot(t_prof + cx_side, l_prof + cy_side, "k-", linewidth=1.2)
     ax.plot([-hb / 2 + cx_side, -hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=1.2)
     ax.plot([hb / 2 + cx_side, hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=1.2)
@@ -523,6 +581,8 @@ def render_tablet(mesh_data, params):
             [-hb / 2],
         ]
     )
+    if render_2d_shaded:
+        _draw_shaded_polygon(ax, w_prof + cx_front, t_front + cy_front, base_rgb=(0.84, 0.76, 0.72), alpha=0.95)
     ax.plot(w_prof + cx_front, t_front + cy_front, "k-", linewidth=1.2)
     ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [hb / 2 + cy_front, hb / 2 + cy_front], "k-", linewidth=1.2)
     ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [-hb / 2 + cy_front, -hb / 2 + cy_front], "k-", linewidth=1.2)

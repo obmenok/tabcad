@@ -175,6 +175,56 @@ def _camera_from_preset(bounds, preset):
     return dict(eye=dict(x=-1.55 * scale, y=-1.45 * scale, z=0.95 * scale), up=dict(x=0, y=0, z=1), center=dict(x=0, y=0, z=0))
 
 
+def _normalize(v):
+    n = np.linalg.norm(v)
+    if n < 1e-12:
+        return v
+    return v / n
+
+
+def _auto_recenter_camera(camera, bounds):
+    """
+    Auto-center by projected silhouette center (not just geometric center).
+    This keeps the model visually centered across presets without hand-tuned offsets.
+    """
+    eye = np.array([camera["eye"]["x"], camera["eye"]["y"], camera["eye"]["z"]], dtype=float)
+    center = np.array([camera["center"]["x"], camera["center"]["y"], camera["center"]["z"]], dtype=float)
+    up_raw = np.array([camera["up"]["x"], camera["up"]["y"], camera["up"]["z"]], dtype=float)
+
+    forward = _normalize(center - eye)
+    right = _normalize(np.cross(forward, up_raw))
+    up = _normalize(np.cross(right, forward))
+    if np.linalg.norm(right) < 1e-9 or np.linalg.norm(up) < 1e-9:
+        return camera
+
+    xmin, xmax, ymin, ymax, zmin, zmax = bounds
+    corners = np.array(
+        [
+            [xmin, ymin, zmin],
+            [xmax, ymin, zmin],
+            [xmax, ymax, zmin],
+            [xmin, ymax, zmin],
+            [xmin, ymin, zmax],
+            [xmax, ymin, zmax],
+            [xmax, ymax, zmax],
+            [xmin, ymax, zmax],
+        ],
+        dtype=float,
+    )
+
+    rel = corners - center[None, :]
+    u = rel @ right
+    v = rel @ up
+    # Positive v means projected center is higher than viewport center.
+    v_shift = 0.5 * (np.nanmax(v) + np.nanmin(v))
+
+    # Move camera center only along the visual up axis to keep orientation stable.
+    center_new = center + up * v_shift
+    cam_new = dict(camera)
+    cam_new["center"] = dict(x=float(center_new[0]), y=float(center_new[1]), z=float(center_new[2]))
+    return cam_new
+
+
 def _bbox_lines_trace(bounds):
     xmin, xmax, ymin, ymax, zmin, zmax = bounds
     pts = np.array(
@@ -396,6 +446,7 @@ def render_tablet_3d(mesh_data, params):
     z_min, z_max = float(np.nanmin(zb_s)), float(np.nanmax(zt_s))
     bounds = [x_min, x_max, y_min, y_max, z_min, z_max]
     camera = _camera_from_preset(bounds, view_preset)
+    camera = _auto_recenter_camera(camera, bounds)
 
     bbox_annotations = None
     if show_bbox:

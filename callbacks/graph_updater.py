@@ -14,6 +14,7 @@ from core.renderer_3d import render_tablet_3d
     ],
     [
         Input("btn-generate", "n_clicks"),
+        Input("drawing-2d-shaded", "value"),
         Input("plotly-view-preset", "value"),
         Input("plotly-show-edges", "value"),
         Input("plotly-show-bbox", "value"),
@@ -52,6 +53,7 @@ from core.renderer_3d import render_tablet_3d
 )
 def generate_graphics(
     n_clicks,
+    drawing_2d_shaded,
     view_preset,
     show_edges,
     show_bbox,
@@ -119,6 +121,7 @@ def generate_graphics(
         "view_preset": view_preset or "isometric",
         "render_mode": "edges" if (show_edges and "on" in show_edges) else "shaded",
         "show_bbox": bool(show_bbox and "on" in show_bbox),
+        "render_2d_shaded": bool(drawing_2d_shaded and "on" in drawing_2d_shaded),
     }
 
     mesh_data = generate_mesh(params)
@@ -126,7 +129,7 @@ def generate_graphics(
     fig = render_tablet_3d(mesh_data, params)
     fig_3d = dcc.Graph(
         figure=fig,
-        style={"height": "80vh"},
+        style={"height": "100%", "width": "100%"},
         config={"displaylogo": False, "displayModeBar": False, "responsive": True},
         id="tablet-3d-graph",
     )
