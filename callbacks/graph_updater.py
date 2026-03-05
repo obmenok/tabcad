@@ -14,10 +14,10 @@ from core.renderer_3d import render_tablet_3d
     ],
     [
         Input("btn-generate", "n_clicks"),
-        Input("drawing-2d-shaded", "value"),
-        Input("plotly-view-preset", "value"),
-        Input("plotly-show-edges", "value"),
-        Input("plotly-show-bbox", "value"),
+        Input("drawing-2d-shaded", "data"),
+        Input("plotly-view-preset", "data"),
+        Input("plotly-show-edges", "data"),
+        Input("plotly-show-bbox", "data"),
     ],
     [
         State("shape-dropdown", "value"),
@@ -119,9 +119,9 @@ def generate_graphics(
         "b_cruciform": bool(b_cruciform and "on" in b_cruciform),
         "b_double_sided": bool(b_double_sided and "on" in b_double_sided),
         "view_preset": view_preset or "isometric",
-        "render_mode": "edges" if (show_edges and "on" in show_edges) else "shaded",
-        "show_bbox": bool(show_bbox and "on" in show_bbox),
-        "render_2d_shaded": bool(drawing_2d_shaded and "on" in drawing_2d_shaded),
+        "render_mode": "edges" if bool(show_edges) else "shaded",
+        "show_bbox": bool(show_bbox),
+        "render_2d_shaded": bool(drawing_2d_shaded),
     }
 
     mesh_data = generate_mesh(params)

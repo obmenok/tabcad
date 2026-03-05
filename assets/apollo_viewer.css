@@ -1,0 +1,133 @@
+@font-face {
+  font-family: "ApolloViewerFonts";
+  src: url("ApolloViewerFonts.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.apollo-icon {
+  font-family: "ApolloViewerFonts", sans-serif;
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.apollo-icon::before {
+  display: inline-block;
+}
+
+.av-i-view::before { content: "\e967"; }
+.av-i-front::before { content: "\e970"; }
+.av-i-back::before { content: "\e96e"; }
+.av-i-left::before { content: "\e972"; }
+.av-i-right::before { content: "\e973"; }
+.av-i-top::before { content: "\e974"; }
+.av-i-bottom::before { content: "\e96f"; }
+.av-i-isometric::before { content: "\e971"; }
+.av-i-edge::before { content: "\e950"; }
+.av-i-bbox::before { content: "\e963"; }
+.av-i-fullscreen::before { content: "\e94e"; }
+.av-i-screenshot::before { content: "\e913"; }
+.av-i-shaded::before { content: "\e95f"; }
+
+.plotly-toolbar-wrap {
+  overflow: visible !important;
+  white-space: nowrap;
+}
+
+.plotly-toolbar-group .btn,
+.plotly-toolbar-group .dropdown-toggle {
+  height: 32px;
+  min-width: 36px;
+  padding: 4px 10px;
+  box-sizing: border-box;
+  border: 1px solid #9aa0a6;
+  color: #495057;
+  background-color: #ffffff;
+  background-image: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  line-height: 1.2 !important;
+  border-radius: 0 !important;
+  transition: none !important;
+}
+
+.plotly-toolbar-group .btn:hover,
+.plotly-toolbar-group .dropdown-toggle:hover {
+  background: #ffffff;
+  border-color: #9aa0a6;
+  color: #495057;
+}
+
+.plotly-toolbar-group .plotly-toggle-btn:hover {
+  background: #ffffff;
+  border-color: #9aa0a6;
+  color: #495057;
+}
+
+.plotly-toolbar-group .btn:focus,
+.plotly-toolbar-group .dropdown-toggle:focus {
+  box-shadow: none;
+  border-color: #6c757d;
+}
+
+.plotly-toolbar-group .btn:active,
+.plotly-toolbar-group .dropdown-toggle:active {
+  transform: none !important;
+}
+
+.plotly-toolbar-group > .btn:first-child,
+.plotly-toolbar-group > .dropdown:first-child .dropdown-toggle {
+  border-top-left-radius: 6px !important;
+  border-bottom-left-radius: 6px !important;
+}
+
+.plotly-toolbar-group .dropdown-toggle {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.plotly-toolbar-group > .btn:last-child,
+.plotly-toolbar-group > .dropdown:last-child .dropdown-toggle {
+  border-top-right-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+}
+
+.plotly-toolbar-group .btn.active,
+.plotly-toolbar-group .btn.is-active {
+  background: #e9ecef;
+  border-color: #6c757d;
+  color: #212529 !important;
+}
+
+.plotly-toolbar-group .btn.active .apollo-icon,
+.plotly-toolbar-group .btn.is-active .apollo-icon {
+  color: #212529;
+}
+
+.plotly-toolbar-group .dropdown-menu .apollo-icon {
+  font-size: 14px;
+}
+
+.plotly-toolbar-group .dropdown-menu {
+  z-index: 9999 !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+}
+
+.plotly-toolbar-group .dropdown-item {
+  font-weight: 400 !important;
+  text-transform: none !important;
+  color: #495057 !important;
+  opacity: 1 !important;
+}
+
+.plotly-toolbar-group .dropdown-item .apollo-icon {
+  color: #495057 !important;
+  opacity: 1 !important;
+}
