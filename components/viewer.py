@@ -81,41 +81,41 @@ def create_viewer():
                                                     id="plotly-view-menu",
                                                     label=html.Span(
                                                         [
-                                                            html.Span(className="apollo-icon av-i-view me-1"),
+                                                            html.Span(className="apollo-icon av-i-view av-view-icon"),
                                                             html.Span("View"),
                                                         ],
-                                                        className="d-inline-flex align-items-center",
+                                                        className="d-inline-flex align-items-center av-view-label",
                                                     ),
                                                     color="light",
                                                     className="plotly-toolbar-btn",
-                                                    toggle_style={"minWidth": "120px"},
+                                                    toggle_style={"minWidth": "104px"},
                                                     children=[
                                                         dbc.DropdownMenuItem(
-                                                            html.Span([html.Span(className="apollo-icon av-i-front me-2"), "Front"]),
+                                                            html.Span([html.Span(className="apollo-icon av-i-front av-menu-icon"), "Front"]),
                                                             id="plotly-view-front",
                                                         ),
                                                         dbc.DropdownMenuItem(
-                                                            html.Span([html.Span(className="apollo-icon av-i-back me-2"), "Back"]),
+                                                            html.Span([html.Span(className="apollo-icon av-i-back av-menu-icon"), "Back"]),
                                                             id="plotly-view-back",
                                                         ),
                                                         dbc.DropdownMenuItem(
-                                                            html.Span([html.Span(className="apollo-icon av-i-left me-2"), "Left"]),
+                                                            html.Span([html.Span(className="apollo-icon av-i-left av-menu-icon"), "Left"]),
                                                             id="plotly-view-left",
                                                         ),
                                                         dbc.DropdownMenuItem(
-                                                            html.Span([html.Span(className="apollo-icon av-i-right me-2"), "Right"]),
+                                                            html.Span([html.Span(className="apollo-icon av-i-right av-menu-icon"), "Right"]),
                                                             id="plotly-view-right",
                                                         ),
                                                         dbc.DropdownMenuItem(
-                                                            html.Span([html.Span(className="apollo-icon av-i-top me-2"), "Top"]),
+                                                            html.Span([html.Span(className="apollo-icon av-i-top av-menu-icon"), "Top"]),
                                                             id="plotly-view-top",
                                                         ),
                                                         dbc.DropdownMenuItem(
-                                                            html.Span([html.Span(className="apollo-icon av-i-bottom me-2"), "Bottom"]),
+                                                            html.Span([html.Span(className="apollo-icon av-i-bottom av-menu-icon"), "Bottom"]),
                                                             id="plotly-view-bottom",
                                                         ),
                                                         dbc.DropdownMenuItem(
-                                                            html.Span([html.Span(className="apollo-icon av-i-isometric me-2"), "Isometric"]),
+                                                            html.Span([html.Span(className="apollo-icon av-i-isometric av-menu-icon"), "Isometric"]),
                                                             id="plotly-view-isometric",
                                                         ),
                                                     ],
