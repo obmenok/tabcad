@@ -22,7 +22,7 @@ def p_get(params, key, default):
     return val if val is not None else default
 
 
-def _draw_shaded_polygon(ax, x_poly, y_poly, base_rgb=(0.86, 0.78, 0.73), alpha=1.0):
+def _draw_shaded_polygon(ax, x_poly, y_poly, base_rgb=(0.86, 0.78, 0.73), alpha=1.0, rotate_90=False):
     x = np.asarray(x_poly, dtype=float)
     y = np.asarray(y_poly, dtype=float)
     if len(x) < 3 or len(y) < 3:
@@ -50,9 +50,16 @@ def _draw_shaded_polygon(ax, x_poly, y_poly, base_rgb=(0.86, 0.78, 0.73), alpha=
 
     xn = 2.0 * (X - xmin) / (xmax - xmin) - 1.0
     yn = 2.0 * (Y - ymin) / (ymax - ymin) - 1.0
+    if rotate_90:
+        # Rotate shading frame 90 degrees clockwise.
+        xr = yn
+        yr = -xn
+    else:
+        xr = xn
+        yr = yn
 
-    light = 0.62 - 0.26 * xn + 0.18 * yn
-    spec = np.exp(-((xn + 0.15) ** 2 / 0.05 + (yn - 0.1) ** 2 / 0.2))
+    light = 0.62 - 0.26 * xr + 0.18 * yr
+    spec = np.exp(-((xr + 0.15) ** 2 / 0.05 + (yr - 0.1) ** 2 / 0.2))
     shade = np.clip(light + 0.25 * spec, 0.0, 1.0)
 
     base = np.array(base_rgb, dtype=float).reshape(1, 1, 3)
@@ -67,6 +74,17 @@ def _draw_shaded_polygon(ax, x_poly, y_poly, base_rgb=(0.86, 0.78, 0.73), alpha=
         zorder=0.2,
     )
     im.set_clip_path(patch)
+
+
+def _draw_solid_polygon(ax, x_poly, y_poly, color="#dec9bd", alpha=0.95, zorder=0.35):
+    x = np.asarray(x_poly, dtype=float)
+    y = np.asarray(y_poly, dtype=float)
+    if len(x) < 3 or len(y) < 3:
+        return
+    if not (np.isclose(x[0], x[-1]) and np.isclose(y[0], y[-1])):
+        x = np.append(x, x[0])
+        y = np.append(y, y[0])
+    ax.fill(x, y, color=color, alpha=alpha, linewidth=0, zorder=zorder)
 
 
 def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, offset=(0, 0)):
@@ -299,6 +317,8 @@ def render_tablet(mesh_data, params):
             flat_rad = max(0.0, r_c - dx_curve)
             if flat_rad > 0.05:
                 x_flat, y_flat = get_circle_contour(flat_rad)
+                if render_2d_shaded:
+                    _draw_solid_polygon(ax, x_flat + cx_top, y_flat + cy_top, color="#dec9bd", alpha=0.97, zorder=0.36)
                 ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=0.6)
         elif profile == "ffbe":
             r_blend = max(0.0, min(p_get(params, "Blend_R", 0.38), dc))
@@ -311,6 +331,8 @@ def render_tablet(mesh_data, params):
                     flat_rad = max(0.0, r_c - d_inset)
                     if flat_rad > 0.05:
                         x_flat, y_flat = get_circle_contour(flat_rad)
+                        if render_2d_shaded:
+                            _draw_solid_polygon(ax, x_flat + cx_top, y_flat + cy_top, color="#dec9bd", alpha=0.97, zorder=0.36)
                         ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=0.6)
         draw_ext(ax, cx_top - w_val / 2, cy_top + w_val / 2, cx_top - w_val / 2, cy_top - w_val / 2, -4.5, 0, f"{w_val:g}\nDiameter")
     elif shape == "capsule" and not is_modified:
@@ -330,6 +352,8 @@ def render_tablet(mesh_data, params):
                 flat_l = l_flat + 2 * r_flat
                 flat_w = 2 * r_flat
                 x_flat, y_flat = get_capsule_contour(flat_l, flat_w)
+                if render_2d_shaded:
+                    _draw_solid_polygon(ax, y_flat + cx_top, x_flat + cy_top, color="#dec9bd", alpha=0.97, zorder=0.36)
                 ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=0.6)
         elif profile == "ffbe":
             r_c = max(0.01, w_val / 2 - land)
@@ -345,6 +369,8 @@ def render_tablet(mesh_data, params):
                         flat_l = l_flat + 2 * r_flat
                         flat_w = 2 * r_flat
                         x_flat, y_flat = get_capsule_contour(flat_l, flat_w)
+                        if render_2d_shaded:
+                            _draw_solid_polygon(ax, y_flat + cx_top, x_flat + cy_top, color="#dec9bd", alpha=0.97, zorder=0.36)
                         ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=0.6)
         draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, f"{w_val:g}\nMinor Axis")
         draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, f"{l_val:g}\nMajor Axis")
@@ -370,6 +396,8 @@ def render_tablet(mesh_data, params):
                 rs_flat = rs - land - dx_curve
                 if re_flat > 0.01 and rs_flat > 0.01 and w_flat_dim > 0.1 and l_flat_dim > 0.1:
                     x_flat_cont, y_flat_cont = get_oval_contour(l_flat_dim, w_flat_dim, re_flat, rs_flat)
+                    if render_2d_shaded:
+                        _draw_solid_polygon(ax, y_flat_cont + cx_top, x_flat_cont + cy_top, color="#dec9bd", alpha=0.97, zorder=0.36)
                     # Source uses solid contour for this line.
                     ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=0.6)
                     oval_ref_flat_side = 2 * l_flat_half
@@ -391,6 +419,8 @@ def render_tablet(mesh_data, params):
                         rs_flat = rs - land - d_inset
                         if re_flat > 0.01 and rs_flat > 0.01 and w_flat_dim > 0.1 and l_flat_dim > 0.1:
                             x_flat_cont, y_flat_cont = get_oval_contour(l_flat_dim, w_flat_dim, re_flat, rs_flat)
+                            if render_2d_shaded:
+                                _draw_solid_polygon(ax, y_flat_cont + cx_top, x_flat_cont + cy_top, color="#dec9bd", alpha=0.97, zorder=0.36)
                             # Source uses solid contour for this line.
                             ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=0.6)
                             oval_ref_flat_side = 2 * l_flat_half
@@ -404,6 +434,29 @@ def render_tablet(mesh_data, params):
 
     if b_type != "none" and b_depth > 0:
         z, z_groove, mask_cup = mesh_data["Z"], mesh_data["Z_groove"], mesh_data["mask_cup"]
+        if render_2d_shaded:
+            groove_mask = np.where(mask_cup & ((z - z_groove) > 1e-6), 1.0, np.nan)
+            if np.any(np.isfinite(groove_mask)):
+                if shape == "round":
+                    ax.contourf(
+                        mesh_data["X"] + cx_top,
+                        mesh_data["Y"] + cy_top,
+                        groove_mask,
+                        levels=[0.5, 1.5],
+                        colors=["#dec9bd"],
+                        antialiased=True,
+                        zorder=0.33,
+                    )
+                else:
+                    ax.contourf(
+                        mesh_data["Y"] + cx_top,
+                        mesh_data["X"] + cy_top,
+                        groove_mask,
+                        levels=[0.5, 1.5],
+                        colors=["#dec9bd"],
+                        antialiased=True,
+                        zorder=0.33,
+                    )
         z_diff_masked = np.where(mask_cup, z - z_groove, np.nan)
         z_groove_masked = np.where(mask_cup, z_groove, np.nan)
         if shape == "round":
@@ -488,7 +541,14 @@ def render_tablet(mesh_data, params):
         ]
     )
     if render_2d_shaded:
-        _draw_shaded_polygon(ax, t_prof + cx_side, l_prof + cy_side, base_rgb=(0.82, 0.74, 0.70), alpha=0.95)
+        _draw_shaded_polygon(
+            ax,
+            t_prof + cx_side,
+            l_prof + cy_side,
+            base_rgb=(0.82, 0.74, 0.70),
+            alpha=0.95,
+            rotate_90=True,
+        )
     ax.plot(t_prof + cx_side, l_prof + cy_side, "k-", linewidth=1.2)
     ax.plot([-hb / 2 + cx_side, -hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=1.2)
     ax.plot([hb / 2 + cx_side, hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=1.2)
