@@ -12,6 +12,7 @@ def make_input(id, label, default_val, step=0.01, min_value=0.01, debounce=False
 
 def create_sidebar():
     return html.Div([
+        dcc.Store(id="bisect-edit-open", data=False),
         html.H4("Tablet Design", className="text-primary mb-3"),
         
         html.Label("Tablet Shape", className="fw-bold mt-2"),
@@ -76,26 +77,46 @@ def create_sidebar():
             value='standard', clearable=False, className="mb-2"
         ),
         html.Div(
-            dbc.Checklist(
-                options=[{"label": "Cruciform", "value": "on"}],
-                value=[],
-                id="bisect-cruciform",
-                switch=True,
-                className="mb-2",
-            ),
-            id="div-bisect-cruciform",
-            style={"display": "none"},
-        ),
-        html.Div(
-            dbc.Checklist(
-                options=[{"label": "Double-sided", "value": "on"}],
-                value=[],
-                id="bisect-double-sided",
-                switch=True,
-                className="mb-2",
-            ),
-            id="div-bisect-double-sided",
-            style={"display": "none"},
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            dbc.Checklist(
+                                options=[{"label": "Cruciform", "value": "on"}],
+                                value=[],
+                                id="bisect-cruciform",
+                                switch=True,
+                                className="mb-0",
+                            ),
+                            id="div-bisect-cruciform",
+                            style={"display": "none"},
+                        ),
+                        html.Div(
+                            dbc.Checklist(
+                                options=[{"label": "Double-sided", "value": "on"}],
+                                value=[],
+                                id="bisect-double-sided",
+                                switch=True,
+                                className="mb-0",
+                            ),
+                            id="div-bisect-double-sided",
+                            style={"display": "none"},
+                        ),
+                    ],
+                    style={"display": "flex", "alignItems": "center"},
+                ),
+                dbc.Button(
+                    "Edit",
+                    id="bisect-edit-btn",
+                    outline=True,
+                    color="secondary",
+                    size="sm",
+                    className="bisect-edit-btn",
+                ),
+            ],
+            id="div-bisect-controls-row",
+            className="mb-2",
+            style={"display": "flex", "alignItems": "center", "justifyContent": "space-between"},
         ),
         make_input('input-b-width', 'Width', 2.25),
         make_input('input-b-depth', 'Depth', 1.12),

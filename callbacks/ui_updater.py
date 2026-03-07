@@ -101,6 +101,54 @@ def toggle_cruciform_bisect(shape, b_type, current_value):
 
 
 @callback(
+    Output("bisect-edit-open", "data"),
+    [Input("bisect-edit-btn", "n_clicks"), Input("bisect-type", "value")],
+    [State("bisect-edit-open", "data")],
+    prevent_initial_call=True,
+)
+def toggle_bisect_edit(n_clicks, b_type, is_open):
+    b_type = b_type or "none"
+    if b_type == "none":
+        return False
+
+    trigger = ctx.triggered_id
+    if trigger == "bisect-edit-btn":
+        return not bool(is_open)
+    return bool(is_open)
+
+
+@callback(
+    [
+        Output("div-bisect-controls-row", "style"),
+        Output("bisect-edit-btn", "style"),
+        Output("div-input-b-width", "style"),
+        Output("div-input-b-depth", "style"),
+        Output("div-input-b-angle", "style"),
+        Output("div-input-b-ri", "style"),
+    ],
+    [Input("bisect-type", "value"), Input("bisect-edit-open", "data")],
+)
+def toggle_bisect_edit_fields(b_type, is_open):
+    b_type = b_type or "none"
+    show_row = {
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "space-between",
+        "width": "100%",
+    }
+    show_btn = {"display": "inline-flex"}
+    hide = {"display": "none"}
+    show_input = {"display": "block"}
+
+    if b_type == "none":
+        return hide, hide, hide, hide, hide, hide
+
+    if bool(is_open):
+        return show_row, show_btn, show_input, show_input, show_input, show_input
+    return show_row, show_btn, hide, hide, hide, hide
+
+
+@callback(
     [
         Output("label-input-w", "children"),
         Output("label-input-rc-min", "children"),
