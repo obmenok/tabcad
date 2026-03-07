@@ -2,6 +2,7 @@ import dash
 import numpy as np
 from dash import Input, Output, State, callback, ctx
 from core.engine import compute_bisect_width, compute_bisect_depth
+from core.engine import generate_mesh
 
 
 def _profile_options(shape, is_modified):
@@ -514,6 +515,197 @@ def sync_physical_params(hb, tt, dc, w, land):
         return 0.01, round(2 * dc + 0.01, 4)
 
     return dash.no_update, dash.no_update
+
+
+def _build_mass_params(
+    shape,
+    profile,
+    is_mod,
+    w,
+    l,
+    re,
+    rs,
+    dc,
+    rc_min,
+    rc_maj,
+    land,
+    hb,
+    bev_d,
+    bev_a,
+    r_edge,
+    blend_r,
+    r_maj_maj,
+    r_maj_min,
+    r_min_maj,
+    r_min_min,
+    b_type,
+    b_width,
+    b_depth,
+    b_angle,
+    b_ri,
+    b_cruciform,
+    b_double_sided,
+):
+    return {
+        "shape": shape,
+        "profile": profile,
+        "is_modified": bool(is_mod),
+        "W": w,
+        "L": l,
+        "Re": re,
+        "Rs": rs,
+        "Dc": dc,
+        "Rc_min": rc_min,
+        "Rc_maj": rc_maj,
+        "Land": land,
+        "Hb": hb,
+        "Bev_D": bev_d,
+        "Bev_A": bev_a,
+        "R_edge": r_edge,
+        "Blend_R": blend_r,
+        "R_maj_maj": r_maj_maj,
+        "R_maj_min": r_maj_min,
+        "R_min_maj": r_min_maj,
+        "R_min_min": r_min_min,
+        "b_type": b_type,
+        "b_width": b_width,
+        "b_depth": b_depth,
+        "b_angle": b_angle,
+        "b_Ri": b_ri,
+        "b_cruciform": bool(b_cruciform and "on" in b_cruciform),
+        "b_double_sided": bool(b_double_sided and "on" in b_double_sided),
+    }
+
+
+@callback(
+    [
+        Output("input-tt", "value", allow_duplicate=True),
+        Output("input-weight", "value"),
+    ],
+    [
+        Input("shape-dropdown", "value"),
+        Input("profile-dropdown", "value"),
+        Input("modified-switch", "value"),
+        Input("input-w", "value"),
+        Input("input-l", "value"),
+        Input("input-re", "value"),
+        Input("input-rs", "value"),
+        Input("input-dc", "value"),
+        Input("input-rc-min", "value"),
+        Input("input-rc-maj", "value"),
+        Input("input-land", "value"),
+        Input("input-tt", "value"),
+        Input("input-bev-d", "value"),
+        Input("input-bev-a", "value"),
+        Input("input-r-edge", "value"),
+        Input("input-blend-r", "value"),
+        Input("input-r-maj-maj", "value"),
+        Input("input-r-maj-min", "value"),
+        Input("input-r-min-maj", "value"),
+        Input("input-r-min-min", "value"),
+        Input("bisect-type", "value"),
+        Input("input-b-width", "value"),
+        Input("input-b-depth", "value"),
+        Input("input-b-angle", "value"),
+        Input("input-b-ri", "value"),
+        Input("bisect-cruciform", "value"),
+        Input("bisect-double-sided", "value"),
+        Input("input-density", "value"),
+        Input("input-weight", "value"),
+    ],
+    prevent_initial_call="initial_duplicate",
+)
+def sync_weight_density_with_volume(
+    shape,
+    profile,
+    is_mod,
+    w,
+    l,
+    re,
+    rs,
+    dc,
+    rc_min,
+    rc_maj,
+    land,
+    tt,
+    bev_d,
+    bev_a,
+    r_edge,
+    blend_r,
+    r_maj_maj,
+    r_maj_min,
+    r_min_maj,
+    r_min_min,
+    b_type,
+    b_width,
+    b_depth,
+    b_angle,
+    b_ri,
+    b_cruciform,
+    b_double_sided,
+    density,
+    weight,
+):
+    if w is None or dc is None:
+        return dash.no_update, dash.no_update
+
+    density_val = 1.19 if density is None else max(0.01, float(density))
+    tt_val = 4.39 if tt is None else float(tt)
+    dc_val = max(0.0, float(dc))
+    hb_val = max(0.01, tt_val - 2.0 * dc_val)
+
+    params = _build_mass_params(
+        shape,
+        profile,
+        is_mod,
+        w,
+        l,
+        re,
+        rs,
+        dc,
+        rc_min,
+        rc_maj,
+        land,
+        hb_val,
+        bev_d,
+        bev_a,
+        r_edge,
+        blend_r,
+        r_maj_maj,
+        r_maj_min,
+        r_min_maj,
+        r_min_min,
+        b_type,
+        b_width,
+        b_depth,
+        b_angle,
+        b_ri,
+        b_cruciform,
+        b_double_sided,
+    )
+    mesh = generate_mesh(params)
+    m = mesh["metrics"]
+    # mm3 * g/cm3 == mg (numerically)
+    vol_now = float(m.get("Tablet_Vol", 0.0))
+    die_hole_sa = float(m.get("Die_Hole_SA", 0.0))
+    cup_vol = float(m.get("Cup_Volume", 0.0))
+    expected_weight = density_val * vol_now
+
+    trig = ctx.triggered_id
+    if trig == "input-weight" and weight is not None and die_hole_sa > 1e-9:
+        target_weight = max(0.0, float(weight))
+        # Ignore self-trigger when weight was just auto-updated from geometry/density.
+        if abs(target_weight - expected_weight) <= max(1e-4, expected_weight * 1e-4):
+            return dash.no_update, round(expected_weight, 4)
+
+        target_vol = target_weight / density_val
+        hb_new = max(0.01, (target_vol - cup_vol) / die_hole_sa)
+        tt_new = hb_new + 2.0 * dc_val
+        actual_vol = die_hole_sa * hb_new + cup_vol
+        actual_weight = density_val * actual_vol
+        return round(tt_new, 4), round(actual_weight, 4)
+
+    return dash.no_update, round(expected_weight, 4)
 
 
 def _calc_rc_from_dc(span, dc):

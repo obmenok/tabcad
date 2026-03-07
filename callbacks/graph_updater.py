@@ -48,6 +48,8 @@ from core.renderer_3d import render_tablet_3d
         State("input-b-ri", "value"),
         State("bisect-cruciform", "value"),
         State("bisect-double-sided", "value"),
+        State("input-density", "value"),
+        State("input-weight", "value"),
     ],
     prevent_initial_call=True,
 )
@@ -85,6 +87,8 @@ def generate_graphics(
     b_ri,
     b_cruciform,
     b_double_sided,
+    density,
+    weight,
 ):
     if w is None or dc is None:
         return dash.no_update, html.Div("Please enter valid dimensions", className="text-danger"), dash.no_update
@@ -135,26 +139,77 @@ def generate_graphics(
     )
 
     m = mesh_data["metrics"]
+    tablet_sa = float(m.get("Tablet_SA", 0.0) or 0.0)
+    tablet_vol = float(m.get("Tablet_Vol", 0.0) or 0.0)
+    tablet_sa_v = (tablet_sa / tablet_vol) if tablet_vol > 1e-12 else 0.0
+    density_val = 1.19 if density is None else float(density)
+    weight_val = density_val * tablet_vol
+
+    def fmt4(value):
+        return f"{float(value):.4f}".replace(".", ",")
+
+    label_style = {"display": "inline-block", "minWidth": "112px"}
+    num_style = {
+        "fontFamily": "Consolas, 'Courier New', monospace",
+        "display": "inline-block",
+        "minWidth": "8ch",
+        "textAlign": "right",
+    }
+    unit_style = {"display": "inline-block", "minWidth": "6ch"}
+
+    def metric_row(label, value, unit, label_min_width="112px"):
+        row_label_style = dict(label_style)
+        row_label_style["minWidth"] = label_min_width
+        return html.Div(
+            [
+                html.Span([f"{label}:", "\u00a0"], style=row_label_style),
+                html.Span(
+                    [
+                        html.Span(fmt4(value), style=num_style),
+                        html.Span("\u00a0", style={"whiteSpace": "pre"}),
+                        html.Span(unit, style=unit_style),
+                    ],
+                    style={"whiteSpace": "nowrap"},
+                ),
+            ],
+            className="d-flex flex-column flex-xl-row align-items-start align-items-xl-center mb-1",
+            style={"columnGap": "2px", "rowGap": "1px"},
+        )
+
     calc_html = html.Div(
         [
             dbc.Row(
                 [
-                    dbc.Col(html.Div([html.Strong("Die Hole SA: "), html.Span(f"{m.get('Die_Hole_SA', 0):.4f} mm2")])),
-                    dbc.Col(html.Div([html.Strong("Perimeter: "), html.Span(f"{m.get('Perimeter', 0):.4f} mm")])),
-                ],
-                className="mb-1",
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(html.Div([html.Strong("Cup Volume: "), html.Span(f"{m.get('Cup_Volume', 0):.4f} mm3")])),
-                    dbc.Col(html.Div([html.Strong("Tablet SA: "), html.Span(f"{m.get('Tablet_SA', 0):.4f} mm2")])),
-                ],
-                className="mb-1",
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(html.Div([html.Strong("Cup SA: "), html.Span(f"{m.get('Cup_SA', 0):.4f} mm2")])),
-                    dbc.Col(html.Div([html.Strong("Tablet Vol: "), html.Span(f"{m.get('Tablet_Vol', 0):.4f} mm3")])),
+                    dbc.Col(
+                        html.Div(
+                            [
+                                metric_row("Die Hole SA", m.get("Die_Hole_SA", 0), "mm\u00b2", label_min_width="98px"),
+                                metric_row("Cup SA", m.get("Cup_SA", 0), "mm\u00b2", label_min_width="98px"),
+                                metric_row("Cup Volume", m.get("Cup_Volume", 0), "mm\u00b3", label_min_width="98px"),
+                            ]
+                        ),
+                        width=4,
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            [
+                                metric_row("Tablet SA", tablet_sa, "mm\u00b2", label_min_width="118px"),
+                                metric_row("Tablet Volume", tablet_vol, "mm\u00b3", label_min_width="118px"),
+                                metric_row("Tablet Weight", weight_val, "mg", label_min_width="118px"),
+                            ]
+                        ),
+                        width=4,
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            [
+                                metric_row("Tablet Density", density_val, "mg/mm\u00b3", label_min_width="102px"),
+                                metric_row("Tablet SA/V", tablet_sa_v, "1/mm", label_min_width="102px"),
+                                metric_row("Perimeter", m.get("Perimeter", 0), "mm", label_min_width="102px"),
+                            ]
+                        ),
+                        width=4,
+                    ),
                 ]
             ),
         ]
