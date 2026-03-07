@@ -1,6 +1,45 @@
 import dash
 import numpy as np
 from dash import Input, Output, State, callback, ctx
+
+
+@callback(
+    [
+        Output("shape-dropdown", "value"),
+        Output("shape-round-btn", "class_name"),
+        Output("shape-capsule-btn", "class_name"),
+        Output("shape-oval-btn", "class_name"),
+    ],
+    [
+        Input("shape-round-btn", "n_clicks"),
+        Input("shape-capsule-btn", "n_clicks"),
+        Input("shape-oval-btn", "n_clicks"),
+    ],
+)
+def update_shape_selection(round_clicks, capsule_clicks, oval_clicks):
+    trig = ctx.triggered_id
+    new_shape = "round" # Default
+
+    if trig == "shape-round-btn":
+        new_shape = "round"
+    elif trig == "shape-capsule-btn":
+        new_shape = "capsule"
+    elif trig == "shape-oval-btn":
+        new_shape = "oval"
+    elif not ctx.triggered:
+        # Initial call
+        new_shape = "round"
+    else:
+        # If triggered by something else or no update needed
+        return dash.no_update
+
+    def get_class(shape):
+        base = "plotly-toolbar-btn"
+        if new_shape == shape:
+            return f"{base} active"
+        return base
+
+    return new_shape, get_class("round"), get_class("capsule"), get_class("oval")
 from core.engine import compute_bisect_width, compute_bisect_depth
 from core.engine import generate_mesh
 

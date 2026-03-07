@@ -16,6 +16,15 @@ def create_sidebar():
         html.H4("Tablet Design", className="text-primary mb-3"),
         
         html.Label("Tablet Shape", className="fw-bold mt-2"),
+        dbc.ButtonGroup(
+            [
+                dbc.Button("Round", id="shape-round-btn", color="light", class_name="plotly-toolbar-btn active"),
+                dbc.Button("Capsule", id="shape-capsule-btn", color="light", class_name="plotly-toolbar-btn"),
+                dbc.Button("Oval", id="shape-oval-btn", color="light", class_name="plotly-toolbar-btn"),
+            ],
+            size="sm",
+            className="w-100 mb-2 plotly-toolbar-group",
+        ),
         dcc.Dropdown(
             id='shape-dropdown',
             options=[
@@ -23,7 +32,7 @@ def create_sidebar():
                 {'label': 'Capsule', 'value': 'capsule'},
                 {'label': 'Oval', 'value': 'oval'}
             ],
-            value='round', clearable=False, className="mb-2" 
+            value='round', clearable=False, style={'display': 'none'}
         ),
         
         html.Div(
@@ -35,7 +44,7 @@ def create_sidebar():
         dcc.Dropdown(
             id='profile-dropdown',
             options=[{'label': 'Concave', 'value': 'concave'}, {'label': 'Compound Cup', 'value': 'compound'}],
-            value='compound', clearable=False, className="mb-4"
+            value='compound', clearable=False, searchable=False, className="mb-4"
         ),
 
         html.H6("Dimensions", className="fw-bold text-secondary border-bottom pb-1"),
