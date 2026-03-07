@@ -293,7 +293,7 @@ def sync_end_side_radii(shape, is_modified, profile, w, l, land, dc, r_edge, ble
     if shape not in ("oval", "capsule"):
         return dash.no_update, dash.no_update
     if shape == "capsule" and not is_mod:
-        return round(max(0.01, w / 2), 4), 0.0
+        return round(max(0.01, w / 2), 2), 0.0
 
     w = max(0.1, w)
     l = max(w, l)
@@ -346,7 +346,7 @@ def sync_end_side_radii(shape, is_modified, profile, w, l, land, dc, r_edge, ble
         if apply_rs_re_bounds:
             rs_val_clamped = min(max(rs_min, rs_val), rs_max)
             if abs(rs_val_clamped - rs_val) > 1e-9:
-                rs_out = round(rs_val_clamped, 4)
+                rs_out = round(rs_val_clamped, 2)
             rs_val = rs_val_clamped
         elif rs_val <= l / 2 + 1e-6:
             return dash.no_update, dash.no_update
@@ -356,7 +356,7 @@ def sync_end_side_radii(shape, is_modified, profile, w, l, land, dc, r_edge, ble
             new_re = re_min
         new_re = min(max(re_min, new_re), re_max)
         # Do not overwrite the field currently being typed by the user.
-        return round(new_re, 4), rs_out
+        return round(new_re, 2), rs_out
 
     rs_calc = _rs_from_re(re_val)
     rs_calc = max(l / 2 + 0.01, rs_calc)
@@ -364,10 +364,10 @@ def sync_end_side_radii(shape, is_modified, profile, w, l, land, dc, r_edge, ble
         rs_calc = min(max(rs_min, rs_calc), rs_max)
         re_out = dash.no_update
         if re is None or abs(re_val - re) > 1e-9:
-            re_out = round(re_val, 4)
-        return re_out, round(rs_calc, 4)
+            re_out = round(re_val, 2)
+        return re_out, round(rs_calc, 2)
     # Keep typed End Radius untouched; update only dependent Side Radius.
-    return dash.no_update, round(rs_calc, 4)
+    return dash.no_update, round(rs_calc, 2)
 
 
 @callback(
@@ -449,7 +449,7 @@ def sync_bisect_logic(
         "Blend_R": blend_r,
     }
 
-    max_d = round(dc * 0.95, 4)
+    max_d = round(dc * 0.95, 2)
     safe_angle = b_angle if b_angle is not None else 90.0
     safe_ri = b_ri if b_ri is not None else 0.06
 
@@ -458,9 +458,9 @@ def sync_bisect_logic(
             return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         angle, ri = 90.0, 0.06
-        depth = round(dc * 0.95, 4) if b_type == "cut_through" else round(dc * 0.34 - 0.005, 4)
+        depth = round(dc * 0.95, 2) if b_type == "cut_through" else round(dc * 0.34 - 0.005, 2)
         width = compute_bisect_width(params, depth, angle, ri)
-        return width, depth, angle, ri
+        return round(width, 2), depth, angle, ri
 
     if trigger == "input-b-width":
         if b_width is None:
@@ -470,7 +470,7 @@ def sync_bisect_logic(
         if depth > max_d:
             depth = max_d
             width = compute_bisect_width(params, depth, safe_angle, safe_ri)
-            return width, depth, dash.no_update, dash.no_update
+            return round(width, 2), depth, dash.no_update, dash.no_update
 
         return dash.no_update, depth, dash.no_update, dash.no_update
 
@@ -480,8 +480,8 @@ def sync_bisect_logic(
     width = compute_bisect_width(params, safe_depth, safe_angle, safe_ri)
 
     if b_depth > max_d:
-        return width, safe_depth, dash.no_update, dash.no_update
-    return width, dash.no_update, dash.no_update, dash.no_update
+        return round(width, 2), safe_depth, dash.no_update, dash.no_update
+    return round(width, 2), dash.no_update, dash.no_update, dash.no_update
 
 
 @callback(
@@ -506,13 +506,13 @@ def sync_physical_params(hb, tt, dc, w, land):
     l_nd = land if land is not None else 0.0
 
     if trigger in ("input-hb", "input-dc"):
-        return dash.no_update, round(hb + 2 * dc, 4)
+        return dash.no_update, round(hb + 2 * dc, 2)
 
     if trigger == "input-tt":
-        new_hb = round(tt - 2 * dc, 4)
+        new_hb = round(tt - 2 * dc, 2)
         if new_hb >= 0.01:
             return new_hb, dash.no_update
-        return 0.01, round(2 * dc + 0.01, 4)
+        return 0.01, round(2 * dc + 0.01, 2)
 
     return dash.no_update, dash.no_update
 
@@ -697,16 +697,16 @@ def sync_weight_density_with_volume(
         target_weight = max(0.0, float(weight))
         # Ignore self-trigger when weight was just auto-updated from geometry/density.
         if abs(target_weight - expected_weight) <= max(1e-4, expected_weight * 1e-4):
-            return dash.no_update, round(expected_weight, 4)
+            return dash.no_update, round(expected_weight, 2)
 
         target_vol = target_weight / density_val
         hb_new = max(0.01, (target_vol - fixed_vol) / die_hole_sa)
         tt_new = hb_new + 2.0 * dc_val
         actual_vol = die_hole_sa * hb_new + fixed_vol
         actual_weight = density_val * actual_vol
-        return round(tt_new, 4), round(actual_weight, 4)
+        return round(tt_new, 2), round(actual_weight, 2)
 
-    return dash.no_update, round(expected_weight, 4)
+    return dash.no_update, round(expected_weight, 2)
 
 
 def _calc_rc_from_dc(span, dc):
@@ -892,7 +892,7 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
             clamped_dc = _clamp_to_step_range(round_concave_span, 0.01, round_concave_span, step=0.01)
             new_rc = _calc_rc_from_dc(s_min, clamped_dc) if clamped_dc > 0 else None
             return (
-                round(new_rc, 4) if new_rc is not None else dash.no_update,
+                round(new_rc, 2) if new_rc is not None else dash.no_update,
                 dash.no_update,
                 clamped_dc,
             )
@@ -926,7 +926,7 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
                     clamped_dc = _clamp_to_step_range(dc_max_tan, 0.01, dc_max_tan, step=0.01)
                     new_rc = _calc_cbe_rc_from_dc(s_min, clamped_dc, bev_d, bev_a)
                     return (
-                        round(new_rc, 4) if new_rc is not None else dash.no_update,
+                        round(new_rc, 2) if new_rc is not None else dash.no_update,
                         dash.no_update,
                         clamped_dc,
                     )
@@ -954,7 +954,7 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
                 clamped_dc = _clamp_to_step_range(dc_max_ffre, 0.01, dc_max_ffre, step=0.01)
                 new_rc = _calc_rc_from_dc(s_min, clamped_dc)
                 return (
-                    round(new_rc, 4) if new_rc is not None else dash.no_update,
+                    round(new_rc, 2) if new_rc is not None else dash.no_update,
                     dash.no_update,
                     clamped_dc,
                 )
@@ -980,7 +980,7 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
                 clamped_dc = _clamp_to_step_range(dc_max_ffbe, 0.01, dc_max_ffbe, step=0.01)
                 new_rc = _calc_rc_from_dc(s_min, clamped_dc)
                 return (
-                    round(new_rc, 4) if new_rc is not None else dash.no_update,
+                    round(new_rc, 2) if new_rc is not None else dash.no_update,
                     dash.no_update,
                     clamped_dc,
                 )
@@ -998,7 +998,7 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
                 clamped_dc = _clamp_to_step_range(lo, lo, hi, step=0.01)
                 new_rc = _calc_rc_from_dc(s_min, clamped_dc)
                 return (
-                    round(new_rc, 4) if new_rc is not None else dash.no_update,
+                    round(new_rc, 2) if new_rc is not None else dash.no_update,
                     dash.no_update,
                     clamped_dc,
                 )
@@ -1006,7 +1006,7 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
                 clamped_dc = _clamp_to_step_range(hi, lo, hi, step=0.01)
                 new_rc = _calc_rc_from_dc(s_min, clamped_dc)
                 return (
-                    round(new_rc, 4) if new_rc is not None else dash.no_update,
+                    round(new_rc, 2) if new_rc is not None else dash.no_update,
                     dash.no_update,
                     clamped_dc,
                 )
@@ -1029,8 +1029,8 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
         new_rc_min = rc_min_from_dc(dc)
         new_rc_maj = rc_maj_from_dc(dc)
         return (
-            round(new_rc_min, 4) if new_rc_min is not None else dash.no_update,
-            round(new_rc_maj, 4) if new_rc_maj is not None else dash.no_update,
+            round(new_rc_min, 2) if new_rc_min is not None else dash.no_update,
+            round(new_rc_maj, 2) if new_rc_maj is not None else dash.no_update,
             dash.no_update,
         )
 
@@ -1048,9 +1048,9 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
             return dash.no_update, dash.no_update, dash.no_update
         new_rc_maj = rc_maj_from_dc(new_dc)
         return (
-            round(rc_min, 4),
-            round(new_rc_maj, 4) if new_rc_maj is not None else dash.no_update,
-            round(new_dc, 4),
+            round(rc_min, 2),
+            round(new_rc_maj, 2) if new_rc_maj is not None else dash.no_update,
+            round(new_dc, 2),
         )
 
     if trig == "input-rc-maj" and editable_maj:
@@ -1061,9 +1061,9 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
             return dash.no_update, dash.no_update, dash.no_update
         new_rc_min = rc_min_from_dc(new_dc)
         return (
-            round(new_rc_min, 4) if new_rc_min is not None else dash.no_update,
-            round(rc_maj, 4),
-            round(new_dc, 4),
+            round(new_rc_min, 2) if new_rc_min is not None else dash.no_update,
+            round(rc_maj, 2),
+            round(new_dc, 2),
         )
 
     return dash.no_update, dash.no_update, dash.no_update

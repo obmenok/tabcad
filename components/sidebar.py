@@ -53,7 +53,7 @@ def create_sidebar():
         make_input('input-r-min-maj', 'Minor Major Rad.', 12.7),
         make_input('input-r-min-min', 'Minor Minor Rad.', 3.81),
         make_input('input-bev-d', 'Bevel Depth', 0.51),
-        make_input('input-bev-a', 'Bevel Angle', 40.0, step=0.1),
+        make_input('input-bev-a', 'Bevel Angle', 40.0, step=0.01),
         make_input('input-r-edge', 'Radius Edge', 6.35),
         make_input('input-blend-r', 'Blend Radius', 0.38),
         
