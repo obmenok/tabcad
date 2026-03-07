@@ -339,9 +339,13 @@ def lock_radii_inputs(shape, is_modified):
 @callback(
     [Output("input-w", "value"), Output("input-l", "value")],
     [Input("input-w", "value"), Input("input-l", "value")],
+    [State("is-loading-preset", "data")],
     prevent_initial_call=True,
 )
-def clamp_main_axes_non_negative(w, l):
+def clamp_main_axes_non_negative(w, l, is_loading):
+    if is_loading:
+        return dash.no_update, dash.no_update
+        
     trigger = ctx.triggered_id
     out_w = dash.no_update
     out_l = dash.no_update
@@ -370,9 +374,13 @@ def clamp_main_axes_non_negative(w, l):
         Input("input-re", "value"),
         Input("input-rs", "value"),
     ],
+    [State("is-loading-preset", "data")],
     prevent_initial_call=True,
 )
-def sync_end_side_radii(shape, is_modified, profile, w, l, land, dc, r_edge, blend_r, bev_a, re, rs):
+def sync_end_side_radii(shape, is_modified, profile, w, l, land, dc, r_edge, blend_r, bev_a, re, rs, is_loading):
+    if is_loading:
+        return dash.no_update, dash.no_update
+        
     if w is None or l is None:
         return dash.no_update, dash.no_update
 
@@ -583,9 +591,13 @@ def sync_bisect_logic(
         Input("input-w", "value"),
         Input("input-land", "value"),
     ],
+    [State("is-loading-preset", "data")],
     prevent_initial_call=True,
 )
-def sync_physical_params(hb, tt, dc, w, land):
+def sync_physical_params(hb, tt, dc, w, land, is_loading):
+    if is_loading:
+        return dash.no_update, dash.no_update
+        
     trigger = ctx.triggered_id
     if any(v is None for v in [hb, tt, dc, w]):
         return dash.no_update, dash.no_update
@@ -700,6 +712,7 @@ def _build_mass_params(
         Input("input-density", "value"),
         Input("input-weight", "value"),
     ],
+    [State("is-loading-preset", "data")],
     prevent_initial_call="initial_duplicate",
 )
 def sync_weight_density_with_volume(
@@ -732,7 +745,11 @@ def sync_weight_density_with_volume(
     b_double_sided,
     density,
     weight,
+    is_loading,
 ):
+    if is_loading:
+        return dash.no_update, dash.no_update
+        
     if w is None or dc is None:
         return dash.no_update, dash.no_update
 
@@ -944,9 +961,13 @@ def _clamp_to_step_range(value, lo, hi, step=0.01):
         Input("input-rc-min", "value"),
         Input("input-rc-maj", "value"),
     ],
+    [State("is-loading-preset", "data")],
     prevent_initial_call=True,
 )
-def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edge, r_maj_maj, r_maj_min, bev_d, bev_a, dc, rc_min, rc_maj):
+def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edge, r_maj_maj, r_maj_min, bev_d, bev_a, dc, rc_min, rc_maj, is_loading):
+    if is_loading:
+        return dash.no_update, dash.no_update, dash.no_update
+        
     if w is None:
         return dash.no_update, dash.no_update, dash.no_update
 

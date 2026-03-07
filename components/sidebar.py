@@ -4,26 +4,65 @@ import dash_bootstrap_components as dbc
 def make_input(id, label, default_val, step=0.01, min_value=0.01, debounce=False):
     return html.Div(
         dbc.InputGroup([
-            dbc.InputGroupText(label, id=f"label-{id}", style={'width': '140px', 'fontSize': '0.9rem'}),
-            dbc.Input(id=id, type='number', value=default_val, step=step, min=min_value, debounce=debounce)
-        ], className="mb-2"),
+            dbc.InputGroupText(label, id=f"label-{id}", style={'width': '140px', 'fontSize': '0.85rem'}),
+            dbc.Input(id=id, type='number', value=default_val, step=step, min=min_value, debounce=debounce, size="sm")
+        ], className="mb-2", size="sm"),
         id=f"div-{id}" 
     )
 
 def create_sidebar():
     return html.Div([
         dcc.Store(id="bisect-edit-open", data=False),
-        html.H4("Tablet Design", className="text-primary mb-3"),
+        dcc.Store(id="is-loading-preset", data=False),
+        
+        html.H4("TabletCAD Pro", className="text-primary mb-3"),
+        
+        # --- PRESETS UI ---
+        html.Div([
+            html.Label("Saved Presets", className="fw-bold text-secondary"),
+            html.Div([
+                html.Div(dbc.Select(
+                    id='preset-dropdown', 
+                    options=[],
+                    size="sm"
+                ), style={"flex": "1", "minWidth": "0"}),
+                dbc.ButtonGroup([
+                    dbc.Button("Load", id="preset-load-btn", color="light", class_name="plotly-toolbar-btn"),
+                    dbc.Button("Save", id="preset-save-btn", color="light", class_name="plotly-toolbar-btn"),
+                    dbc.Button("Save As", id="preset-save-as-btn", color="light", class_name="plotly-toolbar-btn"),
+                    dbc.Button("Del", id="preset-delete-btn", color="light", class_name="plotly-toolbar-btn"),
+                ], size="sm", className="ms-1 plotly-toolbar-group")
+            ], className="d-flex align-items-center mb-3", style={"height": "40px"}),
+        ]),
+
+        # Save As Modal
+        dbc.Modal([
+            dbc.ModalHeader(dbc.ModalTitle("Save Preset As")),
+            dbc.ModalBody(
+                dbc.Input(id="preset-name-input", placeholder="Enter preset name...", type="text")
+            ),
+            dbc.ModalFooter([
+                dbc.Button("Save", id="preset-modal-save-btn", color="success", className="ms-auto"),
+                dbc.Button("Cancel", id="preset-modal-cancel-btn", color="secondary")
+            ]),
+        ], id="preset-save-modal", is_open=False, centered=True),
+        # ------------------
+
+        html.H5("Tablet Design", className="text-secondary border-bottom pb-1 mt-2"),
         
         html.Label("Tablet Shape", className="fw-bold mt-2"),
-        dbc.ButtonGroup(
-            [
-                dbc.Button("Round", id="shape-round-btn", color="light", class_name="plotly-toolbar-btn active"),
-                dbc.Button("Capsule", id="shape-capsule-btn", color="light", class_name="plotly-toolbar-btn"),
-                dbc.Button("Oval", id="shape-oval-btn", color="light", class_name="plotly-toolbar-btn"),
-            ],
-            size="sm",
-            className="w-100 mb-2 plotly-toolbar-group",
+        html.Div(
+            dbc.ButtonGroup(
+                [
+                    dbc.Button("Round", id="shape-round-btn", color="light", class_name="plotly-toolbar-btn active"),
+                    dbc.Button("Capsule", id="shape-capsule-btn", color="light", class_name="plotly-toolbar-btn"),
+                    dbc.Button("Oval", id="shape-oval-btn", color="light", class_name="plotly-toolbar-btn"),
+                ],
+                size="sm",
+                className="w-100 plotly-toolbar-group",
+            ),
+            style={"height": "40px", "display": "flex", "alignItems": "center"},
+            className="mb-1"
         ),
         dcc.Dropdown(
             id='shape-dropdown',
@@ -55,8 +94,8 @@ def create_sidebar():
         
         make_input('input-dc', 'Cup Depth', 0.92),
         # Rc делаем справочными (disabled), как в оригинале!
-        html.Div(dbc.InputGroup([dbc.InputGroupText('Cup Radius', id='label-input-rc-min', style={'width': '140px', 'fontSize': '0.9rem'}), dbc.Input(id='input-rc-min', type='number', value=8.8, min=0.01, disabled=True)], className="mb-2"), id="div-input-rc-min"),
-        html.Div(dbc.InputGroup([dbc.InputGroupText('Cup Radius Maj', id='label-input-rc-maj', style={'width': '140px', 'fontSize': '0.9rem'}), dbc.Input(id='input-rc-maj', type='number', value=39.8, min=0.01, disabled=True)], className="mb-2"), id="div-input-rc-maj"),
+        html.Div(dbc.InputGroup([dbc.InputGroupText('Cup Radius', id='label-input-rc-min', style={'width': '140px', 'fontSize': '0.85rem'}), dbc.Input(id='input-rc-min', type='number', value=8.8, min=0.01, disabled=True, size="sm", className="form-control-sm")], className="mb-2 input-group-sm", size="sm"), id="div-input-rc-min"),
+        html.Div(dbc.InputGroup([dbc.InputGroupText('Cup Radius Maj', id='label-input-rc-maj', style={'width': '140px', 'fontSize': '0.85rem'}), dbc.Input(id='input-rc-maj', type='number', value=39.8, min=0.01, disabled=True, size="sm", className="form-control-sm")], className="mb-2 input-group-sm", size="sm"), id="div-input-rc-maj"),
         
         make_input('input-r-maj-maj', 'Major Major Rad.', 88.9),
         make_input('input-r-maj-min', 'Major Minor Rad.', 6.35),

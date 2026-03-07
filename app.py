@@ -26,6 +26,7 @@ app.layout = dbc.Container(
 from callbacks import ui_updater
 from callbacks import graph_updater
 from callbacks import plotly_ui
+from callbacks import presets
 
 if __name__ == '__main__':
     app.run(debug=True, port=8051)
