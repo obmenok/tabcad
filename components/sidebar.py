@@ -61,7 +61,7 @@ def create_sidebar():
         make_input('input-hb', 'Belly Band', 2.55),
         make_input('input-tt', 'Tablet Thickness', 4.39), # ТЕПЕРЬ ДОСТУПНО ДЛЯ ВВОДА!
         make_input('input-density', 'Tablet Density', 1.19, step=0.01, min_value=0.01, debounce=True),
-        make_input('input-weight', 'Tablet Weight', None, step=0.0001, min_value=0.0, debounce=True),
+        make_input('input-weight', 'Tablet Weight', None, step=0.01, min_value=0.0, debounce=True),
 
         html.H6("Bisect Options", className="fw-bold text-secondary border-bottom pb-1 mt-3"),
         dcc.Dropdown(

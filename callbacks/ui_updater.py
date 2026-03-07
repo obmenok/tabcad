@@ -688,7 +688,8 @@ def sync_weight_density_with_volume(
     # mm3 * g/cm3 == mg (numerically)
     vol_now = float(m.get("Tablet_Vol", 0.0))
     die_hole_sa = float(m.get("Die_Hole_SA", 0.0))
-    cup_vol = float(m.get("Cup_Volume", 0.0))
+    # Constant volume part that does not depend on belly band (both cups + lands + groove effects).
+    fixed_vol = max(0.0, vol_now - die_hole_sa * hb_val)
     expected_weight = density_val * vol_now
 
     trig = ctx.triggered_id
@@ -699,9 +700,9 @@ def sync_weight_density_with_volume(
             return dash.no_update, round(expected_weight, 4)
 
         target_vol = target_weight / density_val
-        hb_new = max(0.01, (target_vol - cup_vol) / die_hole_sa)
+        hb_new = max(0.01, (target_vol - fixed_vol) / die_hole_sa)
         tt_new = hb_new + 2.0 * dc_val
-        actual_vol = die_hole_sa * hb_new + cup_vol
+        actual_vol = die_hole_sa * hb_new + fixed_vol
         actual_weight = density_val * actual_vol
         return round(tt_new, 4), round(actual_weight, 4)
 
