@@ -347,10 +347,10 @@ def lock_radii_inputs(shape, is_modified):
 @callback(
     [Output("input-w", "value", allow_duplicate=True), Output("input-l", "value")],
     [Input("input-w", "value"), Input("input-l", "value")],
-    [State("is-loading-preset", "data"), State("shape-dropdown", "value"), State("input-tt", "value")],
+    [State("is-loading-preset", "data")],
     prevent_initial_call=True,
 )
-def clamp_main_axes_non_negative(w, l, is_loading, shape, tt):
+def clamp_main_axes_non_negative(w, l, is_loading):
     if is_loading:
         return dash.no_update, dash.no_update
         
@@ -1120,19 +1120,27 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
     new_rc_min = rc_min_from_dc(dc_f)
     new_rc_maj = rc_maj_from_dc(dc_f)
 
+    out_rc_min = round(new_rc_min, 4) if new_rc_min is not None else dash.no_update
+    out_rc_maj = round(new_rc_maj, 4) if new_rc_maj is not None else dash.no_update
+    out_dc = round(dc_f, 4) if round(dc_f, 4) != dc else dash.no_update
+    out_w = round(w_f, 4) if round(w_f, 4) != w else dash.no_update
+    out_rmm = round(r_mm_f, 4) if round(r_mm_f, 4) != r_maj_maj else dash.no_update
+    out_rmn = round(r_mn_f, 4) if round(r_mn_f, 4) != r_maj_min else dash.no_update
+    out_beva = round(bev_a_f, 4) if round(bev_a_f, 4) != bev_a else dash.no_update
+
     if trig == "input-rc-min" and editable_min:
         curr_rc = rc_min if rc_min is not None else rc_min_s
-        if curr_rc: new_rc_min = curr_rc
+        if curr_rc: out_rc_min = curr_rc
     if trig == "input-rc-maj" and editable_maj:
         curr_rc = rc_maj if rc_maj is not None else rc_maj_s
-        if curr_rc: new_rc_maj = curr_rc
+        if curr_rc: out_rc_maj = curr_rc
 
     return (
-        round(new_rc_min, 4) if new_rc_min is not None else dash.no_update,
-        round(new_rc_maj, 4) if new_rc_maj is not None else dash.no_update,
-        round(dc_f, 4),
-        round(w_f, 4),
-        round(r_mm_f, 4),
-        round(r_mn_f, 4),
-        round(bev_a_f, 4)
+        out_rc_min,
+        out_rc_maj,
+        out_dc,
+        out_w,
+        out_rmm,
+        out_rmn,
+        out_beva
     )
