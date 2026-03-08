@@ -1,6 +1,7 @@
 import dash
 import numpy as np
 from dash import Input, Output, State, callback, ctx
+from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
 
 
 @callback(
@@ -801,12 +802,12 @@ def sync_weight_density_with_volume(
         return dash.no_update, dash.no_update
         
     # ПРАВИЛО: Если значения стерты, используем дефолты для расчетов
-    w_val = 8.0 if w is None else max(0.1, w)
-    dc_val = 0.92 if dc is None else max(0.0, dc)
+    w_val = BASE_DEFAULTS["W"] if w is None else max(0.1, w)
+    dc_val = BASE_DEFAULTS["dc"] if dc is None else max(0.0, dc)
 
     try:
-        density_val = 1.19 if density is None else max(0.01, float(density))
-        tt_val = 4.39 if tt is None else float(tt)
+        density_val = BASE_DEFAULTS["density"] if density is None else max(0.01, float(density))
+        tt_val = BASE_DEFAULTS["tt"] if tt is None else float(tt)
         dc_val_safe = float(dc_val)
         hb_val = max(0.01, tt_val - 2.0 * dc_val_safe)
 
@@ -815,22 +816,22 @@ def sync_weight_density_with_volume(
             profile,
             is_mod,
             w_val,
-            l or 18.3,
-            re or 4.6,
-            rs or 15.0,
+            l or BASE_DEFAULTS["L"],
+            re or SHAPE_SPECIFIC["oval"]["re"],
+            rs or SHAPE_SPECIFIC["oval"]["rs"],
             dc_val_safe,
-            rc_min or 8.8,
-            rc_maj or 39.8,
-            land or 0.08,
+            rc_min or PROFILE_DEFAULTS["concave"]["rc_min"],
+            rc_maj or PROFILE_DEFAULTS["concave"]["rc_maj"],
+            land or BASE_DEFAULTS["land"],
             hb_val,
-            bev_d or 0.51,
-            bev_a if bev_a is not None else 40.0,
-            r_edge or 6.35,
-            blend_r if blend_r is not None else 0.38,
-            r_maj_maj or 88.9,
-            r_maj_min or 6.35,
-            r_min_maj or 12.7,
-            r_min_min or 3.81,
+            bev_d or PROFILE_DEFAULTS["cbe"]["bev_d"],
+            bev_a if bev_a is not None else PROFILE_DEFAULTS["cbe"]["bev_a"],
+            r_edge or PROFILE_DEFAULTS["ffre"]["r_edge"],
+            blend_r if blend_r is not None else PROFILE_DEFAULTS["ffbe"]["blend_r"],
+            r_maj_maj or PROFILE_DEFAULTS["compound"]["r_maj_maj"],
+            r_maj_min or PROFILE_DEFAULTS["compound"]["r_maj_min"],
+            r_min_maj or PROFILE_DEFAULTS["compound"]["r_min_maj"],
+            r_min_min or PROFILE_DEFAULTS["compound"]["r_min_min"],
             b_type,
             b_width,
             b_depth,
@@ -1044,11 +1045,11 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
 
     # --- ГЛОБАЛЬНЫЕ ПРАВИЛА ВАЛИДАЦИИ ---
     # 1. Если поле стерто (None), восстанавливаем из State.
-    w_f = w if w is not None else (w_s or 8.0)
-    dc_f = dc if dc is not None else (dc_s or 0.92)
-    r_mm_f = r_maj_maj if r_maj_maj is not None else (r_mm_s or 88.9)
-    r_mn_f = r_maj_min if r_maj_min is not None else (r_mn_s or 6.35)
-    bev_a_f = bev_a if bev_a is not None else (bev_a_s or 40.0)
+    w_f = w if w is not None else (w_s or BASE_DEFAULTS["W"])
+    dc_f = dc if dc is not None else (dc_s or BASE_DEFAULTS["dc"])
+    r_mm_f = r_maj_maj if r_maj_maj is not None else (r_mm_s or PROFILE_DEFAULTS["compound"]["r_maj_maj"])
+    r_mn_f = r_maj_min if r_maj_min is not None else (r_mn_s or PROFILE_DEFAULTS["compound"]["r_maj_min"])
+    bev_a_f = bev_a if bev_a is not None else (bev_a_s or PROFILE_DEFAULTS["cbe"]["bev_a"])
 
     # 2. Ограничение Bevel Angle (Max 60) - СКВОЗНОЕ ДЛЯ ВСЕХ ФОРМ
     if bev_a_f > 60.0:
