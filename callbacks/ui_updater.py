@@ -863,7 +863,7 @@ def sync_weight_density_with_volume(
             return round(tt_new, 4), round(actual_weight, 4)
 
         return dash.no_update, round(expected_weight, 4)
-    except Exception as e:
+    except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in sync_weight_density_with_volume: {e}")
         return dash.no_update, dash.no_update
 

@@ -284,7 +284,7 @@ def generate_graphics(
             id="tablet-3d-graph",
         )
         return img_src, fig_3d
-    except Exception as e:
+    except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in generate_graphics: {e}")
         return dash.no_update, dash.no_update
 
@@ -393,7 +393,7 @@ def update_calc_panel_live(
     try:
         mesh_data = generate_mesh(params)
         return _build_calc_html(mesh_data["metrics"], density)
-    except Exception as e:
+    except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in update_calc_output: {e}")
         return html.Div(
             [
