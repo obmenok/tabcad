@@ -273,17 +273,21 @@ def generate_graphics(
         show_bbox=show_bbox,
     )
 
-    mesh_data = generate_mesh(params)
-    img_src = render_tablet(mesh_data, params)
-    fig = render_tablet_3d(mesh_data, params)
-    fig_3d = dcc.Graph(
-        figure=fig,
-        style={"height": "100%", "width": "100%"},
-        config={"displaylogo": False, "displayModeBar": False, "responsive": True},
-        id="tablet-3d-graph",
-    )
+    try:
+        mesh_data = generate_mesh(params)
+        img_src = render_tablet(mesh_data, params)
+        fig = render_tablet_3d(mesh_data, params)
+        fig_3d = dcc.Graph(
+            figure=fig,
+            style={"height": "100%", "width": "100%"},
+            config={"displaylogo": False, "displayModeBar": False, "responsive": True},
+            id="tablet-3d-graph",
+        )
+        return img_src, fig_3d
+    except Exception as e:
+        print(f"Error in generate_graphics: {e}")
+        return dash.no_update, dash.no_update
 
-    return img_src, fig_3d
 
 
 @callback(
@@ -386,8 +390,18 @@ def update_calc_panel_live(
         b_double_sided,
     )
 
-    mesh_data = generate_mesh(params)
-    return _build_calc_html(mesh_data["metrics"], density)
+    try:
+        mesh_data = generate_mesh(params)
+        return _build_calc_html(mesh_data["metrics"], density)
+    except Exception as e:
+        print(f"Error in update_calc_output: {e}")
+        return html.Div(
+            [
+                html.H6("Invalid Geometry", className="text-danger fw-bold"),
+                html.P("Current parameters result in impossible geometry. Please check your dimensions.", className="small mb-0")
+            ],
+            className="p-2 border border-danger rounded bg-light"
+        )
 
 
 @callback(

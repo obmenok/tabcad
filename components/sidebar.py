@@ -1,11 +1,11 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
-def make_input(id, label, default_val, step=0.01, min_value=0.01, debounce=False):
+def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None, debounce=True):
     return html.Div(
         dbc.InputGroup([
             dbc.InputGroupText(label, id=f"label-{id}", style={'width': '140px', 'fontSize': '0.85rem'}),
-            dbc.Input(id=id, type='number', value=default_val, step=step, min=min_value, debounce=debounce, size="sm")
+            dbc.Input(id=id, type='number', value=default_val, step=step, min=min_value, max=max_value, debounce=debounce, size="sm")
         ], className="mb-2", size="sm"),
         id=f"div-{id}" 
     )

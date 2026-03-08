@@ -345,12 +345,12 @@ def lock_radii_inputs(shape, is_modified):
 
 
 @callback(
-    [Output("input-w", "value"), Output("input-l", "value")],
+    [Output("input-w", "value", allow_duplicate=True), Output("input-l", "value")],
     [Input("input-w", "value"), Input("input-l", "value")],
-    [State("is-loading-preset", "data")],
+    [State("is-loading-preset", "data"), State("shape-dropdown", "value"), State("input-tt", "value")],
     prevent_initial_call=True,
 )
-def clamp_main_axes_non_negative(w, l, is_loading):
+def clamp_main_axes_non_negative(w, l, is_loading, shape, tt):
     if is_loading:
         return dash.no_update, dash.no_update
         
@@ -358,8 +358,11 @@ def clamp_main_axes_non_negative(w, l, is_loading):
     out_w = dash.no_update
     out_l = dash.no_update
 
-    if trigger == "input-w" and w is not None and w < 0.01:
-        out_w = 0.01
+    if trigger == "input-w" and w is not None:
+        if w < 0.01:
+            out_w = 0.01
+        # Блокировку W < tt УДАЛЯЕМ, чтобы диаметр мог уменьшаться свободно
+            
     if trigger == "input-l" and l is not None and l < 0.01:
         out_l = 0.01
 
@@ -416,7 +419,8 @@ def sync_end_side_radii(shape, is_modified, profile, w, l, land, dc, r_edge, ble
             inset = np.sqrt(max(0.0, disc))
         else:  # ffbe
             rb = 0.01 if blend_r is None else max(0.01, min(blend_r, dc_val))
-            alpha = np.radians(40.0 if bev_a is None else bev_a)
+            bev_a_val = 40.0 if bev_a is None else min(60.0, bev_a)
+            alpha = np.radians(bev_a_val)
             if 1e-6 < alpha < (np.pi / 2 - 1e-6):
                 tan_a = np.tan(alpha)
                 sin_a = np.sin(alpha)
@@ -548,13 +552,13 @@ def sync_bisect_logic(
         "Rs": rs,
         "Land": land or 0.0,
         "Dc": dc,
-        "Rc_min": rc_min,
-        "R_maj_maj": r_maj_maj,
-        "R_maj_min": r_maj_min,
-        "Bev_D": bev_d,
-        "Bev_A": bev_a,
-        "R_edge": r_edge,
-        "Blend_R": blend_r,
+        "Rc_min": rc_min or 8.8,
+        "R_maj_maj": r_maj_maj or 88.9,
+        "R_maj_min": r_maj_min or 6.35,
+        "Bev_D": bev_d if bev_d is not None else 0.51,
+        "Bev_A": 40.0 if bev_a is None else min(60.0, bev_a),
+        "R_edge": r_edge if r_edge is not None else 6.35,
+        "Blend_R": blend_r if blend_r is not None else 0.38,
     }
 
     max_d = round(dc * 0.95, 4)
@@ -604,10 +608,10 @@ def sync_bisect_logic(
         Input("input-w", "value"),
         Input("input-land", "value"),
     ],
-    [State("is-loading-preset", "data")],
+    [State("is-loading-preset", "data"), State("shape-dropdown", "value")],
     prevent_initial_call=True,
 )
-def sync_physical_params(hb, tt, dc, w, land, is_loading):
+def sync_physical_params(hb, tt, dc, w, land, is_loading, shape):
     if is_loading:
         return dash.no_update, dash.no_update
         
@@ -615,8 +619,41 @@ def sync_physical_params(hb, tt, dc, w, land, is_loading):
     if any(v is None for v in [hb, tt, dc, w]):
         return dash.no_update, dash.no_update
 
-    l_nd = land if land is not None else 0.0
+    # ПРАВИЛО: Для круглых таблеток Диаметр (W) диктует границы для Tt и Dc
+    if shape == "round":
+        # 1. Лимит для Глубины чаши (Dc) относительно Диаметра
+        land_val = land if land is not None else 0.08
+        max_dc = round(max(0.01, w / 2 - land_val - 0.01), 4)
+        
+        # Если текущая Dc не влезает в новый диаметр - мы ее уменьшим
+        # Но этот колбэк не может менять Dc напрямую (она Output в другом месте).
+        # Поэтому мы просто учитываем, что Dc "сожмется" в другом колбэке, 
+        # и здесь корректируем HB/TT исходя из этого.
+        current_dc = min(dc, max_dc)
 
+        # 2. Лимит для Толщины (Tt)
+        if tt > w:
+            tt = w
+            hb = round(tt - 2 * current_dc, 4)
+        
+        # 3. Реакция на триггеры
+        if trigger == "input-tt":
+            if tt > w: tt = w
+            new_hb = round(tt - 2 * current_dc, 4)
+            if new_hb < 0.0001:
+                return 0.0001, round(2 * current_dc + 0.0001, 4)
+            return new_hb, tt
+
+        if trigger in ("input-hb", "input-dc", "input-w"):
+            # Если мы уменьшили диаметр, и Tt стала больше W
+            if hb + 2 * current_dc > w:
+                tt = w
+                hb = round(tt - 2 * current_dc, 4)
+            
+            hb_final = max(0.0001, hb)
+            return hb_final, round(hb_final + 2 * current_dc, 4)
+
+    # Стандартная логика для остальных форм (или если не Round)
     if trigger in ("input-hb", "input-dc"):
         return dash.no_update, round(hb + 2 * dc, 4)
 
@@ -763,67 +800,72 @@ def sync_weight_density_with_volume(
     if is_loading:
         return dash.no_update, dash.no_update
         
-    if w is None or dc is None:
+    # ПРАВИЛО: Если значения стерты, используем дефолты для расчетов
+    w_val = 8.0 if w is None else max(0.1, w)
+    dc_val = 0.92 if dc is None else max(0.0, dc)
+
+    try:
+        density_val = 1.19 if density is None else max(0.01, float(density))
+        tt_val = 4.39 if tt is None else float(tt)
+        dc_val_safe = float(dc_val)
+        hb_val = max(0.01, tt_val - 2.0 * dc_val_safe)
+
+        params = _build_mass_params(
+            shape,
+            profile,
+            is_mod,
+            w_val,
+            l or 18.3,
+            re or 4.6,
+            rs or 15.0,
+            dc_val_safe,
+            rc_min or 8.8,
+            rc_maj or 39.8,
+            land or 0.08,
+            hb_val,
+            bev_d or 0.51,
+            bev_a if bev_a is not None else 40.0,
+            r_edge or 6.35,
+            blend_r if blend_r is not None else 0.38,
+            r_maj_maj or 88.9,
+            r_maj_min or 6.35,
+            r_min_maj or 12.7,
+            r_min_min or 3.81,
+            b_type,
+            b_width,
+            b_depth,
+            b_angle,
+            b_ri,
+            b_cruciform,
+            b_double_sided,
+        )
+        mesh = generate_mesh(params)
+        m = mesh["metrics"]
+        # mm3 * g/cm3 == mg (numerically)
+        vol_now = float(m.get("Tablet_Vol", 0.0))
+        die_hole_sa = float(m.get("Die_Hole_SA", 0.0))
+        # Constant volume part that does not depend on belly band (both cups + lands + groove effects).
+        fixed_vol = max(0.0, vol_now - die_hole_sa * hb_val)
+        expected_weight = density_val * vol_now
+
+        trig = ctx.triggered_id
+        if trig == "input-weight" and weight is not None and die_hole_sa > 1e-9:
+            target_weight = max(0.0, float(weight))
+            # Ignore self-trigger when weight was just auto-updated from geometry/density.
+            if abs(target_weight - expected_weight) <= max(1e-4, expected_weight * 1e-4):
+                return dash.no_update, round(expected_weight, 4)
+
+            target_vol = target_weight / density_val
+            hb_new = max(0.01, (target_vol - fixed_vol) / die_hole_sa)
+            tt_new = hb_new + 2.0 * dc_val
+            actual_vol = die_hole_sa * hb_new + fixed_vol
+            actual_weight = density_val * actual_vol
+            return round(tt_new, 4), round(actual_weight, 4)
+
+        return dash.no_update, round(expected_weight, 4)
+    except Exception as e:
+        print(f"Error in sync_weight_density_with_volume: {e}")
         return dash.no_update, dash.no_update
-
-    density_val = 1.19 if density is None else max(0.01, float(density))
-    tt_val = 4.39 if tt is None else float(tt)
-    dc_val = max(0.0, float(dc))
-    hb_val = max(0.01, tt_val - 2.0 * dc_val)
-
-    params = _build_mass_params(
-        shape,
-        profile,
-        is_mod,
-        w,
-        l,
-        re,
-        rs,
-        dc,
-        rc_min,
-        rc_maj,
-        land,
-        hb_val,
-        bev_d,
-        bev_a,
-        r_edge,
-        blend_r,
-        r_maj_maj,
-        r_maj_min,
-        r_min_maj,
-        r_min_min,
-        b_type,
-        b_width,
-        b_depth,
-        b_angle,
-        b_ri,
-        b_cruciform,
-        b_double_sided,
-    )
-    mesh = generate_mesh(params)
-    m = mesh["metrics"]
-    # mm3 * g/cm3 == mg (numerically)
-    vol_now = float(m.get("Tablet_Vol", 0.0))
-    die_hole_sa = float(m.get("Die_Hole_SA", 0.0))
-    # Constant volume part that does not depend on belly band (both cups + lands + groove effects).
-    fixed_vol = max(0.0, vol_now - die_hole_sa * hb_val)
-    expected_weight = density_val * vol_now
-
-    trig = ctx.triggered_id
-    if trig == "input-weight" and weight is not None and die_hole_sa > 1e-9:
-        target_weight = max(0.0, float(weight))
-        # Ignore self-trigger when weight was just auto-updated from geometry/density.
-        if abs(target_weight - expected_weight) <= max(1e-4, expected_weight * 1e-4):
-            return dash.no_update, round(expected_weight, 4)
-
-        target_vol = target_weight / density_val
-        hb_new = max(0.01, (target_vol - fixed_vol) / die_hole_sa)
-        tt_new = hb_new + 2.0 * dc_val
-        actual_vol = die_hole_sa * hb_new + fixed_vol
-        actual_weight = density_val * actual_vol
-        return round(tt_new, 4), round(actual_weight, 4)
-
-    return dash.no_update, round(expected_weight, 4)
 
 
 def _calc_rc_from_dc(span, dc):
@@ -844,7 +886,7 @@ def _calc_dc_from_rc(span, rc):
 def _calc_cbe_rc_from_dc(span, dc, bev_d, bev_a):
     if span <= 0 or dc is None or dc <= 0:
         return None
-    alpha = np.radians(bev_a if bev_a is not None else 40.0)
+    alpha = np.radians(bev_a)
     if alpha <= 1e-6 or alpha >= np.pi / 2 - 1e-6:
         return None
     db = 0.0 if bev_d is None else max(0.0, min(bev_d, dc - 1e-6))
@@ -863,7 +905,7 @@ def _calc_cbe_rc_from_dc(span, dc, bev_d, bev_a):
 def _calc_dc_from_cbe_rc(span, rc, bev_d, bev_a):
     if span <= 0 or rc is None:
         return None
-    alpha = np.radians(bev_a if bev_a is not None else 40.0)
+    alpha = np.radians(bev_a)
     if alpha <= 1e-6 or alpha >= np.pi / 2 - 1e-6:
         return None
     db = max(0.0, 0.0 if bev_d is None else bev_d)
@@ -956,7 +998,15 @@ def _clamp_to_step_range(value, lo, hi, step=0.01):
 
 
 @callback(
-    [Output("input-rc-min", "value", allow_duplicate=True), Output("input-rc-maj", "value", allow_duplicate=True), Output("input-dc", "value", allow_duplicate=True)],
+    [
+        Output("input-rc-min", "value", allow_duplicate=True), 
+        Output("input-rc-maj", "value", allow_duplicate=True), 
+        Output("input-dc", "value", allow_duplicate=True),
+        Output("input-w", "value", allow_duplicate=True),
+        Output("input-r-maj-maj", "value", allow_duplicate=True),
+        Output("input-r-maj-min", "value", allow_duplicate=True),
+        Output("input-bev-a", "value", allow_duplicate=True),
+    ],
     [
         Input("shape-dropdown", "value"),
         Input("profile-dropdown", "value"),
@@ -974,22 +1024,42 @@ def _clamp_to_step_range(value, lo, hi, step=0.01):
         Input("input-rc-min", "value"),
         Input("input-rc-maj", "value"),
     ],
-    [State("is-loading-preset", "data")],
+    [
+        State("is-loading-preset", "data"),
+        State("input-w", "value"),
+        State("input-dc", "value"),
+        State("input-rc-min", "value"),
+        State("input-rc-maj", "value"),
+        State("input-r-maj-maj", "value"),
+        State("input-r-maj-min", "value"),
+        State("input-bev-a", "value"),
+    ],
     prevent_initial_call=True,
 )
-def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edge, r_maj_maj, r_maj_min, bev_d, bev_a, dc, rc_min, rc_maj, is_loading):
+def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edge, r_maj_maj, r_maj_min, bev_d, bev_a, dc, rc_min, rc_maj, is_loading, w_s, dc_s, rc_min_s, rc_maj_s, r_mm_s, r_mn_s, bev_a_s):
     if is_loading:
-        return dash.no_update, dash.no_update, dash.no_update
+        return [dash.no_update] * 7
         
-    if w is None:
-        return dash.no_update, dash.no_update, dash.no_update
+    trig = ctx.triggered_id
 
-    w_val = max(0.1, w)
+    # --- ГЛОБАЛЬНЫЕ ПРАВИЛА ВАЛИДАЦИИ ---
+    # 1. Если поле стерто (None), восстанавливаем из State.
+    w_f = w if w is not None else (w_s or 8.0)
+    dc_f = dc if dc is not None else (dc_s or 0.92)
+    r_mm_f = r_maj_maj if r_maj_maj is not None else (r_mm_s or 88.9)
+    r_mn_f = r_maj_min if r_maj_min is not None else (r_mn_s or 6.35)
+    bev_a_f = bev_a if bev_a is not None else (bev_a_s or 40.0)
+
+    # 2. Ограничение Bevel Angle (Max 60) - СКВОЗНОЕ ДЛЯ ВСЕХ ФОРМ
+    if bev_a_f > 60.0:
+        bev_a_f = 60.0
+    # -----------------------------------
+
+    w_val = max(0.1, w_f)
     l_val = max(w_val, w_val if l is None else l)
-    land_val = 0.0 if land is None else max(0.0, land)
+    land_val = 0.08 if land is None else max(0.0, land)
     s_min = max(0.001, w_val / 2 - land_val)
     s_maj = max(0.001, l_val / 2 - land_val)
-    trig = ctx.triggered_id
     is_mod = bool(is_modified)
 
     editable_min = (
@@ -1000,191 +1070,69 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
     is_round_concave = shape == "round" and profile == "concave"
     is_capsule_concave = shape == "capsule" and profile == "concave"
 
-    # Global constraint: Cup Depth cannot be negative for any form.
-    if trig == "input-dc" and dc is not None and dc < 0.01:
-        return dash.no_update, dash.no_update, 0.01
+    # Ограничение Cup Depth (не меньше 0.01)
+    if dc_f < 0.01: dc_f = 0.01
 
-    # Round Concave constraints:
-    #   Dc <= (D - 2*Land)/2
-    #   Rc >= (D - 2*Land)/2
+    # Round Concave constraints
     round_concave_span = max(0.0, w_val / 2 - land_val)
     if is_round_concave or is_capsule_concave:
-        if trig == "input-dc" and dc is not None and dc > round_concave_span:
-            clamped_dc = _clamp_to_step_range(round_concave_span, 0.01, round_concave_span, step=0.01)
-            new_rc = _calc_rc_from_dc(s_min, clamped_dc) if clamped_dc > 0 else None
-            return (
-                round(new_rc, 4) if new_rc is not None else dash.no_update,
-                dash.no_update,
-                clamped_dc,
-            )
-        if trig == "input-rc-min" and rc_min is not None and rc_min < round_concave_span:
-            clamped_rc = round(float(np.ceil(round_concave_span / 0.01) * 0.01), 4)
-            new_dc = _calc_dc_from_rc(s_min, clamped_rc)
-            return (
-                clamped_rc,
-                dash.no_update,
-                round(new_dc, 4) if new_dc is not None else dash.no_update,
-            )
+        if dc_f > round_concave_span:
+            dc_f = _clamp_to_step_range(round_concave_span, 0.01, round_concave_span, step=0.01)
+        
+        if trig == "input-rc-min" and rc_min is not None:
+            if rc_min < round_concave_span:
+                rc_min = round(float(np.ceil(round_concave_span / 0.01) * 0.01), 4)
+            new_dc = _calc_dc_from_rc(s_min, rc_min)
+            if new_dc is not None: dc_f = new_dc
 
-    # Concave Bevel Edge tangent limit constraints (Round/Capsule):
-    #   Dc <= Dc_max_tan
-    #   Rc >= Rc_min_tan
+    # CBE tangent limits
     if shape in ("round", "capsule") and profile == "cbe":
-        dc_max_tan, rc_min_tan = _round_cbe_tangent_limits(round_concave_span, bev_d, bev_a)
-        if dc_max_tan is not None and rc_min_tan is not None:
-            # Re-clamp when source params are changed as well (angle/depth/diameter/land).
-            if trig in (
-                "input-dc",
-                "input-bev-d",
-                "input-bev-a",
-                "input-w",
-                "input-land",
-                "shape-dropdown",
-                "profile-dropdown",
-                "modified-switch",
-            ):
-                if dc is not None and dc > dc_max_tan:
-                    clamped_dc = _clamp_to_step_range(dc_max_tan, 0.01, dc_max_tan, step=0.01)
-                    new_rc = _calc_cbe_rc_from_dc(s_min, clamped_dc, bev_d, bev_a)
-                    return (
-                        round(new_rc, 4) if new_rc is not None else dash.no_update,
-                        dash.no_update,
-                        clamped_dc,
-                    )
-            if trig == "input-rc-min" and rc_min is not None and rc_min < rc_min_tan:
-                clamped_rc = round(float(np.ceil(rc_min_tan / 0.01) * 0.01), 4)
-                new_dc = _calc_dc_from_cbe_rc(s_min, clamped_rc, bev_d, bev_a)
-                if new_dc is not None:
-                    return clamped_rc, dash.no_update, round(new_dc, 4)
-                return clamped_rc, dash.no_update, dash.no_update
+        b_d = 0.51 if bev_d is None else bev_d
+        dc_max_tan, rc_min_tan = _round_cbe_tangent_limits(round_concave_span, b_d, bev_a_f)
+        if dc_max_tan is not None and dc_f > dc_max_tan:
+            dc_f = _clamp_to_step_range(dc_max_tan, 0.01, dc_max_tan, step=0.01)
+        
+        if trig == "input-rc-min" and rc_min is not None and rc_min_tan is not None:
+            if rc_min < rc_min_tan:
+                rc_min = round(float(np.ceil(rc_min_tan / 0.01) * 0.01), 4)
+            new_dc = _calc_dc_from_cbe_rc(s_min, rc_min, b_d, bev_a_f)
+            if new_dc is not None: dc_f = new_dc
 
-    # Flat Face Radius Edge depth limit from edge radius (Round/Capsule):
-    #   Dc_max = R_edge - sqrt(R_edge^2 - span^2)
-    if shape in ("round", "capsule") and profile == "ffre":
-        dc_max_ffre = _ffre_dc_max_from_r_edge(round_concave_span, r_edge)
-        if dc_max_ffre is not None and dc is not None and trig in (
-            "input-dc",
-            "input-r-edge",
-            "input-w",
-            "input-land",
-            "shape-dropdown",
-            "profile-dropdown",
-            "modified-switch",
-        ):
-            if dc > dc_max_ffre:
-                clamped_dc = _clamp_to_step_range(dc_max_ffre, 0.01, dc_max_ffre, step=0.01)
-                new_rc = _calc_rc_from_dc(s_min, clamped_dc)
-                return (
-                    round(new_rc, 4) if new_rc is not None else dash.no_update,
-                    dash.no_update,
-                    clamped_dc,
-                )
-
-    # Flat Face Bevel Edge limit from minimum Ref Flat on front view:
-    #   Ref Flat = 2 * r_flat >= 0.1  =>  r_flat >= 0.05
-    #   r_flat = span - ((Dc - Rb)/tan(a) + Rb/sin(a))
-    # which yields:
-    #   Dc <= Rb + tan(a) * (span - 0.05 - Rb/sin(a))
-    if shape in ("round", "capsule") and profile == "ffbe":
-        dc_max_ffbe = _ffbe_dc_max_from_ref_flat(round_concave_span, blend_r, bev_a, ref_flat_min=0.1)
-        if dc_max_ffbe is not None and dc is not None and trig in (
-            "input-dc",
-            "input-blend-r",
-            "input-bev-a",
-            "input-w",
-            "input-land",
-            "shape-dropdown",
-            "profile-dropdown",
-            "modified-switch",
-        ):
-            if dc > dc_max_ffbe:
-                clamped_dc = _clamp_to_step_range(dc_max_ffbe, 0.01, dc_max_ffbe, step=0.01)
-                new_rc = _calc_rc_from_dc(s_min, clamped_dc)
-                return (
-                    round(new_rc, 4) if new_rc is not None else dash.no_update,
-                    dash.no_update,
-                    clamped_dc,
-                )
-
-    # Round Compound Cup geometric bounds:
-    #   Dc_min = Rmaj - sqrt(Rmaj^2 - span^2)
-    #   Dc_max = Rmin - sqrt(Rmin^2 - span^2)
-    # where span = (Diameter - 2*Land)/2.
+    # Compound Cup bounds (Round)
     if shape == "round" and profile == "compound":
-        d_min, d_max = _compound_dc_bounds(round_concave_span, r_maj_maj, r_maj_min)
-        if d_min is not None and d_max is not None and dc is not None:
-            lo = min(d_min, d_max)
-            hi = max(d_min, d_max)
-            if dc < lo:
-                clamped_dc = _clamp_to_step_range(lo, lo, hi, step=0.01)
-                new_rc = _calc_rc_from_dc(s_min, clamped_dc)
-                return (
-                    round(new_rc, 4) if new_rc is not None else dash.no_update,
-                    dash.no_update,
-                    clamped_dc,
-                )
-            if dc > hi:
-                clamped_dc = _clamp_to_step_range(hi, lo, hi, step=0.01)
-                new_rc = _calc_rc_from_dc(s_min, clamped_dc)
-                return (
-                    round(new_rc, 4) if new_rc is not None else dash.no_update,
-                    dash.no_update,
-                    clamped_dc,
-                )
+        d_min, d_max = _compound_dc_bounds(round_concave_span, r_mm_f, r_mn_f)
+        if d_min is not None and d_max is not None:
+            lo, hi = (min(d_min, d_max), max(d_min, d_max))
+            if dc_f < lo: dc_f = lo
+            if dc_f > hi: dc_f = hi
 
-    def rc_min_from_dc(dc_val):
-        if profile == "cbe":
-            return _calc_cbe_rc_from_dc(s_min, dc_val, bev_d, bev_a)
-        return _calc_rc_from_dc(s_min, dc_val)
+    # Final calculations for Rc values
+    def rc_min_from_dc(v):
+        if profile == "cbe": return _calc_cbe_rc_from_dc(s_min, v, bev_d or 0.51, bev_a_f)
+        return _calc_rc_from_dc(s_min, v)
 
-    def rc_maj_from_dc(dc_val):
-        if shape == "oval" and profile == "cbe":
-            return _calc_cbe_rc_from_dc(s_maj, dc_val, bev_d, bev_a)
-        if shape == "oval" and profile == "concave":
-            return _calc_rc_from_dc(s_maj, dc_val)
+    def rc_maj_from_dc(v):
+        if shape == "oval":
+            if profile == "cbe": return _calc_cbe_rc_from_dc(s_maj, v, bev_d or 0.51, bev_a_f)
+            if profile == "concave": return _calc_rc_from_dc(s_maj, v)
         return None
 
-    if trig in ("shape-dropdown", "profile-dropdown", "modified-switch", "input-w", "input-l", "input-land", "input-bev-d", "input-bev-a", "input-dc"):
-        if dc is None or dc <= 0:
-            return dash.no_update, dash.no_update, dash.no_update
-        new_rc_min = rc_min_from_dc(dc)
-        new_rc_maj = rc_maj_from_dc(dc)
-        return (
-            round(new_rc_min, 4) if new_rc_min is not None else dash.no_update,
-            round(new_rc_maj, 4) if new_rc_maj is not None else dash.no_update,
-            dash.no_update,
-        )
+    new_rc_min = rc_min_from_dc(dc_f)
+    new_rc_maj = rc_maj_from_dc(dc_f)
 
     if trig == "input-rc-min" and editable_min:
-        if rc_min is None:
-            return dash.no_update, dash.no_update, dash.no_update
-        if is_round_concave or is_capsule_concave:
-            rc_min = max(round_concave_span, rc_min)
-        if profile == "cbe":
-            new_dc = _calc_dc_from_cbe_rc(s_min, rc_min, bev_d, bev_a)
-        else:
-            rc_min_eff = max(s_min + 0.01, rc_min)
-            new_dc = _calc_dc_from_rc(s_min, rc_min_eff)
-        if new_dc is None or new_dc <= 0:
-            return dash.no_update, dash.no_update, dash.no_update
-        new_rc_maj = rc_maj_from_dc(new_dc)
-        return (
-            round(rc_min, 4),
-            round(new_rc_maj, 4) if new_rc_maj is not None else dash.no_update,
-            round(new_dc, 4),
-        )
-
+        curr_rc = rc_min if rc_min is not None else rc_min_s
+        if curr_rc: new_rc_min = curr_rc
     if trig == "input-rc-maj" and editable_maj:
-        if rc_maj is None:
-            return dash.no_update, dash.no_update, dash.no_update
-        new_dc = _calc_dc_from_cbe_rc(s_maj, rc_maj, bev_d, bev_a)
-        if new_dc is None or new_dc <= 0:
-            return dash.no_update, dash.no_update, dash.no_update
-        new_rc_min = rc_min_from_dc(new_dc)
-        return (
-            round(new_rc_min, 4) if new_rc_min is not None else dash.no_update,
-            round(rc_maj, 4),
-            round(new_dc, 4),
-        )
+        curr_rc = rc_maj if rc_maj is not None else rc_maj_s
+        if curr_rc: new_rc_maj = curr_rc
 
-    return dash.no_update, dash.no_update, dash.no_update
+    return (
+        round(new_rc_min, 4) if new_rc_min is not None else dash.no_update,
+        round(new_rc_maj, 4) if new_rc_maj is not None else dash.no_update,
+        round(dc_f, 4),
+        round(w_f, 4),
+        round(r_mm_f, 4),
+        round(r_mn_f, 4),
+        round(bev_a_f, 4)
+    )
