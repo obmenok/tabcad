@@ -3,7 +3,7 @@
 # Основные габариты по умолчанию (те, что в sidebar.py)
 BASE_DEFAULTS = {
     "W": 8.0,           # Diameter (Round) or Minor Axis (Oval/Capsule)
-    "L": 18.3,          # Major Axis
+    "L": 16.0,          # Major Axis
     "dc": 0.92,         # Cup Depth
     "land": 0.08,       # Land
     "hb": 2.55,         # Belly Band
@@ -53,11 +53,11 @@ SHAPE_SPECIFIC = {
         "rs": 0.0,
     },
     "oval": {
-        "re": 4.6,
-        "rs": 15.0,
+        "re": 3.0,
+        "rs": 16.0,
     },
     "capsule": {
-        "re": 4.6,
+        "re": 4.0,
         "rs": 0.0,
     }
 }
