@@ -494,13 +494,6 @@ def render_tablet_3d(mesh_data, params):
         dragmode="orbit",
     )
 
-    # Unified framing for all views/presets to keep scale and centering consistent.
-    span_max = max(x_max - x_min, y_max - y_min, z_max - z_min)
-    half = 0.5 * span_max * 1.04
-    scene_config["xaxis"].update(range=[-half, half], autorange=False)
-    scene_config["yaxis"].update(range=[-half, half], autorange=False)
-    scene_config["zaxis"].update(range=[-half, half], autorange=False)
-    scene_config["aspectmode"] = "cube"
     if bbox_annotations is not None:
         scene_config["annotations"] = bbox_annotations
 

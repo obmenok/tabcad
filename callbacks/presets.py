@@ -13,6 +13,76 @@ PRESET_KEYS = [
     "input-b-width", "input-b-depth", "input-b-angle", "input-b-ri"
 ]
 
+def _generate_preset_name(shape, profile, is_mod, w, l, tt, b_type, b_cruciform, b_double):
+    """Генерирует имя пресета на основе текущих параметров."""
+    def fmt_num(val):
+        if val is None: return ""
+        return f"{val:g}".replace(".", ",")
+        
+    dim_str = fmt_num(w) if shape == "round" else f"{fmt_num(w)}x{fmt_num(l)}"
+    tt_str = fmt_num(tt)
+    
+    form_code = ""
+    is_m = bool(is_mod)
+    if shape == "round":
+        mapping = {"concave": "R-CON", "compound": "R-COM", "cbe": "R-CBE", "ffre": "R-FRE", "ffbe": "R-FBE"}
+        form_code = mapping.get(profile, "")
+    elif shape == "oval":
+        mapping = {"concave": "O-CON", "modified_oval": "O-MOD", "compound": "O-COM", "cbe": "O-CBE", "ffre": "O-FRE", "ffbe": "O-FBE"}
+        form_code = mapping.get(profile, "")
+    elif shape == "capsule":
+        if is_m:
+            mapping = {"concave": "CM-CON", "cbe": "CM-CBE"}
+        else:
+            mapping = {"concave": "C-CON", "cbe": "C-CBE", "ffre": "C-FRE", "ffbe": "C-FBE"}
+        form_code = mapping.get(profile, "")
+        
+    name_parts = [f"TAB-{dim_str}-{tt_str}-{form_code}"]
+    
+    if b_type and b_type != "none":
+        b_map = {"standard": "BS", "cut_through": "BC", "decreasing": "BD"}
+        name_parts.append(b_map.get(b_type, ""))
+        
+        if shape == "round" and bool(b_cruciform):
+            name_parts.append("Q")
+        elif shape in ("capsule", "oval") and bool(b_double):
+            name_parts.append("D")
+            
+    return "-".join(filter(bool, name_parts))
+
+
+@callback(
+    [Output("preset-save-modal", "is_open"), Output("preset-name-input", "value")],
+    [
+        Input("preset-save-as-btn", "n_clicks"),
+        Input("preset-modal-cancel-btn", "n_clicks"),
+        Input("preset-modal-save-btn", "n_clicks"),
+    ],
+    [
+        State("preset-save-modal", "is_open"),
+        State("shape-dropdown", "value"),
+        State("profile-dropdown", "value"),
+        State("modified-switch", "value"),
+        State("input-w", "value"),
+        State("input-l", "value"),
+        State("input-tt", "value"),
+        State("bisect-type", "value"),
+        State("bisect-cruciform", "value"),
+        State("bisect-double-sided", "value"),
+    ],
+    prevent_initial_call=True
+)
+def toggle_modal(n_open, n_cancel, n_save, is_open, shape, profile, is_mod, w, l, tt, b_type, b_cruciform, b_double):
+    """Управляет открытием окна и генерирует имя по стандартам Natoli."""
+    trig = ctx.triggered_id
+    
+    if trig == "preset-save-as-btn":
+        auto_name = _generate_preset_name(shape, profile, is_mod, w, l, tt, b_type, b_cruciform, b_double)
+        return True, auto_name
+        
+    return False, dash.no_update
+
+
 @callback(
     [
         Output("preset-dropdown", "value", allow_duplicate=True),
@@ -33,14 +103,12 @@ def handle_preset_actions(save_btn, modal_save_btn, delete_btn, current_preset, 
     """Обрабатывает сохранение/удаление пресетов и обновляет список."""
     trig = ctx.triggered_id
     
-    # Вспомогательная функция для получения актуального списка опций
     def get_options():
         names = db.get_all_preset_names()
         opts = [{'label': "Select preset...", 'value': '', 'disabled': True}]
         opts.extend([{'label': n, 'value': n} for n in names])
         return opts
 
-    # Если вызов произошел при первоначальной загрузке страницы
     if not trig:
         return dash.no_update, get_options()
         
@@ -48,20 +116,38 @@ def handle_preset_actions(save_btn, modal_save_btn, delete_btn, current_preset, 
         db.delete_preset(current_preset)
         return None, get_options()
         
-    # Собираем словарь параметров из интерфейса
     params = dict(zip(PRESET_KEYS, values))
     
     if trig == "preset-modal-save-btn" and new_name:
-        # Сохранить как новый
         name = new_name.strip()
         if name:
             db.save_preset(name, params)
             return name, get_options()
             
     if trig == "preset-save-btn" and current_preset:
-        # Перезаписать текущий
-        db.save_preset(current_preset, params)
-        return dash.no_update, dash.no_update
+        # Автоматически пересчитываем имя на основе текущих параметров
+        new_calculated_name = _generate_preset_name(
+            params.get("shape-dropdown"),
+            params.get("profile-dropdown"),
+            params.get("modified-switch"),
+            params.get("input-w"),
+            params.get("input-l"),
+            params.get("input-tt"),
+            params.get("bisect-type"),
+            params.get("bisect-cruciform"),
+            params.get("bisect-double-sided")
+        )
+        
+        # Если значимые параметры изменились, сохраняем как новый пресет 
+        # (и удаляем старый, чтобы произошел "перенос" (rename))
+        if new_calculated_name != current_preset:
+            db.delete_preset(current_preset)
+            db.save_preset(new_calculated_name, params)
+            return new_calculated_name, get_options()
+        else:
+            # Иначе просто перезаписываем текущий (могли измениться только радиусы/фаски)
+            db.save_preset(current_preset, params)
+            return dash.no_update, dash.no_update
         
     return dash.no_update, dash.no_update
 

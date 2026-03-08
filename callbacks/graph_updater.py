@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 from core.engine import generate_mesh
 from core.renderer import render_tablet
 from core.renderer_3d import render_tablet_3d
+from core.stl_exporter import generate_tablet_stl
 
 
 def _build_params(
@@ -387,3 +388,110 @@ def update_calc_panel_live(
 
     mesh_data = generate_mesh(params)
     return _build_calc_html(mesh_data["metrics"], density)
+
+
+@callback(
+    Output("download-stl", "data"),
+    Input("plotly-stl-btn", "n_clicks"),
+    [
+        State("shape-dropdown", "value"),
+        State("profile-dropdown", "value"),
+        State("modified-switch", "value"),
+        State("input-w", "value"),
+        State("input-l", "value"),
+        State("input-re", "value"),
+        State("input-rs", "value"),
+        State("input-dc", "value"),
+        State("input-rc-min", "value"),
+        State("input-rc-maj", "value"),
+        State("input-land", "value"),
+        State("input-hb", "value"),
+        State("input-tt", "value"),
+        State("input-bev-d", "value"),
+        State("input-bev-a", "value"),
+        State("input-r-edge", "value"),
+        State("input-blend-r", "value"),
+        State("input-r-maj-maj", "value"),
+        State("input-r-maj-min", "value"),
+        State("input-r-min-maj", "value"),
+        State("input-r-min-min", "value"),
+        State("bisect-type", "value"),
+        State("input-b-width", "value"),
+        State("input-b-depth", "value"),
+        State("input-b-angle", "value"),
+        State("input-b-ri", "value"),
+        State("bisect-cruciform", "value"),
+        State("bisect-double-sided", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def export_stl_callback(
+    n_clicks,
+    shape,
+    profile,
+    is_mod,
+    w,
+    l,
+    re,
+    rs,
+    dc,
+    rc_min,
+    rc_maj,
+    land,
+    hb,
+    tt,
+    bev_d,
+    bev_a,
+    r_edge,
+    blend_r,
+    r_maj_maj,
+    r_maj_min,
+    r_min_maj,
+    r_min_min,
+    b_type,
+    b_width,
+    b_depth,
+    b_angle,
+    b_ri,
+    b_cruciform,
+    b_double_sided,
+):
+    if n_clicks is None:
+        return dash.no_update
+
+    params = _build_params(
+        shape,
+        profile,
+        is_mod,
+        w,
+        l,
+        re,
+        rs,
+        dc,
+        rc_min,
+        rc_maj,
+        land,
+        hb,
+        tt,
+        bev_d,
+        bev_a,
+        r_edge,
+        blend_r,
+        r_maj_maj,
+        r_maj_min,
+        r_min_maj,
+        r_min_min,
+        b_type,
+        b_width,
+        b_depth,
+        b_angle,
+        b_ri,
+        b_cruciform,
+        b_double_sided,
+    )
+
+    mesh_data = generate_mesh(params)
+    stl_bytes = generate_tablet_stl(mesh_data, params)
+    
+    filename = f"tablet_{shape}_{profile}.stl"
+    return dcc.send_bytes(stl_bytes, filename)
