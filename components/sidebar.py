@@ -95,8 +95,8 @@ def create_sidebar():
         
         make_input('input-dc', 'Cup Depth', BASE_DEFAULTS["dc"]),
         # Rc делаем справочными (disabled), как в оригинале!
-        html.Div(dbc.InputGroup([dbc.InputGroupText('Cup Radius', id='label-input-rc-min', style={'width': '140px', 'fontSize': '0.85rem'}), dbc.Input(id='input-rc-min', type='number', value=PROFILE_DEFAULTS["concave"]["rc_min"], min=0.01, disabled=True, size="sm", className="form-control-sm")], className="mb-2 input-group-sm", size="sm"), id="div-input-rc-min"),
-        html.Div(dbc.InputGroup([dbc.InputGroupText('Cup Radius Maj', id='label-input-rc-maj', style={'width': '140px', 'fontSize': '0.85rem'}), dbc.Input(id='input-rc-maj', type='number', value=PROFILE_DEFAULTS["concave"]["rc_maj"], min=0.01, disabled=True, size="sm", className="form-control-sm")], className="mb-2 input-group-sm", size="sm"), id="div-input-rc-maj"),
+        html.Div(dbc.InputGroup([dbc.InputGroupText('Cup Radius', id='label-input-rc-min', style={'width': '140px', 'fontSize': '0.85rem'}), dbc.Input(id='input-rc-min', type='number', value=PROFILE_DEFAULTS["concave"]["rc_min"], min=0.01, step=0.01, disabled=True, size="sm", className="form-control-sm")], className="mb-2 input-group-sm", size="sm"), id="div-input-rc-min"),
+        html.Div(dbc.InputGroup([dbc.InputGroupText('Cup Radius Maj', id='label-input-rc-maj', style={'width': '140px', 'fontSize': '0.85rem'}), dbc.Input(id='input-rc-maj', type='number', value=PROFILE_DEFAULTS["concave"]["rc_maj"], min=0.01, step=0.01, disabled=True, size="sm", className="form-control-sm")], className="mb-2 input-group-sm", size="sm"), id="div-input-rc-maj"),
         
         make_input('input-r-maj-maj', 'Major Major Rad.', PROFILE_DEFAULTS["compound"]["r_maj_maj"]),
         make_input('input-r-maj-min', 'Major Minor Rad.', PROFILE_DEFAULTS["compound"]["r_maj_min"]),
