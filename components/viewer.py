@@ -5,7 +5,79 @@ import dash_bootstrap_components as dbc
 def create_viewer():
     return html.Div(
         [
-            html.Div(id="calc-output", className="mb-3 p-3 bg-light border rounded", style={"minHeight": "80px"}),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.Div(
+                                    id="calc-output",
+                                    className="py-2 px-3 bg-light border rounded h-100",
+                                    style={"minHeight": "80px"},
+                                )
+                            ],
+                            className="h-100",
+                        ),
+                        width=9,
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.Div(
+                                    "Saved Presets",
+                                    className="fw-bold text-secondary mb-2",
+                                    style={"fontSize": "1rem"},
+                                ),
+                                html.Div(
+                                    dcc.Dropdown(
+                                        id="preset-dropdown",
+                                        options=[],
+                                        value=None,
+                                        clearable=False,
+                                        searchable=False,
+                                        className="small-dropdown mb-2",
+                                        style={"fontSize": "0.85rem"},
+                                    ),
+                                    style={"overflow": "visible"},
+                                ),
+                                dbc.ButtonGroup(
+                                    [
+                                        dbc.Button("Load", id="preset-load-btn", color="light", class_name="plotly-toolbar-btn"),
+                                        dbc.Button("Save", id="preset-save-btn", color="light", class_name="plotly-toolbar-btn"),
+                                        dbc.Button("Save As", id="preset-save-as-btn", color="light", class_name="plotly-toolbar-btn"),
+                                        dbc.Button("Delete", id="preset-delete-btn", color="light", class_name="plotly-toolbar-btn"),
+                                    ],
+                                    size="sm",
+                                    className="plotly-toolbar-group",
+                                ),
+                            ],
+                            className="py-2 px-3 bg-light border rounded h-100",
+                            style={"minHeight": "80px", "overflow": "visible", "position": "relative", "zIndex": 6000},
+                        ),
+                        width=3,
+                    ),
+                ],
+                className="g-2 mb-3",
+                style={"overflow": "visible"},
+            ),
+            # Save As Modal
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(dbc.ModalTitle("Save Preset As")),
+                    dbc.ModalBody(
+                        dbc.Input(id="preset-name-input", placeholder="Enter preset name...", type="text")
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button("Save", id="preset-modal-save-btn", color="success", className="ms-auto"),
+                            dbc.Button("Cancel", id="preset-modal-cancel-btn", color="secondary"),
+                        ]
+                    ),
+                ],
+                id="preset-save-modal",
+                is_open=False,
+                centered=True,
+            ),
             dbc.Row(
                 [
                     dbc.Col(

@@ -54,7 +54,7 @@
   text-transform: none !important;
   letter-spacing: normal !important;
   line-height: 1.2 !important;
-  border-radius: 0 !important;
+  border-radius: 0;
   transition: none !important;
 }
 
@@ -84,19 +84,19 @@
 
 .plotly-toolbar-group > .btn:first-child,
 .plotly-toolbar-group > .dropdown:first-child .dropdown-toggle {
-  border-top-left-radius: 6px !important;
-  border-bottom-left-radius: 6px !important;
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
 }
 
 .plotly-toolbar-group .dropdown-toggle {
-  border-top-right-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .plotly-toolbar-group > .btn:last-child,
 .plotly-toolbar-group > .dropdown:last-child .dropdown-toggle {
-  border-top-right-radius: 6px !important;
-  border-bottom-right-radius: 6px !important;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
 }
 
 .plotly-toolbar-group .btn.active,
@@ -115,11 +115,22 @@
 .small-dropdown .Select-control {
   height: 32px !important;
   min-height: 32px !important;
-  font-size: 0.85rem !important;
+  font-size: 14px !important;
   border: 1px solid #9aa0a6 !important;
   border-radius: 4px !important;
   display: flex !important;
   align-items: center !important;
+}
+
+.small-dropdown {
+  font-size: 14px !important;
+}
+
+.small-dropdown .Select-value-label,
+.small-dropdown .Select-placeholder,
+.small-dropdown .Select-input,
+.small-dropdown .Select-value {
+  font-size: 14px !important;
 }
 
 .small-dropdown .Select-control:hover {
@@ -160,7 +171,22 @@
 }
 
 .small-dropdown .Select-menu-outer {
-  font-size: 0.85rem !important;
+  font-size: 14px !important;
+}
+
+#preset-dropdown .Select-control {
+  font-size: 14px !important;
+}
+
+#preset-dropdown .Select-input,
+#preset-dropdown .Select-value,
+#preset-dropdown .Select-placeholder {
+  font-size: 14px !important;
+}
+
+#preset-dropdown .Select-menu-outer {
+  font-size: 14px !important;
+  z-index: 12000 !important;
 }
 
 
@@ -173,6 +199,14 @@
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
 }
 
+.modal {
+  z-index: 7000 !important;
+}
+
+.modal-backdrop {
+  z-index: 6990 !important;
+}
+
 .plotly-toolbar-group .dropdown-item {
   font-weight: 400 !important;
   text-transform: none !important;
@@ -183,6 +217,12 @@
 .plotly-toolbar-group .dropdown-item .apollo-icon {
   color: #495057 !important;
   opacity: 1 !important;
+}
+
+/* Input label + value font size */
+.tablet-input-label,
+.tablet-input-control {
+  font-size: 14px;
 }
 
 #plotly-view-menu .dropdown-toggle {

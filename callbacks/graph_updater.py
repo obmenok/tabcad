@@ -5,6 +5,7 @@ from core.engine import generate_mesh
 from core.renderer import render_tablet
 from core.renderer_3d import render_tablet_3d
 from core.stl_exporter import generate_tablet_stl
+from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
 
 
 def _build_params(
@@ -112,12 +113,17 @@ def _build_calc_html(metrics, density):
                     style={"whiteSpace": "nowrap"},
                 ),
             ],
-            className="d-flex flex-column flex-xl-row align-items-start align-items-xl-center mb-1",
+            className="d-flex flex-column flex-lg-row align-items-start align-items-lg-center mb-1",
             style={"columnGap": "2px", "rowGap": "1px"},
         )
 
     return html.Div(
         [
+            html.Div(
+                "Calculations",
+                className="fw-bold text-secondary mb-2",
+                style={"fontSize": "1rem"},
+            ),
             dbc.Row(
                 [
                     dbc.Col(
@@ -152,7 +158,8 @@ def _build_calc_html(metrics, density):
                     ),
                 ]
             ),
-        ]
+        ],
+        style={"fontSize": "14px"},
     )
 
 

@@ -10,12 +10,26 @@ from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAP
         Output("shape-round-btn", "class_name"),
         Output("shape-capsule-btn", "class_name"),
         Output("shape-oval-btn", "class_name"),
+        Output("input-w", "value", allow_duplicate=True),
+        Output("input-l", "value", allow_duplicate=True),
+        Output("input-re", "value", allow_duplicate=True),
+        Output("input-rs", "value", allow_duplicate=True),
+        Output("input-dc", "value", allow_duplicate=True),
+        Output("input-rc-min", "value", allow_duplicate=True),
+        Output("input-rc-maj", "value", allow_duplicate=True),
+        Output("input-land", "value", allow_duplicate=True),
+        Output("input-hb", "value", allow_duplicate=True),
+        Output("input-tt", "value", allow_duplicate=True),
+        Output("input-density", "value", allow_duplicate=True),
+        Output("input-weight", "value", allow_duplicate=True),
+        Output("is-loading-preset", "data", allow_duplicate=True),
     ],
     [
         Input("shape-round-btn", "n_clicks"),
         Input("shape-capsule-btn", "n_clicks"),
         Input("shape-oval-btn", "n_clicks"),
     ],
+    prevent_initial_call=True
 )
 def update_shape_selection(round_clicks, capsule_clicks, oval_clicks):
     trig = ctx.triggered_id
@@ -27,20 +41,39 @@ def update_shape_selection(round_clicks, capsule_clicks, oval_clicks):
         new_shape = "capsule"
     elif trig == "shape-oval-btn":
         new_shape = "oval"
-    elif not ctx.triggered:
-        # Initial call
-        new_shape = "round"
     else:
-        # If triggered by something else or no update needed
-        return dash.no_update
+        return [dash.no_update] * 17
 
     def get_class(shape):
         base = "plotly-toolbar-btn"
         if new_shape == shape:
             return f"{base} active"
         return base
-
-    return new_shape, get_class("round"), get_class("capsule"), get_class("oval")
+        
+    # Дефолтные значения для сброса
+    w = BASE_DEFAULTS["W"]
+    l = BASE_DEFAULTS["L"]
+    re = SHAPE_SPECIFIC[new_shape]["re"]
+    rs = SHAPE_SPECIFIC[new_shape]["rs"]
+    dc = BASE_DEFAULTS["dc"]
+    rc_min = PROFILE_DEFAULTS["concave"]["rc_min"]
+    rc_maj = PROFILE_DEFAULTS["concave"]["rc_maj"]
+    land = BASE_DEFAULTS["land"]
+    hb = BASE_DEFAULTS["hb"]
+    tt = BASE_DEFAULTS["tt"]
+    density = BASE_DEFAULTS["density"]
+    weight = None # Пересчитается автоматически
+    
+    # Мы ставим is_loading=True, чтобы не сработали другие колбэки во время сброса, 
+    # а потом система сама его скинет.
+    return (
+        new_shape, 
+        get_class("round"), 
+        get_class("capsule"), 
+        get_class("oval"),
+        w, l, re, rs, dc, rc_min, rc_maj, land, hb, tt, density, weight,
+        True
+    )
 from core.engine import compute_bisect_width, compute_bisect_depth
 from core.engine import generate_mesh
 
@@ -104,6 +137,97 @@ def update_profile_options(shape, is_modified, current_profile, is_loading):
     if is_loading:
         return options, dash.no_update
     return options, value
+
+
+@callback(
+    Output("profile-dropdown", "value", allow_duplicate=True),
+    [
+        Input("profile-btn-con", "n_clicks"),
+        Input("profile-btn-com", "n_clicks"),
+        Input("profile-btn-cbe", "n_clicks"),
+        Input("profile-btn-ffre", "n_clicks"),
+        Input("profile-btn-ffbe", "n_clicks"),
+        Input("profile-btn-mod", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def set_profile_from_buttons(*_):
+    trigger = ctx.triggered_id
+    mapping = {
+        "profile-btn-con": "concave",
+        "profile-btn-com": "compound",
+        "profile-btn-cbe": "cbe",
+        "profile-btn-ffre": "ffre",
+        "profile-btn-ffbe": "ffbe",
+        "profile-btn-mod": "modified_oval",
+    }
+    return mapping.get(trigger, dash.no_update)
+
+
+@callback(
+    [
+        Output("profile-btn-con", "style"),
+        Output("profile-btn-com", "style"),
+        Output("profile-btn-cbe", "style"),
+        Output("profile-btn-ffre", "style"),
+        Output("profile-btn-ffbe", "style"),
+        Output("profile-btn-mod", "style"),
+        Output("profile-btn-con", "active"),
+        Output("profile-btn-com", "active"),
+        Output("profile-btn-cbe", "active"),
+        Output("profile-btn-ffre", "active"),
+        Output("profile-btn-ffbe", "active"),
+        Output("profile-btn-mod", "active"),
+    ],
+    [Input("shape-dropdown", "value"), Input("modified-switch", "value"), Input("profile-dropdown", "value")],
+)
+def sync_profile_buttons(shape, is_modified, profile):
+    options = _profile_options(shape, bool(is_modified))
+    ordered = [o["value"] for o in options]
+    allowed = set(ordered)
+    order_map = {value: idx for idx, value in enumerate(ordered, start=1)}
+    first_visible = ordered[0] if ordered else None
+    last_visible = ordered[-1] if ordered else None
+
+    def style_for(value):
+        if value not in allowed:
+            return {"display": "none"}
+        style = {"order": order_map.get(value, 99)}
+        if value == first_visible:
+            style.update({"borderTopLeftRadius": "6px", "borderBottomLeftRadius": "6px"})
+        else:
+            style.update({"borderTopLeftRadius": "0", "borderBottomLeftRadius": "0"})
+        if value == last_visible:
+            style.update({"borderTopRightRadius": "6px", "borderBottomRightRadius": "6px"})
+        else:
+            style.update({"borderTopRightRadius": "0", "borderBottomRightRadius": "0"})
+        return style
+
+    active_map = {
+        "concave": False,
+        "compound": False,
+        "cbe": False,
+        "ffre": False,
+        "ffbe": False,
+        "modified_oval": False,
+    }
+    if profile in active_map:
+        active_map[profile] = True
+
+    return (
+        style_for("concave"),
+        style_for("compound"),
+        style_for("cbe"),
+        style_for("ffre"),
+        style_for("ffbe"),
+        style_for("modified_oval"),
+        active_map["concave"],
+        active_map["compound"],
+        active_map["cbe"],
+        active_map["ffre"],
+        active_map["ffbe"],
+        active_map["modified_oval"],
+    )
 
 
 @callback(
@@ -609,60 +733,77 @@ def sync_bisect_logic(
         Input("input-w", "value"),
         Input("input-land", "value"),
     ],
-    [State("is-loading-preset", "data"), State("shape-dropdown", "value")],
+    [
+        State("is-loading-preset", "data"), 
+        State("shape-dropdown", "value"),
+        State("profile-dropdown", "value"),
+        State("input-bev-d", "value"),
+        State("input-bev-a", "value"),
+        State("input-r-edge", "value"),
+        State("input-blend-r", "value"),
+        State("input-r-maj-maj", "value"),
+        State("input-r-maj-min", "value"),
+    ],
     prevent_initial_call=True,
 )
-def sync_physical_params(hb, tt, dc, w, land, is_loading, shape):
+def sync_physical_params(hb, tt, dc, w, land, is_loading, shape, profile, bev_d, bev_a, r_edge, blend_r, r_mm, r_mn):
     if is_loading:
         return dash.no_update, dash.no_update
         
     trigger = ctx.triggered_id
     if any(v is None for v in [hb, tt, dc, w]):
         return dash.no_update, dash.no_update
-
-    # ПРАВИЛО: Для круглых таблеток Диаметр (W) диктует границы для Tt и Dc
+    # RULE: Diameter/width (W) limits Tt and Dc
     if shape == "round":
-        # 1. Лимит для Глубины чаши (Dc) относительно Диаметра
         land_val = land if land is not None else 0.08
-        max_dc = round(max(0.01, w / 2 - land_val - 0.01), 4)
-        
-        # Если текущая Dc не влезает в новый диаметр - мы ее уменьшим
-        # Но этот колбэк не может менять Dc напрямую (она Output в другом месте).
-        # Поэтому мы просто учитываем, что Dc "сожмется" в другом колбэке, 
-        # и здесь корректируем HB/TT исходя из этого.
-        current_dc = min(dc, max_dc)
+        concave_span = max(0.01, w / 2 - land_val - 0.01)
+        max_dc = round(concave_span, 4)
 
-        # 2. Лимит для Толщины (Tt)
-        if tt > w:
+        # 1. Cup Depth (Dc) profile max
+        if profile == "ffre":
+            r_edge_val = r_edge if r_edge is not None else PROFILE_DEFAULTS["ffre"]["r_edge"]
+            ffre_max = _ffre_dc_max_from_r_edge(concave_span, r_edge_val)
+            if ffre_max is not None: max_dc = min(max_dc, round(ffre_max, 4))
+        elif profile == "ffbe":
+            blend_r_val = blend_r if blend_r is not None else PROFILE_DEFAULTS["ffbe"]["blend_r"]
+            bev_a_val = bev_a if bev_a is not None else PROFILE_DEFAULTS["cbe"]["bev_a"]
+            ffbe_max = _ffbe_dc_max_from_ref_flat(concave_span, blend_r_val, bev_a_val)
+            if ffbe_max is not None: max_dc = min(max_dc, round(ffbe_max, 4))
+        elif profile == "cbe":
+            b_d = bev_d if bev_d is not None else 0.51
+            bev_a_val = bev_a if bev_a is not None else PROFILE_DEFAULTS["cbe"]["bev_a"]
+            cbe_max, _ = _round_cbe_tangent_limits(concave_span, b_d, bev_a_val)
+            if cbe_max is not None: max_dc = min(max_dc, round(cbe_max, 4))
+        elif profile == "compound":
+            r_mm_val = r_mm if r_mm is not None else PROFILE_DEFAULTS["compound"]["r_maj_maj"]
+            r_mn_val = r_mn if r_mn is not None else PROFILE_DEFAULTS["compound"]["r_maj_min"]
+            _, c_max = _compound_dc_bounds(concave_span, r_mm_val, r_mn_val)
+            if c_max is not None: max_dc = min(max_dc, round(c_max, 4))
+
+        current_dc = min(dc, max_dc)
+    else:
+        current_dc = dc
+
+    # 2. Tablet Thickness (Tt) limit for ALL shapes
+    if tt > w:
+        tt = w
+        hb = round(tt - 2 * current_dc, 4)
+
+    # 3. Trigger handling
+    if trigger == "input-tt":
+        if tt > w: tt = w
+        new_hb = round(tt - 2 * current_dc, 4)
+        if new_hb < 0.01:
+            return 0.01, round(2 * current_dc + 0.01, 4)
+        return new_hb, tt
+
+    if trigger in ("input-hb", "input-dc", "input-w"):
+        if hb + 2 * current_dc > w:
             tt = w
             hb = round(tt - 2 * current_dc, 4)
-        
-        # 3. Реакция на триггеры
-        if trigger == "input-tt":
-            if tt > w: tt = w
-            new_hb = round(tt - 2 * current_dc, 4)
-            if new_hb < 0.0001:
-                return 0.0001, round(2 * current_dc + 0.0001, 4)
-            return new_hb, tt
 
-        if trigger in ("input-hb", "input-dc", "input-w"):
-            # Если мы уменьшили диаметр, и Tt стала больше W
-            if hb + 2 * current_dc > w:
-                tt = w
-                hb = round(tt - 2 * current_dc, 4)
-            
-            hb_final = max(0.0001, hb)
-            return hb_final, round(hb_final + 2 * current_dc, 4)
-
-    # Стандартная логика для остальных форм (или если не Round)
-    if trigger in ("input-hb", "input-dc"):
-        return dash.no_update, round(hb + 2 * dc, 4)
-
-    if trigger == "input-tt":
-        new_hb = round(tt - 2 * dc, 4)
-        if new_hb >= 0.0001:
-            return new_hb, dash.no_update
-        return 0.0001, round(2 * dc + 0.0001, 4)
+        hb_final = max(0.01, hb)
+        return hb_final, round(hb_final + 2 * current_dc, 4)
 
     return dash.no_update, dash.no_update
 
@@ -1070,26 +1211,27 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
     editable_maj = shape == "oval" and profile == "cbe"
     is_round_concave = shape == "round" and profile == "concave"
     is_capsule_concave = shape == "capsule" and profile == "concave"
+    is_oval_concave = shape == "oval" and profile == "concave"
 
     # Ограничение Cup Depth (не меньше 0.01)
     if dc_f < 0.01: dc_f = 0.01
 
-    # Round Concave constraints
-    round_concave_span = max(0.0, w_val / 2 - land_val)
-    if is_round_concave or is_capsule_concave:
-        if dc_f > round_concave_span:
-            dc_f = _clamp_to_step_range(round_concave_span, 0.01, round_concave_span, step=0.01)
+    # Round/Capsule/Oval Concave constraints
+    concave_span = max(0.0, w_val / 2 - land_val)
+    if is_round_concave or is_capsule_concave or is_oval_concave:
+        if dc_f > concave_span:
+            dc_f = _clamp_to_step_range(concave_span, 0.01, concave_span, step=0.01)
         
         if trig == "input-rc-min" and rc_min is not None:
-            if rc_min < round_concave_span:
-                rc_min = round(float(np.ceil(round_concave_span / 0.01) * 0.01), 4)
+            if rc_min < concave_span:
+                rc_min = round(float(np.ceil(concave_span / 0.01) * 0.01), 4)
             new_dc = _calc_dc_from_rc(s_min, rc_min)
             if new_dc is not None: dc_f = new_dc
 
     # CBE tangent limits
     if shape in ("round", "capsule") and profile == "cbe":
         b_d = 0.51 if bev_d is None else bev_d
-        dc_max_tan, rc_min_tan = _round_cbe_tangent_limits(round_concave_span, b_d, bev_a_f)
+        dc_max_tan, rc_min_tan = _round_cbe_tangent_limits(concave_span, b_d, bev_a_f)
         if dc_max_tan is not None and dc_f > dc_max_tan:
             dc_f = _clamp_to_step_range(dc_max_tan, 0.01, dc_max_tan, step=0.01)
         
@@ -1101,11 +1243,24 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
 
     # Compound Cup bounds (Round)
     if shape == "round" and profile == "compound":
-        d_min, d_max = _compound_dc_bounds(round_concave_span, r_mm_f, r_mn_f)
+        d_min, d_max = _compound_dc_bounds(concave_span, r_mm_f, r_mn_f)
         if d_min is not None and d_max is not None:
             lo, hi = (min(d_min, d_max), max(d_min, d_max))
             if dc_f < lo: dc_f = lo
             if dc_f > hi: dc_f = hi
+
+    # Flat Face constraints (FFRE/FFBE)
+    if profile == "ffre":
+        r_edge_val = r_edge if r_edge is not None else PROFILE_DEFAULTS["ffre"]["r_edge"]
+        dc_max_ffre = _ffre_dc_max_from_r_edge(concave_span, r_edge_val)
+        if dc_max_ffre is not None and dc_f > dc_max_ffre:
+            dc_f = _clamp_to_step_range(dc_max_ffre, 0.01, dc_max_ffre, step=0.01)
+            
+    if profile == "ffbe":
+        blend_r_val = blend_r if blend_r is not None else PROFILE_DEFAULTS["ffbe"]["blend_r"]
+        dc_max_ffbe = _ffbe_dc_max_from_ref_flat(concave_span, blend_r_val, bev_a_f)
+        if dc_max_ffbe is not None and dc_f > dc_max_ffbe:
+            dc_f = _clamp_to_step_range(dc_max_ffbe, 0.01, dc_max_ffbe, step=0.01)
 
     # Final calculations for Rc values
     def rc_min_from_dc(v):
