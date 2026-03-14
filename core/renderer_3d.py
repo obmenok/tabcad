@@ -158,7 +158,7 @@ def _extract_iso_segments(field, x_grid, y_grid, level):
 
 
 def _camera_from_preset(bounds, preset):
-    scale = 1.10
+    scale = 1.50
     p = (preset or "isometric").lower()
     if p == "front":
         return dict(eye=dict(x=0.0, y=-2.15 * scale, z=0.0), up=dict(x=0, y=0, z=1), center=dict(x=0, y=0, z=0))

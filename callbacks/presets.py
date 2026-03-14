@@ -17,7 +17,9 @@ def _generate_preset_name(shape, profile, is_mod, w, l, tt, b_type, b_cruciform,
     """Генерирует имя пресета на основе текущих параметров."""
     def fmt_num(val):
         if val is None: return ""
-        return f"{val:g}".replace(".", ",")
+        if float(val).is_integer():
+            return f"{int(round(float(val)))}"
+        return f"{val:.1f}".replace(".", ",")
         
     dim_str = fmt_num(w) if shape == "round" else f"{fmt_num(w)}x{fmt_num(l)}"
     tt_str = fmt_num(tt)
@@ -212,3 +214,4 @@ def reset_loading_flag(is_loading):
     if is_loading is True:
         return False
     return dash.no_update
+

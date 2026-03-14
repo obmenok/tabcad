@@ -44,11 +44,11 @@ def create_viewer():
                                     [
                                         dbc.Button("Load", id="preset-load-btn", color="light", class_name="plotly-toolbar-btn"),
                                         dbc.Button("Save", id="preset-save-btn", color="light", class_name="plotly-toolbar-btn"),
-                                        dbc.Button("Save As", id="preset-save-as-btn", color="light", class_name="plotly-toolbar-btn"),
-                                        dbc.Button("Delete", id="preset-delete-btn", color="light", class_name="plotly-toolbar-btn"),
+                                        dbc.Button("Save\u00a0As", id="preset-save-as-btn", color="light", class_name="plotly-toolbar-btn"),
+                                        dbc.Button("Del", id="preset-delete-btn", color="light", class_name="plotly-toolbar-btn"),
                                     ],
                                     size="sm",
-                                    className="plotly-toolbar-group",
+                                    className="plotly-toolbar-group preset-btn-group segmented-btn-group",
                                 ),
                             ],
                             className="py-2 px-3 bg-light border rounded h-100",
@@ -63,20 +63,42 @@ def create_viewer():
             # Save As Modal
             dbc.Modal(
                 [
-                    dbc.ModalHeader(dbc.ModalTitle("Save Preset As")),
+                    dbc.ModalHeader(
+                        dbc.ModalTitle("Save Preset As", style={"fontSize": "16px", "fontWeight": 600}),
+                        className="preset-modal-header",
+                    ),
                     dbc.ModalBody(
-                        dbc.Input(id="preset-name-input", placeholder="Enter preset name...", type="text")
+                        dbc.Input(
+                            id="preset-name-input",
+                            placeholder="Enter preset name...",
+                            type="text",
+                            style={"fontSize": "14px"},
+                        ),
+                        style={"borderBottom": "none"},
                     ),
                     dbc.ModalFooter(
                         [
-                            dbc.Button("Save", id="preset-modal-save-btn", color="success", className="ms-auto"),
-                            dbc.Button("Cancel", id="preset-modal-cancel-btn", color="secondary"),
+                            dbc.Button(
+                                "Save",
+                                id="preset-modal-save-btn",
+                                outline=True,
+                                color="secondary",
+                                className="outline-soft-btn preset-modal-btn",
+                            ),
+                            dbc.Button(
+                                "Cancel",
+                                id="preset-modal-cancel-btn",
+                                outline=True,
+                                color="secondary",
+                                className="outline-soft-btn preset-modal-btn",
+                            ),
                         ]
-                    ),
+                    , style={"justifyContent": "flex-end", "borderTop": "none", "gap": "8px"}),
                 ],
                 id="preset-save-modal",
                 is_open=False,
                 centered=True,
+                className="preset-modal",
             ),
             dbc.Row(
                 [

@@ -3,20 +3,22 @@ import dash_bootstrap_components as dbc
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
 
 def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None, debounce=True, disabled=False):
+    step_value = "any" if disabled else step
     return html.Div(
         dbc.InputGroup([
-            dbc.InputGroupText(label, id=f"label-{id}", className="tablet-input-label", style={'width': '140px'}),
+            dbc.InputGroupText(label, id=f"label-{id}", className="tablet-input-label", style={'width': '50%'}),
             dbc.Input(
                 id=id,
                 type='number',
                 value=default_val,
-                step=step,
-                min=min_value,
-                max=max_value,
+                step=step_value,
+                min=None,
+                max=None,
                 debounce=debounce,
                 disabled=disabled,
                 size="sm",
                 className="tablet-input-control",
+                inputMode="decimal",
             )
         ], className="mb-2 input-group-sm", size="sm"),
         id=f"div-{id}" 
@@ -28,7 +30,7 @@ def create_sidebar():
         dcc.Store(id="is-loading-preset", data=False),
         dcc.Store(id="constraints-data", data=[]),
         
-        html.H4("TabletCAD Pro", className="text-primary mb-3"),
+        html.H4("TabletCAD Pro", className="text-primary mb-2"),
         
         dbc.Modal(
             [
@@ -125,19 +127,15 @@ def create_sidebar():
         ),
 
         
-        html.Label("Tablet Shape", className="fw-bold m-0"),
-        html.Div(
-            dbc.ButtonGroup(
-                [
-                    dbc.Button("Round", id="shape-round-btn", color="light", class_name="plotly-toolbar-btn active"),
-                    dbc.Button("Capsule", id="shape-capsule-btn", color="light", class_name="plotly-toolbar-btn"),
-                    dbc.Button("Oval", id="shape-oval-btn", color="light", class_name="plotly-toolbar-btn"),
-                ],
-                size="sm",
-                className="w-100 plotly-toolbar-group",
-            ),
-            style={"height": "40px", "display": "flex", "alignItems": "center"},
-            className="mb-1"
+        html.Label("Tablet Shape", className="fw-bold mt-2 mb-1"),
+        dbc.ButtonGroup(
+            [
+                dbc.Button("Round", id="shape-round-btn", color="light", class_name="plotly-toolbar-btn active"),
+                dbc.Button("Capsule", id="shape-capsule-btn", color="light", class_name="plotly-toolbar-btn"),
+                dbc.Button("Oval", id="shape-oval-btn", color="light", class_name="plotly-toolbar-btn"),
+            ],
+            size="sm",
+            className="plotly-toolbar-group segmented-btn-group tablet-shape-group mb-2",
         ),
         dcc.Dropdown(
             id='shape-dropdown',
@@ -148,10 +146,10 @@ def create_sidebar():
             ],
             value='round', clearable=False, style={'display': 'none'}
         ),
-        
+
         html.Div(
             [
-                html.Label("Cup Configuration", className="fw-bold m-0"),
+                html.Label("Cup Configuration", className="fw-bold m-0 mb-1"),
                 html.Div(
                     dbc.Checklist(
                         options=[{"label": "Modified Shape", "value": True}],
@@ -163,68 +161,61 @@ def create_sidebar():
                     id="div-modified-switch",
                 ),
             ],
-            className="mb-0 mt-2",
+            className="mb-1 mt-2",
             style={"display": "flex", "alignItems": "center", "justifyContent": "space-between"},
-        ),
-        html.Div(
+        ),        dbc.ButtonGroup(
             [
-                dbc.ButtonGroup(
-                    [
-                        dbc.Button(
-                            "CON",
-                            id="profile-btn-con",
-                            color="light",
-                            class_name="plotly-toolbar-btn cup-config-btn",
-                            size="sm",
-                            title="Concave",
-                        ),
-                        dbc.Button(
-                            "COM",
-                            id="profile-btn-com",
-                            color="light",
-                            class_name="plotly-toolbar-btn cup-config-btn",
-                            size="sm",
-                            title="Compound Cup",
-                        ),
-                        dbc.Button(
-                            "CBE",
-                            id="profile-btn-cbe",
-                            color="light",
-                            class_name="plotly-toolbar-btn cup-config-btn",
-                            size="sm",
-                            title="Concave Bevel Edge",
-                        ),
-                        dbc.Button(
-                            "FFRE",
-                            id="profile-btn-ffre",
-                            color="light",
-                            class_name="plotly-toolbar-btn cup-config-btn",
-                            size="sm",
-                            title="Flat Face Radius Edge",
-                        ),
-                        dbc.Button(
-                            "FFBE",
-                            id="profile-btn-ffbe",
-                            color="light",
-                            class_name="plotly-toolbar-btn cup-config-btn",
-                            size="sm",
-                            title="Flat Face Bevel Edge",
-                        ),
-                        dbc.Button(
-                            "MOD",
-                            id="profile-btn-mod",
-                            color="light",
-                            class_name="plotly-toolbar-btn cup-config-btn",
-                            size="sm",
-                            title="Modified Oval",
-                        ),
-                    ],
+                dbc.Button(
+                    "CON",
+                    id="profile-btn-con",
+                    color="light",
+                    class_name="plotly-toolbar-btn cup-config-btn",
                     size="sm",
-                    className="w-100 plotly-toolbar-group cup-config-group",
+                    title="Concave",
+                ),
+                dbc.Button(
+                    "COM",
+                    id="profile-btn-com",
+                    color="light",
+                    class_name="plotly-toolbar-btn cup-config-btn",
+                    size="sm",
+                    title="Compound Cup",
+                ),
+                dbc.Button(
+                    "CBE",
+                    id="profile-btn-cbe",
+                    color="light",
+                    class_name="plotly-toolbar-btn cup-config-btn",
+                    size="sm",
+                    title="Concave Bevel Edge",
+                ),
+                dbc.Button(
+                    "FFRE",
+                    id="profile-btn-ffre",
+                    color="light",
+                    class_name="plotly-toolbar-btn cup-config-btn",
+                    size="sm",
+                    title="Flat Face Radius Edge",
+                ),
+                dbc.Button(
+                    "FFBE",
+                    id="profile-btn-ffbe",
+                    color="light",
+                    class_name="plotly-toolbar-btn cup-config-btn",
+                    size="sm",
+                    title="Flat Face Bevel Edge",
+                ),
+                dbc.Button(
+                    "MOD",
+                    id="profile-btn-mod",
+                    color="light",
+                    class_name="plotly-toolbar-btn cup-config-btn",
+                    size="sm",
+                    title="Modified Oval",
                 ),
             ],
-            className="mb-1",
-            style={"height": "40px", "display": "flex", "alignItems": "center"},
+            size="sm",
+            className="plotly-toolbar-group cup-config-group segmented-btn-group mb-2",
         ),
         dcc.Dropdown(
             id='profile-dropdown',
@@ -244,38 +235,38 @@ def create_sidebar():
                     outline=True,
                     color="secondary",
                     size="sm",
-                    className="bisect-edit-btn",
+                    className="outline-soft-btn",
                 ),
             ],
-            className="border-bottom pb-1 mb-2 mt-2",
+            className="mb-2 mt-2",
             style={"display": "flex", "justifyContent": "space-between", "alignItems": "center"},
         ),
-        make_input('input-w', 'Minor Axis', BASE_DEFAULTS["W"]), 
-        make_input('input-l', 'Major Axis', BASE_DEFAULTS["L"]),
-        make_input('input-re', 'End Radius', SHAPE_SPECIFIC["oval"]["re"]),
-        make_input('input-rs', 'Side Radius', SHAPE_SPECIFIC["oval"]["rs"], min_value=0.0),
+        make_input('input-w', 'Minor Axis, mm', BASE_DEFAULTS["W"]), 
+        make_input('input-l', 'Major Axis, mm', BASE_DEFAULTS["L"]),
+        make_input('input-re', 'End Radius, mm', SHAPE_SPECIFIC["oval"]["re"]),
+        make_input('input-rs', 'Side Radius, mm', SHAPE_SPECIFIC["oval"]["rs"], min_value=0.0),
         
-        make_input('input-dc', 'Cup Depth', BASE_DEFAULTS["dc"]),
+        make_input('input-dc', 'Cup Depth, mm', BASE_DEFAULTS["dc"]),
         # Rc делаем справочными (disabled), как в оригинале!
-        make_input('input-rc-min', 'Cup Radius', PROFILE_DEFAULTS["concave"]["rc_min"], disabled=True),
-        make_input('input-rc-maj', 'Cup Radius Maj', PROFILE_DEFAULTS["concave"]["rc_maj"], disabled=True),
+        make_input('input-rc-min', 'Cup Radius, mm', PROFILE_DEFAULTS["concave"]["rc_min"], disabled=True),
+        make_input('input-rc-maj', 'Cup Radius Major, mm', PROFILE_DEFAULTS["concave"]["rc_maj"], disabled=True),
         
-        make_input('input-r-maj-maj', 'Major Major Rad.', PROFILE_DEFAULTS["compound"]["r_maj_maj"]),
-        make_input('input-r-maj-min', 'Major Minor Rad.', PROFILE_DEFAULTS["compound"]["r_maj_min"]),
-        make_input('input-r-min-maj', 'Minor Major Rad.', PROFILE_DEFAULTS["compound"]["r_min_maj"]),
-        make_input('input-r-min-min', 'Minor Minor Rad.', PROFILE_DEFAULTS["compound"]["r_min_min"]),
-        make_input('input-bev-d', 'Bevel Depth', PROFILE_DEFAULTS["cbe"]["bev_d"]),
-        make_input('input-bev-a', 'Bevel Angle', PROFILE_DEFAULTS["cbe"]["bev_a"], step=0.01, max_value=60.0),
-        make_input('input-r-edge', 'Radius Edge', PROFILE_DEFAULTS["ffre"]["r_edge"]),
-        make_input('input-blend-r', 'Blend Radius', PROFILE_DEFAULTS["ffbe"]["blend_r"]),
+        make_input('input-r-maj-maj', 'Major Major Radius, mm', PROFILE_DEFAULTS["compound"]["r_maj_maj"]),
+        make_input('input-r-maj-min', 'Major Minor Radius, mm', PROFILE_DEFAULTS["compound"]["r_maj_min"]),
+        make_input('input-r-min-maj', 'Minor Major Radius, mm', PROFILE_DEFAULTS["compound"]["r_min_maj"]),
+        make_input('input-r-min-min', 'Minor Minor Radius, mm', PROFILE_DEFAULTS["compound"]["r_min_min"]),
+        make_input('input-bev-d', 'Bevel Depth, mm', PROFILE_DEFAULTS["cbe"]["bev_d"]),
+        make_input('input-bev-a', 'Bevel Angle, °', PROFILE_DEFAULTS["cbe"]["bev_a"], step=0.01, max_value=60.0),
+        make_input('input-r-edge', 'Radius Edge, mm', PROFILE_DEFAULTS["ffre"]["r_edge"]),
+        make_input('input-blend-r', 'Blend Radius, mm', PROFILE_DEFAULTS["ffbe"]["blend_r"]),
         
-        make_input('input-land', 'Land', BASE_DEFAULTS["land"]),
-        make_input('input-hb', 'Belly Band', BASE_DEFAULTS["hb"]),
-        make_input('input-tt', 'Tablet Thickness', BASE_DEFAULTS["tt"]), # ТЕПЕРЬ ДОСТУПНО ДЛЯ ВВОДА!
-        make_input('input-density', 'Tablet Density', BASE_DEFAULTS["density"], step=0.01, min_value=0.01, debounce=True),
-        make_input('input-weight', 'Tablet Weight', None, step=0.01, min_value=0.0, debounce=True),
+        make_input('input-land', 'Land, mm', BASE_DEFAULTS["land"]),
+        make_input('input-hb', 'Belly Band, mm', BASE_DEFAULTS["hb"]),
+        make_input('input-tt', 'Tablet Thickness, mm', BASE_DEFAULTS["tt"]), # ТЕПЕРЬ ДОСТУПНО ДЛЯ ВВОДА!
+        make_input('input-density', 'Tablet Density, mg/mm³', BASE_DEFAULTS["density"], step=0.01, min_value=0.01, debounce=True),
+        make_input('input-weight', 'Tablet Weight, mg', None, step=0.01, min_value=0.0, debounce=True),
 
-        html.H6("Bisect Options", className="fw-bold text-secondary border-bottom pb-1 mt-3"),
+        html.H6("Scoring Options", className="fw-bold text-secondary mt-3"),
         dcc.Dropdown(
             id='bisect-type',
             # ВОТ ЗДЕСЬ ВЕРНУЛИ ВСЕ 4 ОПЦИИ РИСКИ
@@ -293,7 +284,7 @@ def create_sidebar():
                     [
                         html.Div(
                             dbc.Checklist(
-                                options=[{"label": "Cruciform", "value": "on"}],
+                                options=[{"label": "Cross-scored", "value": "on"}],
                                 value=[],
                                 id="bisect-cruciform",
                                 switch=True,
@@ -322,17 +313,17 @@ def create_sidebar():
                     outline=True,
                     color="secondary",
                     size="sm",
-                    className="bisect-edit-btn",
+                    className="outline-soft-btn",
                 ),
             ],
             id="div-bisect-controls-row",
             className="mb-2",
             style={"display": "flex", "alignItems": "center", "justifyContent": "space-between"},
         ),
-        make_input('input-b-width', 'Width', BISECT_DEFAULTS["standard"]["width"]),
-        make_input('input-b-depth', 'Depth', BISECT_DEFAULTS["standard"]["depth"]),
-        make_input('input-b-angle', 'Angle', BISECT_DEFAULTS["standard"]["angle"]),
-        make_input('input-b-ri', 'Radius Inner', BISECT_DEFAULTS["standard"]["ri"]),
+        make_input('input-b-width', 'Width, mm', BISECT_DEFAULTS["standard"]["width"]),
+        make_input('input-b-depth', 'Depth, mm', BISECT_DEFAULTS["standard"]["depth"]),
+        make_input('input-b-angle', 'Angle, °', BISECT_DEFAULTS["standard"]["angle"]),
+        make_input('input-b-ri', 'Radius Inner, mm', BISECT_DEFAULTS["standard"]["ri"]),
 
         html.Hr(),
         dbc.Button("Generate Drawing", id="btn-generate", color="primary", className="w-100 mb-3")

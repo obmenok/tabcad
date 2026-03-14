@@ -56,6 +56,17 @@
   line-height: 1.2 !important;
   border-radius: 0;
   transition: none !important;
+  position: relative;
+}
+
+.plotly-toolbar-group .btn + .btn {
+  margin-left: -1px;
+}
+
+.plotly-toolbar-group .btn:hover,
+.plotly-toolbar-group .btn:focus,
+.plotly-toolbar-group .btn:active {
+  z-index: 1;
 }
 
 .plotly-toolbar-group .btn:hover,
@@ -109,6 +120,42 @@
 .plotly-toolbar-group .btn.active .apollo-icon,
 .plotly-toolbar-group .btn.is-active .apollo-icon {
   color: #212529;
+}
+
+/* Presets button group: allow wrapping to prevent overflow */
+.preset-btn-group {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.preset-btn-group .btn {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.plotly-toolbar-group .btn {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Unified segmented button group behavior (match presets) */
+.segmented-btn-group {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 32px; /* Lock height to prevent any layout shifts during animations */
+  align-items: stretch;
+}
+
+.segmented-btn-group .btn {
+  flex: 1 1 0;
+  white-space: nowrap;
+  height: 32px; /* Ensure button height matches container */
+}
+
+/* Ensure hovered buttons stay on top for proper border rendering without jumping */
+.plotly-toolbar-group .btn:hover {
+  z-index: 1 !important;
 }
 
 /* Стили для маленького Dropdown, чтобы он совпадал по высоте с кнопками (32px) */
@@ -225,6 +272,69 @@
   font-size: 14px;
 }
 
+/* Calculations grid: sync wrap of all columns */
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 10px;
+  row-gap: 2px;
+}
+
+.calc-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  column-gap: 6px;
+  row-gap: 2px;
+  align-items: center;
+}
+
+.calc-label {
+  flex: none;
+}
+
+.calc-value {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.calc-num {
+  display: inline-block;
+  text-align: right;
+  min-width: 9ch;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sync wrapping based on the calculations container width */
+@media (max-width: 1360px) {
+  .calc-row {
+    grid-template-columns: 1fr;
+    row-gap: 2px;
+  }
+
+  .calc-num {
+    text-align: left !important;
+    min-width: 0 !important;
+  }
+
+  .calc-value {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 900px) {
+  .calc-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .calc-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 #plotly-view-menu .dropdown-toggle {
   min-width: 92px !important;
   padding-left: 12px !important;
@@ -261,7 +371,7 @@
   justify-content: center;
 }
 
-.bisect-edit-btn.btn.btn-outline-secondary {
+.outline-soft-btn.btn.btn-outline-secondary {
   height: 30px;
   min-width: 62px;
   padding: 0 12px !important;
@@ -282,12 +392,42 @@
   letter-spacing: normal !important;
   transform: none !important;
   transition: none !important;
+  box-shadow: none !important;
 }
 
-.bisect-edit-btn.btn.btn-outline-secondary:hover,
-.bisect-edit-btn.btn.btn-outline-secondary:focus,
-.bisect-edit-btn.btn.btn-outline-secondary:active,
-.bisect-edit-btn.btn.btn-outline-secondary:focus-visible {
+/* Preset modal: remove header/body/footer dividers */
+.preset-modal .modal-header,
+.preset-modal .modal-body,
+.preset-modal .modal-footer {
+  border: none !important;
+}
+
+.preset-modal .modal-header {
+  border: none !important;
+}
+
+.preset-modal .modal-footer {
+  padding-right: 16px;
+}
+
+.preset-modal .modal-body {
+  padding-right: 16px;
+}
+
+.preset-modal .modal-footer .outline-soft-btn {
+  font-size: 14px;
+}
+
+.preset-modal .modal-header .btn-close {
+  font-size: 12px;
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.outline-soft-btn.btn.btn-outline-secondary:hover,
+.outline-soft-btn.btn.btn-outline-secondary:focus,
+.outline-soft-btn.btn.btn-outline-secondary:active,
+.outline-soft-btn.btn.btn-outline-secondary:focus-visible {
   height: 30px !important;
   min-width: 62px !important;
   padding: 0 12px !important;
@@ -296,7 +436,7 @@
   top: 0 !important;
   border-color: #9aa0a6 !important;
   color: #495057 !important;
-  background-color: #ffffff !important;
+    background-color: #e9ecef !important;
   box-shadow: none !important;
   transform: none !important;
 }

@@ -89,32 +89,33 @@ def _build_calc_html(metrics, density):
     def fmt4(value):
         return f"{float(value):.4f}".replace(".", ",")
 
-    label_style = {"display": "inline-block", "minWidth": "112px"}
+    label_style = {"display": "inline-block", "minWidth": "98px"}
     num_style = {
-        "fontFamily": "Consolas, 'Courier New', monospace",
         "display": "inline-block",
-        "minWidth": "8ch",
+        "minWidth": "9ch",
         "textAlign": "right",
+        "fontVariantNumeric": "tabular-nums",
     }
-    unit_style = {"display": "inline-block", "minWidth": "6ch"}
+    unit_style = {"display": "inline-block"}
 
     def metric_row(label, value, unit, label_min_width="112px"):
         row_label_style = dict(label_style)
         row_label_style["minWidth"] = label_min_width
         return html.Div(
             [
-                html.Span([f"{label}:", "\u00a0"], style=row_label_style),
+                html.Span([f"{label}:", "\u00a0"], className="calc-label", style=row_label_style),
                 html.Span(
                     [
-                        html.Span(fmt4(value), style=num_style),
+                        html.Span(fmt4(value), className="calc-num", style=num_style),
                         html.Span("\u00a0", style={"whiteSpace": "pre"}),
                         html.Span(unit, style=unit_style),
                     ],
+                    className="calc-value",
                     style={"whiteSpace": "nowrap"},
                 ),
             ],
-            className="d-flex flex-column flex-lg-row align-items-start align-items-lg-center mb-1",
-            style={"columnGap": "2px", "rowGap": "1px"},
+            className="calc-row",
+            style={"marginBottom": "4px"},
         )
 
     return html.Div(
@@ -124,39 +125,37 @@ def _build_calc_html(metrics, density):
                 className="fw-bold text-secondary mb-2",
                 style={"fontSize": "1rem"},
             ),
-            dbc.Row(
+            html.Div(
                 [
-                    dbc.Col(
-                        html.Div(
-                            [
-                                metric_row("Die Hole SA", m.get("Die_Hole_SA", 0), "mm\u00b2", label_min_width="98px"),
-                                metric_row("Cup SA", m.get("Cup_SA", 0), "mm\u00b2", label_min_width="98px"),
-                                metric_row("Cup Volume", m.get("Cup_Volume", 0), "mm\u00b3", label_min_width="98px"),
-                            ]
-                        ),
-                        width=4,
+                    html.Div(
+                        [
+                            metric_row("Die Hole SA", m.get("Die_Hole_SA", 0), "mm\u00b2", label_min_width="98px"),
+                            metric_row("Cup SA", m.get("Cup_SA", 0), "mm\u00b2", label_min_width="98px"),
+                            metric_row("Cup Volume", m.get("Cup_Volume", 0), "mm\u00b3", label_min_width="98px"),
+                        ],
+                        className="calc-col",
+                        style={"minWidth": 0},
                     ),
-                    dbc.Col(
-                        html.Div(
-                            [
-                                metric_row("Tablet SA", tablet_sa, "mm\u00b2", label_min_width="118px"),
-                                metric_row("Tablet Volume", tablet_vol, "mm\u00b3", label_min_width="118px"),
-                                metric_row("Tablet Weight", weight_val, "mg", label_min_width="118px"),
-                            ]
-                        ),
-                        width=4,
+                    html.Div(
+                        [
+                            metric_row("Tablet SA", tablet_sa, "mm\u00b2", label_min_width="118px"),
+                            metric_row("Tablet Volume", tablet_vol, "mm\u00b3", label_min_width="118px"),
+                            metric_row("Tablet Weight", weight_val, "mg", label_min_width="118px"),
+                        ],
+                        className="calc-col",
+                        style={"minWidth": 0},
                     ),
-                    dbc.Col(
-                        html.Div(
-                            [
-                                metric_row("Tablet Density", density_val, "mg/mm\u00b3", label_min_width="102px"),
-                                metric_row("Tablet SA/V", tablet_sa_v, "1/mm", label_min_width="102px"),
-                                metric_row("Perimeter", m.get("Perimeter", 0), "mm", label_min_width="102px"),
-                            ]
-                        ),
-                        width=4,
+                    html.Div(
+                        [
+                            metric_row("Tablet Density", density_val, "mg/mm\u00b3", label_min_width="102px"),
+                            metric_row("Tablet SA/V", tablet_sa_v, "1/mm", label_min_width="102px"),
+                            metric_row("Perimeter", m.get("Perimeter", 0), "mm", label_min_width="102px"),
+                        ],
+                        className="calc-col",
+                        style={"minWidth": 0},
                     ),
-                ]
+                ],
+                className="calc-grid",
             ),
         ],
         style={"fontSize": "14px"},

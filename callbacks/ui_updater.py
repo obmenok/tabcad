@@ -348,9 +348,9 @@ def update_ui_visibility(shape, profile):
     show = {"display": "block"}
     hide = {"display": "none"}
 
-    label_w = "Minor Axis"
-    label_rc_min = "Cup Radius"
-    label_rc_maj = "Cup Radius Maj"
+    label_w = "Minor Axis, mm"
+    label_rc_min = "Cup Radius, mm"
+    label_rc_maj = "Cup Radius Major, mm"
     vis_l = show
     vis_re = hide
     vis_rs = hide
@@ -369,7 +369,7 @@ def update_ui_visibility(shape, profile):
     rc_maj_disabled = True
 
     if shape == "round":
-        label_w = "Diameter"
+        label_w = "Diameter, mm"
         vis_l = hide
     elif shape == "capsule":
         vis_mod_switch = show
@@ -401,32 +401,32 @@ def update_ui_visibility(shape, profile):
 
     if profile == "modified_oval":
         rc_min_disabled = True
-        label_rc_min = "Cup Radius"
+        label_rc_min = "Cup Radius, mm"
     if shape == "oval" and profile == "concave":
         rc_min_disabled = True
         rc_maj_disabled = True
-        label_rc_min = "Cup Radius"
-        label_rc_maj = "Cup Radius Maj"
+        label_rc_min = "Cup Radius, mm"
+        label_rc_maj = "Cup Radius Major, mm"
     if shape == "oval" and profile == "cbe":
         # User requirement list: minor cup radius locked, major cup radius editable.
         rc_min_disabled = True
         rc_maj_disabled = False
-        label_rc_min = "Cup Radius Min"
-        label_rc_maj = "Cup Radius Maj"
+        label_rc_min = "Cup Radius Minor, mm"
+        label_rc_maj = "Cup Radius Major, mm"
     if shape == "oval" and profile in ("ffre", "ffbe"):
         rc_min_disabled = True
         rc_maj_disabled = True
-        label_rc_min = "Cup Radius"
+        label_rc_min = "Cup Radius, mm"
     if shape == "oval" and profile == "compound":
         rc_min_disabled = True
         rc_maj_disabled = True
-        label_rc_min = "Cup Radius"
+        label_rc_min = "Cup Radius, mm"
     if (shape == "round" and profile in ("ffre", "ffbe")) or (shape == "capsule" and profile in ("ffre", "ffbe")):
         rc_min_disabled = True
-        label_rc_min = "Cup Radius"
+        label_rc_min = "Cup Radius, mm"
 
     if shape in ("round", "capsule") and profile in ("concave", "cbe", "compound", "ffre", "ffbe"):
-        label_rc_min = "Cup Radius"
+        label_rc_min = "Cup Radius, mm"
     if shape == "round" and profile in ("concave", "cbe"):
         rc_min_disabled = False
     if shape == "round" and profile == "compound":
