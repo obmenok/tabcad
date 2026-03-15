@@ -12,7 +12,7 @@ from matplotlib.patches import PathPatch
 
 from core.engine import get_1d_z_engine, get_compound_profile
 
-DIM_LINE_WIDTH, C_TEXT, ARROW_LENGTH = 0.6, "#9467bd", 10.0
+DIM_LINE_WIDTH, C_TEXT, ARROW_LENGTH = 0.6, "#000000", 10.0
 ARR_STYLE_DOUBLE = "<|-|>,head_length=1,head_width=0.175"
 ARR_STYLE_SINGLE = "-|>,head_length=1,head_width=0.175"
 
@@ -273,7 +273,7 @@ def apply_1d_groove(x_1d, z_surf, params, edge_rad):
     return np.minimum(z_surf, z_g)
 
 
-def render_tablet(mesh_data, params):
+def render_tablet(mesh_data, params, dpi=120):
     shape, is_modified, w_val, l_val, land, re, rs = _shape_meta(params)
     hb = p_get(params, "Hb", 2.54)
     dc = p_get(params, "Dc", 1.5)
@@ -856,6 +856,6 @@ def render_tablet(mesh_data, params):
 
     buf = BytesIO()
     plt.tight_layout()
-    plt.savefig(buf, format="png", bbox_inches="tight", dpi=120)
+    plt.savefig(buf, format="png", bbox_inches="tight", dpi=dpi)
     plt.close(fig)
     return f"data:image/png;base64,{base64.b64encode(buf.getbuffer()).decode('ascii')}"

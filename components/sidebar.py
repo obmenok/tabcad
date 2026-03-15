@@ -335,5 +335,7 @@ def create_sidebar():
         make_input('input-b-ri', 'Radius Inner, mm', BISECT_DEFAULTS["standard"]["ri"]),
 
         html.Hr(),
-        dbc.Button("Generate Drawing", id="btn-generate", color="primary", className="w-100 mb-3")
+        dbc.Button("Generate Drawing", id="btn-generate", color="primary", className="w-100 mb-2"),
+        dbc.Button("PDF Export", id="export-pdf-btn", color="success", className="w-100 mb-3"),
+        dcc.Download(id="download-pdf")
     ])

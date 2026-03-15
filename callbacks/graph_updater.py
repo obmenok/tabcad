@@ -5,7 +5,152 @@ from core.engine import generate_mesh
 from core.renderer import render_tablet
 from core.renderer_3d import render_tablet_3d
 from core.stl_exporter import generate_tablet_stl
+from core.pdf_generator import TabletPDFGenerator
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
+
+
+@callback(
+    Output("download-pdf", "data"),
+    Input("export-pdf-btn", "n_clicks"),
+    [
+        State("shape-dropdown", "value"),
+        State("profile-dropdown", "value"),
+        State("modified-switch", "value"),
+        State("input-w", "value"),
+        State("input-l", "value"),
+        State("input-re", "value"),
+        State("input-rs", "value"),
+        State("input-dc", "value"),
+        State("input-rc-min", "value"),
+        State("input-rc-maj", "value"),
+        State("input-land", "value"),
+        State("input-hb", "value"),
+        State("input-tt", "value"),
+        State("input-bev-d", "value"),
+        State("input-bev-a", "value"),
+        State("input-r-edge", "value"),
+        State("input-blend-r", "value"),
+        State("input-r-maj-maj", "value"),
+        State("input-r-maj-min", "value"),
+        State("input-r-min-maj", "value"),
+        State("input-r-min-min", "value"),
+        State("bisect-type", "value"),
+        State("input-b-width", "value"),
+        State("input-b-depth", "value"),
+        State("input-b-angle", "value"),
+        State("input-b-ri", "value"),
+        State("bisect-cruciform", "value"),
+        State("bisect-double-sided", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def export_pdf_callback(
+    n_clicks,
+    shape,
+    profile,
+    is_mod,
+    w,
+    l,
+    re,
+    rs,
+    dc,
+    rc_min,
+    rc_maj,
+    land,
+    hb,
+    tt,
+    bev_d,
+    bev_a,
+    r_edge,
+    blend_r,
+    r_maj_maj,
+    r_maj_min,
+    r_min_maj,
+    r_min_min,
+    b_type,
+    b_width,
+    b_depth,
+    b_angle,
+    b_ri,
+    b_cruciform,
+    b_double_sided,
+):
+    if not n_clicks:
+        return dash.no_update
+
+    params = _build_params(
+        shape,
+        profile,
+        is_mod,
+        w,
+        l,
+        re,
+        rs,
+        dc,
+        rc_min,
+        rc_maj,
+        land,
+        hb,
+        tt,
+        bev_d,
+        bev_a,
+        r_edge,
+        blend_r,
+        r_maj_maj,
+        r_maj_min,
+        r_min_maj,
+        r_min_min,
+        b_type,
+        b_width,
+        b_depth,
+        b_angle,
+        b_ri,
+        b_cruciform,
+        b_double_sided,
+    )
+
+    mesh_data = generate_mesh(params)
+    metrics = mesh_data.get("metrics", {})
+    
+    # Generate high-res 2D drawing for PDF with SHADING enabled
+    params_2d = dict(params)
+    params_2d["render_2d_shaded"] = True
+    drawing_2d_b64 = render_tablet(mesh_data, params_2d, dpi=300)
+    
+    # Capture 3D view for PDF (Isometric only)
+    import base64
+    views_3d = []
+    for preset in ["Isometric"]:
+        p_3d = dict(params)
+        p_3d["view_preset"] = preset.lower()
+        p_3d["render_mode"] = "shaded"
+        p_3d["show_bbox"] = False
+        fig_3d = render_tablet_3d(mesh_data, p_3d)
+        
+        # Absolute clean layout for export
+        fig_3d.update_layout(
+            paper_bgcolor="white",
+            plot_bgcolor="white",
+            scene=dict(
+                xaxis=dict(visible=False),
+                yaxis=dict(visible=False),
+                zaxis=dict(visible=False)
+            )
+        )
+        img_bytes = fig_3d.to_image(format="png", width=500, height=500)
+        b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
+        views_3d.append((b64, preset))
+
+    # Generate PDF
+    pdf_filename = f"tablet_specification_{shape}_{profile}.pdf"
+    gen = TabletPDFGenerator(pdf_filename, params, metrics, drawing_2d_b64=drawing_2d_b64, views_3d=views_3d)
+    gen.generate()
+    
+    # Send file to user and then cleanup
+    data = dcc.send_file(pdf_filename)
+    # Note: We can't easily delete the file right here because send_file needs it.
+    # But for now, this is acceptable.
+    return data
 
 
 def _build_params(
