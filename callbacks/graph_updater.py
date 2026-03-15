@@ -141,15 +141,26 @@ def export_pdf_callback(
         b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
         views_3d.append((b64, preset))
 
-    # Generate PDF
-    pdf_filename = f"tablet_specification_{shape}_{profile}.pdf"
-    gen = TabletPDFGenerator(pdf_filename, params, metrics, drawing_2d_b64=drawing_2d_b64, views_3d=views_3d)
+    # Generate PDF in a temporary file
+    import tempfile
+    import os
+    
+    # We create a temporary file and close it immediately so PDFGenerator can open it
+    fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix=f"tablet_specification_{shape}_{profile}_")
+    os.close(fd)
+    
+    gen = TabletPDFGenerator(temp_pdf_path, params, metrics, drawing_2d_b64=drawing_2d_b64, views_3d=views_3d)
     gen.generate()
     
-    # Send file to user and then cleanup
-    data = dcc.send_file(pdf_filename)
-    # Note: We can't easily delete the file right here because send_file needs it.
-    # But for now, this is acceptable.
+    # Define the filename the user will see when downloading
+    download_name = f"tablet_specification_{shape}_{profile}.pdf"
+    
+    # Send file to user
+    data = dcc.send_file(temp_pdf_path, filename=download_name)
+    
+    # Note: dcc.send_file will read the file. Dash does not currently have a built-in 
+    # automatic cleanup for files sent via send_file, but storing them in the OS temp directory 
+    # means the OS will clean them up periodically, keeping our project root clean.
     return data
 
 
