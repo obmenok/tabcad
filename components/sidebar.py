@@ -228,7 +228,7 @@ def create_sidebar():
 
         html.Div(
             [
-                html.H6("Dimensions", className="fw-bold text-secondary mb-0"),
+                html.Label("Dimensions", className="fw-bold mb-0"),
                 dbc.Button(
                     "Constraints",
                     id="constraints-open-btn",
@@ -266,17 +266,26 @@ def create_sidebar():
         make_input('input-density', 'Tablet Density, mg/mm³', BASE_DEFAULTS["density"], step=0.01, min_value=0.01, debounce=True),
         make_input('input-weight', 'Tablet Weight, mg', None, step=0.01, min_value=0.0, debounce=True),
 
-        html.H6("Scoring Options", className="fw-bold text-secondary mt-3"),
+        html.Label("Scoring Options", className="fw-bold mt-3 mb-1"),
+        dbc.ButtonGroup(
+            [
+                dbc.Button("None", id="bisect-btn-none", color="light", class_name="plotly-toolbar-btn", title="None"),
+                dbc.Button("Std", id="bisect-btn-standard", color="light", class_name="plotly-toolbar-btn", title="Standard"),
+                dbc.Button("Cut", id="bisect-btn-cut", color="light", class_name="plotly-toolbar-btn", title="Cut Through"),
+                dbc.Button("Decr", id="bisect-btn-dec", color="light", class_name="plotly-toolbar-btn", title="Decreasing"),
+            ],
+            size="sm",
+            className="plotly-toolbar-group segmented-btn-group bisect-type-group mb-2",
+        ),
         dcc.Dropdown(
             id='bisect-type',
-            # ВОТ ЗДЕСЬ ВЕРНУЛИ ВСЕ 4 ОПЦИИ РИСКИ
             options=[
                 {'label': 'None', 'value': 'none'}, 
                 {'label': 'Standard', 'value': 'standard'},
                 {'label': 'Cut Through', 'value': 'cut_through'},
                 {'label': 'Decreasing', 'value': 'decreasing'}
             ],
-            value='standard', clearable=False, className="mb-2"
+            value='standard', clearable=False, style={'display': 'none'}
         ),
         html.Div(
             [

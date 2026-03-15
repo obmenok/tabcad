@@ -11,19 +11,6 @@ def create_viewer():
                         html.Div(
                             [
                                 html.Div(
-                                    id="calc-output",
-                                    className="py-2 px-3 bg-light border rounded h-100",
-                                    style={"minHeight": "80px"},
-                                )
-                            ],
-                            className="h-100",
-                        ),
-                        width=9,
-                    ),
-                    dbc.Col(
-                        html.Div(
-                            [
-                                html.Div(
                                     "Saved Presets",
                                     className="fw-bold text-secondary mb-2",
                                     style={"fontSize": "1rem"},
@@ -55,6 +42,19 @@ def create_viewer():
                             style={"minHeight": "80px", "overflow": "visible", "position": "relative", "zIndex": 6000},
                         ),
                         width=3,
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.Div(
+                                    id="calc-output",
+                                    className="py-2 px-3 bg-light border rounded h-100",
+                                    style={"minHeight": "80px"},
+                                )
+                            ],
+                            className="h-100",
+                        ),
+                        width=9,
                     ),
                 ],
                 className="g-2 mb-3",

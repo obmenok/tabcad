@@ -245,6 +245,71 @@ def update_bisect_options(profile, current_type, is_loading):
 
 
 @callback(
+    Output("bisect-type", "value", allow_duplicate=True),
+    [
+        Input("bisect-btn-none", "n_clicks"),
+        Input("bisect-btn-standard", "n_clicks"),
+        Input("bisect-btn-cut", "n_clicks"),
+        Input("bisect-btn-dec", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def set_bisect_type_from_buttons(*_):
+    trig = ctx.triggered_id
+    mapping = {
+        "bisect-btn-none": "none",
+        "bisect-btn-standard": "standard",
+        "bisect-btn-cut": "cut_through",
+        "bisect-btn-dec": "decreasing",
+    }
+    return mapping.get(trig, dash.no_update)
+
+
+@callback(
+    [
+        Output("bisect-btn-none", "style"),
+        Output("bisect-btn-standard", "style"),
+        Output("bisect-btn-cut", "style"),
+        Output("bisect-btn-dec", "style"),
+        Output("bisect-btn-none", "active"),
+        Output("bisect-btn-standard", "active"),
+        Output("bisect-btn-cut", "active"),
+        Output("bisect-btn-dec", "active"),
+    ],
+    [Input("profile-dropdown", "value"), Input("bisect-type", "value")],
+)
+def sync_bisect_buttons(profile, bisect_type):
+    options = _bisect_options(profile)
+    ordered = [o["value"] for o in options]
+    allowed = set(ordered)
+    first_visible = ordered[0] if ordered else None
+    last_visible = ordered[-1] if ordered else None
+
+    results = []
+    # Styles
+    for val in ["none", "standard", "cut_through", "decreasing"]:
+        if val not in allowed:
+            results.append({"display": "none"})
+        else:
+            style = {}
+            if val == first_visible:
+                style.update({"borderTopLeftRadius": "6px", "borderBottomLeftRadius": "6px"})
+            else:
+                style.update({"borderTopLeftRadius": "0", "borderBottomLeftRadius": "0"})
+            if val == last_visible:
+                style.update({"borderTopRightRadius": "6px", "borderBottomRightRadius": "6px"})
+            else:
+                style.update({"borderTopRightRadius": "0", "borderBottomRightRadius": "0"})
+            results.append(style)
+
+    # Active states
+    for val in ["none", "standard", "cut_through", "decreasing"]:
+        results.append(bisect_type == val)
+
+    return results
+
+
+@callback(
     [Output("div-bisect-double-sided", "style"), Output("bisect-double-sided", "value")],
     [Input("shape-dropdown", "value"), Input("bisect-type", "value")],
     [State("bisect-double-sided", "value"), State("is-loading-preset", "data")],
