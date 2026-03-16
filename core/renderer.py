@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Arc
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
+from types import SimpleNamespace
 
 from core.engine import get_1d_z_engine, get_compound_profile
 
@@ -17,9 +18,43 @@ ARR_STYLE_DOUBLE = "<|-|>,head_length=1,head_width=0.175"
 ARR_STYLE_SINGLE = "-|>,head_length=1,head_width=0.175"
 
 
-def p_get(params, key, default):
-    val = params.get(key)
-    return val if val is not None else default
+_REQUIRED_PARAM_KEYS = [
+    "shape",
+    "is_modified",
+    "W",
+    "L",
+    "Re",
+    "Rs",
+    "Land",
+    "Hb",
+    "Dc",
+    "Tt",
+    "profile",
+    "b_type",
+    "b_depth",
+    "b_double_sided",
+    "b_cruciform",
+    "b_angle",
+    "b_Ri",
+    "Bev_A",
+    "Bev_D",
+    "R_edge",
+    "Blend_R",
+    "R_maj_maj",
+    "R_maj_min",
+    "R_min_maj",
+    "R_min_min",
+    "Rc_min",
+    "Rc_maj",
+    "render_2d_shaded",
+]
+
+
+def _validate_params(params):
+    missing = [k for k in _REQUIRED_PARAM_KEYS if k not in params or params[k] is None]
+    if missing:
+        raise ValueError(f"Отсутствует параметр(ы): {', '.join(missing)}")
+    return SimpleNamespace(**params)
 
 
 def _draw_shaded_polygon(ax, x_poly, y_poly, base_rgb=(0.86, 0.78, 0.73), alpha=1.0, rotate_90=False):
@@ -194,22 +229,22 @@ def get_oval_contour(l_val, w_val, re, rs, density=120):
     return x, y
 
 
-def _shape_meta(params):
-    shape = p_get(params, "shape", "capsule")
-    is_modified = bool(p_get(params, "is_modified", False))
-    w_val = max(0.1, p_get(params, "W", 9.2))
-    l_val = max(0.1, p_get(params, "L", 18.3))
+def _shape_meta(cfg):
+    shape = cfg.shape
+    is_modified = bool(cfg.is_modified)
+    w_val = max(0.1, cfg.W)
+    l_val = max(0.1, cfg.L)
     if shape == "round":
         l_val = w_val
     if l_val < w_val:
         l_val = w_val
-    land = max(0.0, p_get(params, "Land", 0.08))
-    re = min(max(0.01, p_get(params, "Re", w_val / 2 - 0.01)), w_val / 2 - 0.01)
-    rs = max(l_val / 2 + 0.01, p_get(params, "Rs", 15.0))
+    land = max(0.0, cfg.Land)
+    re = min(max(0.01, cfg.Re), w_val / 2 - 0.01)
+    rs = max(l_val / 2 + 0.01, cfg.Rs)
     return shape, is_modified, w_val, l_val, land, re, rs
 
 
-def _major_profile_x(x_1d, params, shape, is_modified, l_val, w_val, land, dc):
+def _major_profile_x(x_1d, params, cfg, shape, is_modified, l_val, w_val, land, dc):
     if shape == "round":
         span = max(0.001, w_val / 2 - land)
         return get_1d_z_engine(np.abs(x_1d), params, span, dc)
@@ -219,33 +254,33 @@ def _major_profile_x(x_1d, params, shape, is_modified, l_val, w_val, land, dc):
         rho = np.maximum(0, np.abs(x_1d) - l_flat / 2)
         return get_1d_z_engine(rho, params, span, dc)
     span = max(0.001, l_val / 2 - land)
-    if shape == "oval" and p_get(params, "profile", "concave") == "concave":
+    if shape == "oval" and cfg.profile == "concave":
         # For oval concave, major side view must use major cup radius from source logic.
         params_major = dict(params)
-        params_major["Rc_min"] = p_get(params, "Rc_maj", p_get(params, "Rc_min", 8.8))
+        params_major["Rc_min"] = cfg.Rc_maj
         return get_1d_z_engine(np.abs(x_1d), params_major, span, dc)
     return get_1d_z_engine(np.abs(x_1d), params, span, dc)
 
 
-def _minor_profile_y(y_1d, params, w_val, land, dc):
+def _minor_profile_y(y_1d, params, cfg, w_val, land, dc):
     span = max(0.001, w_val / 2 - land)
-    if p_get(params, "shape", "") == "oval" and p_get(params, "profile", "") == "compound":
+    if cfg.shape == "oval" and cfg.profile == "compound":
         return get_compound_profile(
             np.abs(y_1d),
-            p_get(params, "R_min_maj", 12.7),
-            p_get(params, "R_min_min", 3.81),
+            cfg.R_min_maj,
+            cfg.R_min_min,
             dc,
             span,
         )
     return get_1d_z_engine(np.abs(y_1d), params, span, dc)
 
 
-def apply_1d_groove(x_1d, z_surf, params, edge_rad):
-    b_type = p_get(params, "b_type", "none")
-    b_depth = p_get(params, "b_depth", 0.0)
-    b_angle = p_get(params, "b_angle", 90.0)
-    b_ri = p_get(params, "b_Ri", 0.06)
-    dc = p_get(params, "Dc", 1.5)
+def apply_1d_groove(x_1d, z_surf, cfg, edge_rad):
+    b_type = cfg.b_type
+    b_depth = cfg.b_depth
+    b_angle = cfg.b_angle
+    b_ri = cfg.b_Ri
+    dc = cfg.Dc
 
     if b_type == "none" or b_depth <= 0:
         return z_surf
@@ -274,20 +309,21 @@ def apply_1d_groove(x_1d, z_surf, params, edge_rad):
 
 
 def render_tablet(mesh_data, params, dpi=120):
-    shape, is_modified, w_val, l_val, land, re, rs = _shape_meta(params)
-    hb = p_get(params, "Hb", 2.54)
-    dc = p_get(params, "Dc", 1.5)
-    tt = p_get(params, "Tt", hb + 2 * dc)
-    profile = p_get(params, "profile", "concave")
-    render_2d_shaded = bool(p_get(params, "render_2d_shaded", False))
-    b_type = p_get(params, "b_type", "none")
-    b_depth = p_get(params, "b_depth", 0.0)
-    b_double_sided = bool(p_get(params, "b_double_sided", False))
-    b_cruciform = bool(p_get(params, "b_cruciform", False))
-    b_angle = p_get(params, "b_angle", 90.0)
-    b_ri = p_get(params, "b_Ri", 0.06)
-    bev_a = p_get(params, "Bev_A", 40.0)
-    r_edge = p_get(params, "R_edge", 6.35)
+    cfg = _validate_params(params)
+    shape, is_modified, w_val, l_val, land, re, rs = _shape_meta(cfg)
+    hb = cfg.Hb
+    dc = cfg.Dc
+    tt = cfg.Tt
+    profile = cfg.profile
+    render_2d_shaded = bool(cfg.render_2d_shaded)
+    b_type = cfg.b_type
+    b_depth = cfg.b_depth
+    b_double_sided = bool(cfg.b_double_sided)
+    b_cruciform = bool(cfg.b_cruciform)
+    b_angle = cfg.b_angle
+    b_ri = cfg.b_Ri
+    bev_a = cfg.Bev_A
+    r_edge = cfg.R_edge
     x_grid, y_grid = mesh_data["x_grid"], mesh_data["y_grid"]
 
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -312,7 +348,7 @@ def render_tablet(mesh_data, params, dpi=120):
             x_in, y_in = get_circle_contour(r_c)
             ax.plot(x_in + cx_top, y_in + cy_top, "k-", linewidth=0.6)
         if profile == "ffre":
-            r_edge = p_get(params, "R_edge", 6.35)
+            r_edge = cfg.R_edge
             dx_curve = np.sqrt(max(0.0, r_edge**2 - (r_edge - dc) ** 2))
             flat_rad = max(0.0, r_c - dx_curve)
             if flat_rad > 0.05:
@@ -321,8 +357,8 @@ def render_tablet(mesh_data, params, dpi=120):
                     _draw_solid_polygon(ax, x_flat + cx_top, y_flat + cy_top, color="#dec9bd", alpha=0.97, zorder=0.36)
                 ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=0.6)
         elif profile == "ffbe":
-            r_blend = max(0.0, min(p_get(params, "Blend_R", 0.38), dc))
-            alpha_rad = np.radians(p_get(params, "Bev_A", 30.0))
+            r_blend = max(0.0, min(cfg.Blend_R, dc))
+            alpha_rad = np.radians(cfg.Bev_A)
             if 1e-6 < alpha_rad < (np.pi / 2 - 1e-6):
                 tan_a = np.tan(alpha_rad)
                 sin_a = np.sin(alpha_rad)
@@ -345,7 +381,7 @@ def render_tablet(mesh_data, params, dpi=120):
             ax.plot(y_in + cx_top, x_in + cy_top, "k-", linewidth=0.6)
         if profile == "ffre":
             r_c = max(0.01, w_val / 2 - land)
-            r_edge = max(0.0, p_get(params, "R_edge", 6.35))
+            r_edge = max(0.0, cfg.R_edge)
             dx_curve = np.sqrt(max(0.0, r_edge**2 - (r_edge - dc) ** 2))
             r_flat = max(0.0, r_c - dx_curve)
             if r_flat > 0.05:
@@ -357,8 +393,8 @@ def render_tablet(mesh_data, params, dpi=120):
                 ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=0.6)
         elif profile == "ffbe":
             r_c = max(0.01, w_val / 2 - land)
-            r_blend = max(0.0, min(p_get(params, "Blend_R", 0.38), dc))
-            alpha_rad = np.radians(p_get(params, "Bev_A", 30.0))
+            r_blend = max(0.0, min(cfg.Blend_R, dc))
+            alpha_rad = np.radians(cfg.Bev_A)
             if 1e-6 < alpha_rad < (np.pi / 2 - 1e-6):
                 tan_a = np.tan(alpha_rad)
                 sin_a = np.sin(alpha_rad)
@@ -385,7 +421,7 @@ def render_tablet(mesh_data, params, dpi=120):
         l_c_oval = max(0.001, l_val / 2 - land)
         w_c_oval = max(0.001, w_val / 2 - land)
         if profile == "ffre":
-            r_edge_oval = max(0.0, p_get(params, "R_edge", 6.35))
+            r_edge_oval = max(0.0, cfg.R_edge)
             dx_curve = np.sqrt(max(0.0, r_edge_oval**2 - (r_edge_oval - dc) ** 2))
             l_flat_half = max(0.0, l_c_oval - dx_curve)
             w_flat_half = max(0.0, w_c_oval - dx_curve)
@@ -403,8 +439,8 @@ def render_tablet(mesh_data, params, dpi=120):
                     oval_ref_flat_side = 2 * l_flat_half
                     oval_ref_flat_front = 2 * w_flat_half
         elif profile == "ffbe":
-            r_blend_oval = max(0.0, min(p_get(params, "Blend_R", 0.38), dc))
-            alpha_oval = np.radians(p_get(params, "Bev_A", 30.0))
+            r_blend_oval = max(0.0, min(cfg.Blend_R, dc))
+            alpha_oval = np.radians(cfg.Bev_A)
             if 1e-6 < alpha_oval < (np.pi / 2 - 1e-6):
                 tan_oval = np.tan(alpha_oval)
                 sin_oval = np.sin(alpha_oval)
@@ -510,9 +546,9 @@ def render_tablet(mesh_data, params, dpi=120):
         span = max(0.001, l_val / 2 - land)
         l_side = l_val
     x_maj = np.linspace(-span, span, 400)
-    z_up_maj_base = _major_profile_x(x_maj, params, shape, is_modified, l_val, w_val, land, dc)
-    z_up_maj = apply_1d_groove(x_maj, z_up_maj_base, params, max(0.001, span))
-    z_down_maj = apply_1d_groove(x_maj, z_up_maj_base, params, max(0.001, span)) if b_double_sided else z_up_maj_base
+    z_up_maj_base = _major_profile_x(x_maj, params, cfg, shape, is_modified, l_val, w_val, land, dc)
+    z_up_maj = apply_1d_groove(x_maj, z_up_maj_base, cfg, max(0.001, span))
+    z_down_maj = apply_1d_groove(x_maj, z_up_maj_base, cfg, max(0.001, span)) if b_double_sided else z_up_maj_base
 
     l_prof = np.concatenate(
         [
@@ -554,7 +590,7 @@ def render_tablet(mesh_data, params, dpi=120):
     ax.plot([hb / 2 + cx_side, hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=1.2)
     draw_ext_outside(ax, cx_side + hb / 2, cy_side + l_side / 2, cx_side + hb / 2 + dc, cy_side + l_side / 2, 0, 4, f"{dc:g}\nCup Depth")
     if profile == "cbe":
-        bev_d = p_get(params, "Bev_D", 0.51)
+        bev_d = cfg.Bev_D
         if bev_d > 0:
             draw_ext_outside(ax, cx_side + hb / 2, cy_side + l_side / 2, cx_side + hb / 2 + bev_d, cy_side + l_side / 2, 0, 2, f"{bev_d:g}\nBevel Depth")
     draw_ext_outside(ax, cx_side - hb / 2, cy_side - l_side / 2, cx_side + hb / 2, cy_side - l_side / 2, 0, -4, f"{hb:g}\nBelly Band")
@@ -562,14 +598,14 @@ def render_tablet(mesh_data, params, dpi=120):
         ref_flat_side = l_flat
         if profile == "ffre":
             r_c_caps = max(0.01, w_val / 2 - land)
-            r_edge_caps = max(0.0, p_get(params, "R_edge", 6.35))
+            r_edge_caps = max(0.0, cfg.R_edge)
             dx_curve = np.sqrt(max(0.0, r_edge_caps**2 - (r_edge_caps - dc) ** 2))
             capsule_r_flat = max(0.0, r_c_caps - dx_curve)
             ref_flat_side = l_flat + 2 * capsule_r_flat
         elif profile == "ffbe":
             r_c_caps = max(0.01, w_val / 2 - land)
-            r_blend_caps = max(0.0, min(p_get(params, "Blend_R", 0.38), dc))
-            alpha_caps = np.radians(p_get(params, "Bev_A", 30.0))
+            r_blend_caps = max(0.0, min(cfg.Blend_R, dc))
+            alpha_caps = np.radians(cfg.Bev_A)
             if 1e-6 < alpha_caps < (np.pi / 2 - 1e-6):
                 tan_caps = np.tan(alpha_caps)
                 sin_caps = np.sin(alpha_caps)
@@ -591,14 +627,14 @@ def render_tablet(mesh_data, params, dpi=120):
         )
 
     if shape == "oval" and profile not in ("compound", "modified_oval", "ffbe", "ffre"):
-        rc_maj = p_get(params, "Rc_maj", p_get(params, "Rc_min", 8.8))
+        rc_maj = cfg.Rc_maj
         p_idx = np.argmin(np.abs(x_maj - (-l_side / 4)))
         pt_surf = z_up_maj[p_idx] + hb / 2
         pt_len = x_maj[p_idx]
         draw_pointer(ax, (pt_surf + cx_side, pt_len + cy_side), (pt_surf + cx_side + 4, pt_len + cy_side - l_side / 4), f"{rc_maj:g}\nCup Radius\nMajor")
     elif shape == "oval" and profile in ("modified_oval", "compound"):
-        r_maj_maj = p_get(params, "R_maj_maj", 88.9)
-        r_maj_min = p_get(params, "R_maj_min", 6.35)
+        r_maj_maj = cfg.R_maj_maj
+        r_maj_min = cfg.R_maj_min
         l_c = max(0.001, l_val / 2 - land)
         x_maj_pt = l_c * 0.30
         z_maj_pt = get_compound_profile(np.array([x_maj_pt]), r_maj_maj, r_maj_min, dc, l_c)[0]
@@ -614,7 +650,7 @@ def render_tablet(mesh_data, params, dpi=120):
 
     span_front = max(0.001, w_val / 2 - land)
     y_min_cup = np.linspace(-span_front, span_front, 400)
-    z_up_min = _minor_profile_y(y_min_cup, params, w_val, land, dc)
+    z_up_min = _minor_profile_y(y_min_cup, params, cfg, w_val, land, dc)
     w_prof = np.concatenate(
         [
             [-w_val / 2, -w_val / 2],
@@ -718,11 +754,11 @@ def render_tablet(mesh_data, params, dpi=120):
         )
 
     if profile == "modified_oval" and shape == "oval":
-        rc_min = p_get(params, "Rc_min", 8.8)
+        rc_min = cfg.Rc_min
         draw_pointer(ax, (cx_front, cy_front + tt / 2), (cx_front - w_val / 4, cy_front + tt / 2 + 4), f"{rc_min:g}\nCup Radius\nMinor")
     elif profile == "compound" and shape == "oval":
-        r_min_maj = p_get(params, "R_min_maj", 12.7)
-        r_min_min = p_get(params, "R_min_min", 3.81)
+        r_min_maj = cfg.R_min_maj
+        r_min_min = cfg.R_min_min
         x_min_maj_pt = span_front * 0.10
         z_min_maj_pt = get_compound_profile(np.array([x_min_maj_pt]), r_min_maj, r_min_min, dc, span_front)[0]
         targ_front_maj = (cx_front + x_min_maj_pt, cy_front + hb / 2 + z_min_maj_pt)
@@ -735,8 +771,8 @@ def render_tablet(mesh_data, params, dpi=120):
         txt_front_min = (cx_front - x_min_min_pt - 2.5, cy_front + hb / 2 + z_min_min_pt + 4.5)
         draw_pointer(ax, targ_front_min, txt_front_min, f"{r_min_min:g}\nMinor Minor\nRadius")
     elif profile in ("compound",) and shape == "round":
-        r_maj_maj = p_get(params, "R_maj_maj", 88.9)
-        r_maj_min = p_get(params, "R_maj_min", 6.35)
+        r_maj_maj = cfg.R_maj_maj
+        r_maj_min = cfg.R_maj_min
         x_min_pt = span_front * 0.8
         z_min_pt = get_compound_profile(np.array([x_min_pt]), r_maj_maj, r_maj_min, dc, span_front)[0]
         draw_pointer(ax, (cx_front - x_min_pt, cy_front + hb / 2 + z_min_pt), (cx_front - x_min_pt - w_val / 6, cy_front + hb / 2 + z_min_pt + 5), f"{r_maj_min:g}\nMinor Radius")
@@ -745,8 +781,8 @@ def render_tablet(mesh_data, params, dpi=120):
             z_maj_pt = get_compound_profile(np.array([x_maj_pt]), r_maj_maj, r_maj_min, dc, span_front)[0]
             draw_pointer(ax, (cx_front + x_maj_pt, cy_front + hb / 2 + z_maj_pt), (cx_front + x_maj_pt + 0.5, cy_front + hb / 2 + z_maj_pt + 5), f"{r_maj_maj:g}\nMajor Radius")
     elif profile == "ffbe":
-        r_blend = max(0.0, min(p_get(params, "Blend_R", 0.38), dc))
-        alpha_rad = np.radians(p_get(params, "Bev_A", 30.0))
+        r_blend = max(0.0, min(cfg.Blend_R, dc))
+        alpha_rad = np.radians(cfg.Bev_A)
         if r_blend > 0 and 1e-6 < alpha_rad < (np.pi / 2 - 1e-6):
             tan_a = np.tan(alpha_rad)
             sin_a = np.sin(alpha_rad)
@@ -824,8 +860,8 @@ def render_tablet(mesh_data, params, dpi=120):
     if profile == "ffbe" and shape == "capsule":
         if capsule_r_flat is None:
             r_c_caps = span_front
-            r_blend_caps = max(0.0, min(p_get(params, "Blend_R", 0.38), dc))
-            alpha_caps = np.radians(p_get(params, "Bev_A", 30.0))
+            r_blend_caps = max(0.0, min(cfg.Blend_R, dc))
+            alpha_caps = np.radians(cfg.Bev_A)
             if 1e-6 < alpha_caps < (np.pi / 2 - 1e-6):
                 tan_caps = np.tan(alpha_caps)
                 sin_caps = np.sin(alpha_caps)
@@ -844,7 +880,7 @@ def render_tablet(mesh_data, params, dpi=120):
                 f"{2 * capsule_r_flat:.3f}\nRef. Flat",
             )
     if profile in ("concave", "cbe"):
-        rc_min = p_get(params, "Rc_min", 8.8)
+        rc_min = cfg.Rc_min
         draw_pointer(ax, (cx_front, cy_front + hb / 2 + dc), (cx_front - w_val / 4, cy_front + hb / 2 + dc + 4), f"{rc_min:g}\nCup Radius")
 
     x_min_val, x_max_val = cx_side - tt / 2 - 12, cx_top + w_val / 2 + 15

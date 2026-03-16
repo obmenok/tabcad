@@ -1,4 +1,15 @@
 import os
+import sys
+import hashlib
+
+# Patch for Python 3.8 compatibility with reportlab >= 4.2
+if sys.version_info < (3, 9):
+    _original_md5 = hashlib.md5
+    def _md5_patched(*args, **kwargs):
+        kwargs.pop('usedforsecurity', None)
+        return _original_md5(*args, **kwargs)
+    hashlib.md5 = _md5_patched
+
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
@@ -41,6 +52,13 @@ class TabletPDFGenerator:
         self.top_m = 6 * mm
         self.bot_m = 6 * mm
         self.content_w = self.width - self.left_m - self.right_m
+
+        self._require_params(["shape", "W", "Tt", "density", "Hb", "Dc"])
+
+    def _require_params(self, keys):
+        missing = [k for k in keys if k not in self.params or self.params[k] is None]
+        if missing:
+            raise ValueError(f"Отсутствует параметр(ы): {', '.join(missing)}")
 
     def _line(self, x1, y1, x2, y2, width=0.1):
         self.c.setLineWidth(width * mm)
@@ -95,9 +113,9 @@ class TabletPDFGenerator:
             elif val_align == "center":
                 self.c.drawCentredString(bx + s(cx + cw/2), val_y, value)
         
-        shape = str(self.params.get("shape", "Round")).upper()
-        w_val = float(self.params.get('W', 8.0))
-        tt_val = float(self.params.get('Tt', 4.0))
+        shape = str(self.params["shape"]).upper()
+        w_val = float(self.params["W"])
+        tt_val = float(self.params["Tt"])
         dwg_no = f"PN-{w_val:g}-{tt_val:g}"
         date_str = datetime.now().strftime('%d.%m.%Y')
 
@@ -135,7 +153,7 @@ class TabletPDFGenerator:
         m = self.metrics
         vol = m.get('Tablet_Vol', 0)
         sa = m.get('Tablet_SA', 0)
-        density = float(self.params.get('density', 1.19))
+        density = float(self.params["density"])
         weight = vol * density
         
         data = [
@@ -145,9 +163,9 @@ class TabletPDFGenerator:
             ["Tablet Weight", f"{weight:.2f}", "mg"],
             ["Density", f"{density:.2f}", "mg/mm³"],
             ["Perimeter", f"{m.get('Perimeter', 0):.2f}", "mm"],
-            ["Belly Band (Hb)", f"{float(self.params.get('Hb', 0)):.2f}", "mm"],
-            ["Cup Depth (Dc)", f"{float(self.params.get('Dc', 0)):.2f}", "mm"],
-            ["Total Thickness", f"{float(self.params.get('Tt', 0)):.2f}", "mm"],
+            ["Belly Band (Hb)", f"{float(self.params['Hb']):.2f}", "mm"],
+            ["Cup Depth (Dc)", f"{float(self.params['Dc']):.2f}", "mm"],
+            ["Total Thickness", f"{float(self.params['Tt']):.2f}", "mm"],
         ]
         t = Table(data, colWidths=[45*mm, 25*mm, 15*mm])
         t.setStyle(TableStyle([
@@ -176,31 +194,6 @@ class TabletPDFGenerator:
         # Isometric (Centered in the area)
         offset_x = 20 * mm
         place_v("Isometric", x_start + offset_x, y_start + 10*mm)
-
-    def draw_1to1_contour(self, cx, cy):
-        shape = self.params.get("shape", "round")
-        w = float(self.params.get("W", 8.0))
-        l = float(self.params.get("L", w if shape == "round" else 16.0))
-        
-        self.c.setFont(self.font_name, 7)
-        self.c.drawCentredString(cx, cy + (max(w, l)/2 + 5)*mm, "ACTUAL SCALE (1:1)")
-        
-        self.c.setLineWidth(0.2 * mm)
-        self.c.setStrokeColor(colors.black)
-        
-        if shape == "round":
-            self.c.circle(cx, cy, (w/2)*mm, stroke=1, fill=0)
-        elif shape == "capsule":
-            r, lf = (w/2)*mm, (l-w)*mm
-            p = self.c.beginPath()
-            p.moveTo(cx - lf/2, cy + r); p.lineTo(cx + lf/2, cy + r)
-            p.arc(cx + lf/2 - r, cy - r, cx + lf/2 + r, cy + r, 90, -180)
-            p.lineTo(cx - lf/2, cy - r)
-            p.arc(cx - lf/2 - r, cy - r, cx - lf/2 + r, cy + r, 270, -180)
-            p.close()
-            self.c.drawPath(p, stroke=1, fill=0)
-        elif shape == "oval":
-            self.c.ellipse(cx - l/2*mm, cy - w/2*mm, cx + l/2*mm, cy + w/2*mm, stroke=1, fill=0)
 
     def generate(self):
         self.draw_frame()

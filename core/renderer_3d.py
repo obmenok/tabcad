@@ -3,6 +3,35 @@ import plotly.graph_objects as go
 
 from core.domain.shapes import shape_params
 
+_REQUIRED_PARAM_KEYS = [
+    "shape",
+    "profile",
+    "is_modified",
+    "W",
+    "L",
+    "Re",
+    "Rs",
+    "Dc",
+    "Land",
+    "Hb",
+    "render_mode",
+    "show_bbox",
+    "view_preset",
+    "b_type",
+    "b_width",
+    "b_depth",
+    "b_angle",
+    "b_Ri",
+    "b_cruciform",
+    "b_double_sided",
+]
+
+
+def _validate_params(params):
+    missing = [k for k in _REQUIRED_PARAM_KEYS if k not in params or params[k] is None]
+    if missing:
+        raise ValueError(f"Отсутствует параметр(ы): {', '.join(missing)}")
+    return params
 
 def _get_circle_contour(radius, density=220):
     t = np.linspace(0, 2 * np.pi, density)
@@ -250,7 +279,8 @@ def _bbox_lines_trace(bounds):
 
 
 def render_tablet_3d(mesh_data, params):
-    hb = max(0.0, params.get("Hb", 2.54))
+    _validate_params(params)
+    hb = max(0.0, params["Hb"])
     x_grid = mesh_data["x_grid"]
     y_grid = mesh_data["y_grid"]
     z_top_grid = mesh_data["Z_cup_top"]
@@ -281,10 +311,10 @@ def render_tablet_3d(mesh_data, params):
     lighting_top = dict(ambient=0.4, diffuse=0.8, specular=0.3, roughness=0.6, fresnel=0.1)
     lighting_bot = dict(ambient=0.7, diffuse=0.4, specular=0.1, roughness=0.8, fresnel=0.2)
 
-    render_mode = (params.get("render_mode", "shaded") or "shaded").lower()
-    show_bbox = bool(params.get("show_bbox", False))
-    view_preset = params.get("view_preset", "isometric")
-    b_double_sided = bool(params.get("b_double_sided", False))
+    render_mode = (params["render_mode"] or "shaded").lower()
+    show_bbox = bool(params["show_bbox"])
+    view_preset = params["view_preset"]
+    b_double_sided = bool(params["b_double_sided"])
     top_opacity, bottom_opacity, band_opacity = 1.0, 1.0, 1.0
     hide_surface = False
     if render_mode == "transparent":
@@ -336,9 +366,9 @@ def render_tablet_3d(mesh_data, params):
         add_edge(xi, yi, z_bot_i - eps, width=2)
 
         # 2.1) FFBE: edge of the upper flat cup lid (Ref. Flat).
-        profile_name = (params.get("profile", "") or "").lower()
+        profile_name = (params["profile"] or "").lower()
         if profile_name in ("ffbe", "ffre"):
-            dc = max(0.0, float(params.get("Dc", 0.0) or 0.0))
+            dc = max(0.0, float(params["Dc"]))
             if dc > 1e-6:
                 lvl = max(0.0, dc - max(1e-4, dc * 1e-3))
                 z_top_mask = np.where(mesh_data["mask_cup"], z_top_grid, np.nan)
@@ -386,8 +416,8 @@ def render_tablet_3d(mesh_data, params):
                 add_edge(sx, sy, sbz, width=2)
 
         # 4) Inner tangent line of groove corner radius
-        b_type = (params.get("b_type", "none") or "none").lower()
-        b_depth = float(params.get("b_depth", 0.0) or 0.0)
+        b_type = (params["b_type"] or "none").lower()
+        b_depth = float(params["b_depth"])
         z_g_masked = np.where(mask_cup, z_g, np.nan)
         gx0, gy0 = _extract_iso_segments(z_g_masked, x_grid, y_grid, level=0.0)
         if len(gx0) > 0:
@@ -401,12 +431,12 @@ def render_tablet_3d(mesh_data, params):
                 add_edge(gx0, gy0, gbz0, width=2)
 
         if b_type != "none" and b_depth > 0:
-            b_angle = float(params.get("b_angle", 90.0) or 90.0)
-            b_ri = float(params.get("b_Ri", 0.06) or 0.06)
-            b_cruciform = bool(params.get("b_cruciform", False))
+            b_angle = float(params["b_angle"])
+            b_ri = float(params["b_Ri"])
+            b_cruciform = bool(params["b_cruciform"])
             x_ti = b_ri * np.sin(np.radians(b_angle / 2.0))
             if x_ti > 1e-4:
-                shape_name = params.get("shape", "round")
+                shape_name = params["shape"]
                 cut_field = np.abs(mesh_data["Y"]) if shape_name == "round" else np.abs(mesh_data["X"])
                 # Draw inner groove radius/vee transition only where groove is actually visible.
                 ti_field = np.where(groove_visible, cut_field - x_ti, np.nan)

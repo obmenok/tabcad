@@ -78,90 +78,94 @@ def export_pdf_callback(
     if not n_clicks:
         return dash.no_update
 
-    params = _build_params(
-        shape,
-        profile,
-        is_mod,
-        w,
-        l,
-        re,
-        rs,
-        dc,
-        rc_min,
-        rc_maj,
-        land,
-        hb,
-        tt,
-        bev_d,
-        bev_a,
-        r_edge,
-        blend_r,
-        r_maj_maj,
-        r_maj_min,
-        r_min_maj,
-        r_min_min,
-        b_type,
-        b_width,
-        b_depth,
-        b_angle,
-        b_ri,
-        b_cruciform,
-        b_double_sided,
-    )
-
-    mesh_data = generate_mesh(params)
-    metrics = mesh_data.get("metrics", {})
-    
-    # Generate high-res 2D drawing for PDF with SHADING enabled
-    params_2d = dict(params)
-    params_2d["render_2d_shaded"] = True
-    drawing_2d_b64 = render_tablet(mesh_data, params_2d, dpi=300)
-    
-    # Capture 3D view for PDF (Isometric only)
-    import base64
-    views_3d = []
-    for preset in ["Isometric"]:
-        p_3d = dict(params)
-        p_3d["view_preset"] = preset.lower()
-        p_3d["render_mode"] = "shaded"
-        p_3d["show_bbox"] = False
-        fig_3d = render_tablet_3d(mesh_data, p_3d)
-        
-        # Absolute clean layout for export
-        fig_3d.update_layout(
-            paper_bgcolor="white",
-            plot_bgcolor="white",
-            scene=dict(
-                xaxis=dict(visible=False),
-                yaxis=dict(visible=False),
-                zaxis=dict(visible=False)
-            )
+    try:
+        params = _build_params(
+            shape,
+            profile,
+            is_mod,
+            w,
+            l,
+            re,
+            rs,
+            dc,
+            rc_min,
+            rc_maj,
+            land,
+            hb,
+            tt,
+            bev_d,
+            bev_a,
+            r_edge,
+            blend_r,
+            r_maj_maj,
+            r_maj_min,
+            r_min_maj,
+            r_min_min,
+            b_type,
+            b_width,
+            b_depth,
+            b_angle,
+            b_ri,
+            b_cruciform,
+            b_double_sided,
         )
-        img_bytes = fig_3d.to_image(format="png", width=500, height=500)
-        b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
-        views_3d.append((b64, preset))
 
-    # Generate PDF in a temporary file
-    import tempfile
-    import os
-    
-    # We create a temporary file and close it immediately so PDFGenerator can open it
-    fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix=f"tablet_specification_{shape}_{profile}_")
-    os.close(fd)
-    
-    gen = TabletPDFGenerator(temp_pdf_path, params, metrics, drawing_2d_b64=drawing_2d_b64, views_3d=views_3d)
-    gen.generate()
-    
-    # Define the filename the user will see when downloading
-    download_name = f"tablet_specification_{shape}_{profile}.pdf"
-    
-    # Send file to user
-    data = dcc.send_file(temp_pdf_path, filename=download_name)
-    
-    # Note: dcc.send_file will read the file. Dash does not currently have a built-in 
-    # automatic cleanup for files sent via send_file, but storing them in the OS temp directory 
-    # means the OS will clean them up periodically, keeping our project root clean.
-    return data
+        mesh_data = generate_mesh(params)
+        metrics = mesh_data.get("metrics", {})
+
+        # Generate high-res 2D drawing for PDF with SHADING enabled
+        params_2d = dict(params)
+        params_2d["render_2d_shaded"] = True
+        drawing_2d_b64 = render_tablet(mesh_data, params_2d, dpi=300)
+
+        # Capture 3D view for PDF (Isometric only)
+        import base64
+        views_3d = []
+        for preset in ["Isometric"]:
+            p_3d = dict(params)
+            p_3d["view_preset"] = preset.lower()
+            p_3d["render_mode"] = "shaded"
+            p_3d["show_bbox"] = False
+            fig_3d = render_tablet_3d(mesh_data, p_3d)
+
+            # Absolute clean layout for export
+            fig_3d.update_layout(
+                paper_bgcolor="white",
+                plot_bgcolor="white",
+                scene=dict(
+                    xaxis=dict(visible=False),
+                    yaxis=dict(visible=False),
+                    zaxis=dict(visible=False)
+                )
+            )
+            img_bytes = fig_3d.to_image(format="png", width=500, height=500)
+            b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
+            views_3d.append((b64, preset))
+
+        # Generate PDF in a temporary file
+        import tempfile
+        import os
+
+        # We create a temporary file and close it immediately so PDFGenerator can open it
+        fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix=f"tablet_specification_{shape}_{profile}_")
+        os.close(fd)
+
+        gen = TabletPDFGenerator(temp_pdf_path, params, metrics, drawing_2d_b64=drawing_2d_b64, views_3d=views_3d)
+        gen.generate()
+
+        # Define the filename the user will see when downloading
+        download_name = f"tablet_specification_{shape}_{profile}.pdf"
+
+        # Send file to user
+        data = dcc.send_file(temp_pdf_path, filename=download_name)
+
+        # Note: dcc.send_file will read the file. Dash does not currently have a built-in 
+        # automatic cleanup for files sent via send_file, but storing them in the OS temp directory 
+        # means the OS will clean them up periodically, keeping our project root clean.
+        return data
+    except (ValueError, ZeroDivisionError, OverflowError) as e:
+        print(f"Error in export_pdf_callback: {e}")
+        return dash.no_update
 
 
 def _build_params(
@@ -635,39 +639,43 @@ def export_stl_callback(
     if n_clicks is None:
         return dash.no_update
 
-    params = _build_params(
-        shape,
-        profile,
-        is_mod,
-        w,
-        l,
-        re,
-        rs,
-        dc,
-        rc_min,
-        rc_maj,
-        land,
-        hb,
-        tt,
-        bev_d,
-        bev_a,
-        r_edge,
-        blend_r,
-        r_maj_maj,
-        r_maj_min,
-        r_min_maj,
-        r_min_min,
-        b_type,
-        b_width,
-        b_depth,
-        b_angle,
-        b_ri,
-        b_cruciform,
-        b_double_sided,
-    )
+    try:
+        params = _build_params(
+            shape,
+            profile,
+            is_mod,
+            w,
+            l,
+            re,
+            rs,
+            dc,
+            rc_min,
+            rc_maj,
+            land,
+            hb,
+            tt,
+            bev_d,
+            bev_a,
+            r_edge,
+            blend_r,
+            r_maj_maj,
+            r_maj_min,
+            r_min_maj,
+            r_min_min,
+            b_type,
+            b_width,
+            b_depth,
+            b_angle,
+            b_ri,
+            b_cruciform,
+            b_double_sided,
+        )
 
-    mesh_data = generate_mesh(params)
-    stl_bytes = generate_tablet_stl(mesh_data, params)
-    
-    filename = f"tablet_{shape}_{profile}.stl"
-    return dcc.send_bytes(stl_bytes, filename)
+        mesh_data = generate_mesh(params)
+        stl_bytes = generate_tablet_stl(mesh_data, params)
+
+        filename = f"tablet_{shape}_{profile}.stl"
+        return dcc.send_bytes(stl_bytes, filename)
+    except (ValueError, ZeroDivisionError, OverflowError) as e:
+        print(f"Error in export_stl_callback: {e}")
+        return dash.no_update

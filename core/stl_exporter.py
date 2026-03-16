@@ -3,6 +3,11 @@ import numpy as np
 import io
 from core.renderer_3d import _shape_contour, _boundary_radius_from_contour, _interp_bilinear
 
+def _require_params(params, keys):
+    missing = [k for k in keys if k not in params or params[k] is None]
+    if missing:
+        raise ValueError(f"Отсутствует параметр(ы): {', '.join(missing)}")
+
 def write_binary_stl(triangles):
     """
     Writes triangles to a binary STL format.
@@ -61,7 +66,8 @@ def grid_to_triangles(X, Y, Z, flip_normals=False):
     return np.concatenate([t1, t2], axis=0)
 
 def generate_tablet_stl(mesh_data, params):
-    hb = max(0.0, params.get("Hb", 2.54))
+    _require_params(params, ["Hb"])
+    hb = max(0.0, params["Hb"])
     x_grid = mesh_data["x_grid"]
     y_grid = mesh_data["y_grid"]
     z_top_grid = mesh_data["Z_cup_top"]

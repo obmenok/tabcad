@@ -4,9 +4,31 @@ from core.domain.profiles import eval_profile_1d
 from core.domain.shapes import capsule_rho, minor_span, oval_mask, oval_metrics, shape_params
 
 
+def _require_params(params, keys):
+    missing = [k for k in keys if k not in params or params[k] is None]
+    if missing:
+        raise ValueError(f"Отсутствует параметр(ы): {', '.join(missing)}")
+
+
 def build_surface(params, x_grid, y_grid):
+    _require_params(
+        params,
+        [
+            "shape",
+            "profile",
+            "is_modified",
+            "W",
+            "L",
+            "Re",
+            "Rs",
+            "Land",
+            "Dc",
+            "R_min_maj",
+            "R_min_min",
+        ],
+    )
     shape, is_modified, w_val, l_val, land, re, rs = shape_params(params)
-    dc = max(0.0, params.get("Dc", 1.5))
+    dc = max(0.0, params["Dc"])
     x_arr, y_arr = np.meshgrid(x_grid, y_grid)
 
     # === КРУГ ===
@@ -58,7 +80,7 @@ def build_surface(params, x_grid, y_grid):
     l_c = max(0.001, l_val / 2 - land)
     w_c = max(0.001, w_val / 2 - land)
     z = np.zeros_like(x_arr)
-    profile = params.get("profile", "concave")
+    profile = params["profile"]
 
     xi, yi = np.abs(x_arr), np.abs(y_arr)
     
@@ -125,8 +147,8 @@ def build_surface(params, x_grid, y_grid):
 
         params_min = dict(params)
         params_min["profile"] = "compound"
-        params_min["R_maj_maj"] = params.get("R_min_maj", 12.7)
-        params_min["R_maj_min"] = params.get("R_min_min", 3.81)
+        params_min["R_maj_maj"] = params["R_min_maj"]
+        params_min["R_maj_min"] = params["R_min_min"]
         z_w_eq = eval_profile_1d(y_eq, params_min, w_c, dc)
 
         z_blend = z_w_eq * (h_local / max(1e-6, dc))
@@ -167,7 +189,8 @@ def build_surface(params, x_grid, y_grid):
 def compute_bisect_width(params, depth, angle, ri):
     if depth <= 0:
         return 0.0
-    dc = max(0.0, params.get("Dc", 1.5))
+    _require_params(params, ["Dc"])
+    dc = max(0.0, params["Dc"])
     span = minor_span(params)
     x_test = np.linspace(0, span, 2000)
     z_bottom = dc - depth
@@ -194,7 +217,8 @@ def compute_bisect_width(params, depth, angle, ri):
 def compute_bisect_depth(params, target_width, angle, ri):
     if target_width <= 0:
         return 0.0
-    dc = max(0.0, params.get("Dc", 1.5))
+    _require_params(params, ["Dc"])
+    dc = max(0.0, params["Dc"])
     d_min, d_max = 0.0, dc * 2.0
     for _ in range(35):
         d_mid = (d_min + d_max) / 2
@@ -207,8 +231,31 @@ def compute_bisect_depth(params, target_width, angle, ri):
 
 
 def generate_mesh(params):
+    _require_params(
+        params,
+        [
+            "shape",
+            "profile",
+            "is_modified",
+            "W",
+            "L",
+            "Re",
+            "Rs",
+            "Land",
+            "Dc",
+            "Hb",
+            "b_type",
+            "b_depth",
+            "b_angle",
+            "b_Ri",
+            "b_cruciform",
+            "b_double_sided",
+            "R_min_maj",
+            "R_min_min",
+        ],
+    )
     shape, _, w_val, l_val, _, _, _ = shape_params(params)
-    dc = max(0.0, params.get("Dc", 1.5))
+    dc = max(0.0, params["Dc"])
 
     mesh_n = 300
     x_grid = np.linspace(-l_val / 2, l_val / 2, mesh_n)
@@ -222,26 +269,26 @@ def generate_mesh(params):
     z_cup_bottom = z.copy()
     z_groove = np.full_like(z, dc * 5.0)
 
-    b_type = params.get("b_type", "none")
-    b_depth = params.get("b_depth", 0.0) or 0.0
-    b_cruciform = bool(params.get("b_cruciform", False))
-    b_double_sided = bool(params.get("b_double_sided", False))
+    b_type = params["b_type"]
+    b_depth = params["b_depth"] or 0.0
+    b_cruciform = bool(params["b_cruciform"])
+    b_double_sided = bool(params["b_double_sided"])
     if b_type != "none" and b_depth > 0:
-        b_angle = params.get("b_angle", 90.0)
-        b_ri = params.get("b_Ri", 0.061)
+        b_angle = params["b_angle"]
+        b_ri = params["b_Ri"]
         alpha = np.radians(b_angle / 2.0)
         d_sharp = b_ri / np.sin(alpha) - b_ri if (b_ri > 0 and alpha > 0) else 0.0
         x_ti = b_ri * np.sin(alpha)
 
         span = minor_span(params)
-        profile = params.get("profile", "concave")
+        profile = params["profile"]
 
         def _groove_from_axes(cut_axis, along_axis):
             if shape == "oval" and profile in ["compound", "compound_cup"]:
                 params_along = dict(params)
                 params_along["profile"] = "compound"
-                params_along["R_maj_maj"] = params.get("R_min_maj", 12.7)
-                params_along["R_maj_min"] = params.get("R_min_min", 3.81)
+                params_along["R_maj_maj"] = params["R_min_maj"]
+                params_along["R_maj_min"] = params["R_min_min"]
                 z_centerline = eval_profile_1d(along_axis, params_along, span, dc)
             else:
                 z_centerline = eval_profile_1d(along_axis, params, span, dc)
@@ -284,7 +331,7 @@ def generate_mesh(params):
     cup_sa_bottom = np.sum(np.sqrt(1 + dzdx_bot**2 + dzdy_bot**2)[mask_cup]) * d_a
 
     land_sa = max(0.0, die_hole_sa - np.sum(mask_cup) * d_a)
-    hb = params.get("Hb", 2.54)
+    hb = params["Hb"]
     
     tablet_sa = perimeter * hb + (cup_sa_top + land_sa) + (cup_sa_bottom + land_sa)
     tablet_vol = die_hole_sa * hb + cup_vol_top + cup_vol_bottom
