@@ -232,6 +232,17 @@ Recommended:
 
 ## Notes
 
+- **Defaults & Params Flow (Single Source of Truth)**  
+  Defaults live only in `core/defaults.py` and are applied in UI/Callbacks. Runtime geometry/render/PDF/STL expects a full `params` dict and fails fast if a required key is missing.
+  Flow:
+  1. `components/sidebar.py` sets initial input values from `core/defaults.py`
+  2. `callbacks/ui_updater.py` adjusts inputs (still using `core/defaults.py`)
+  3. `callbacks/graph_updater.py::_build_params` assembles the final `params` (fills `None` from `core/defaults.py`)
+  4. `core/domain/*`, `core/renderer*.py`, `core/pdf_generator.py`, `core/stl_exporter.py` consume `params` with **no internal defaults**
+
+- **Constraints file (reference helper)**  
+  There is a constraints file used mainly as a reference to visualize parameter limits and relationships. It is only lightly integrated (the constraints viewer is hooked into the UI), and the file itself exists primarily for human inspection due to the complexity/volume of constraints.
+
 - Some legacy/reference files are intentionally kept for parity and auditability.
 - Architecture goal is domain-first single-runtime path after complete parity and regression confidence.
 
@@ -241,4 +252,3 @@ Recommended:
 
 License is not defined yet in this repository.
 Add a `LICENSE` file before external distribution.
-

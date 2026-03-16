@@ -6,7 +6,7 @@ def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None
     step_value = "any" if disabled else step
     return html.Div(
         dbc.InputGroup([
-            dbc.InputGroupText(label, id=f"label-{id}", className="tablet-input-label", style={'width': '50%'}),
+            dbc.InputGroupText(label, id=f"label-{id}", className="tablet-input-label", style={'width': '60%'}),
             dbc.Input(
                 id=id,
                 type='number',
