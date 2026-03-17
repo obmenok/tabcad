@@ -13,7 +13,7 @@ def create_viewer():
                                 html.Div(
                                     id="calc-output",
                                     className="py-2 px-3 bg-light border rounded h-100",
-                                    style={"minHeight": "80px"},
+                                    style={"minHeight": "125px"},
                                 )
                             ],
                             className="h-100",
@@ -38,7 +38,7 @@ def create_viewer():
                                         className="small-dropdown mb-2",
                                         style={"fontSize": "0.85rem"},
                                     ),
-                                    style={"overflow": "visible"},
+                                    style={"overflow": "visible", "height": "40px"},
                                 ),
                                 dbc.ButtonGroup(
                                     [
@@ -52,9 +52,8 @@ def create_viewer():
                                 ),
                             ],
                             className="py-2 px-3 bg-light border rounded h-100",
-                            style={"minHeight": "80px", "overflow": "visible", "position": "relative", "zIndex": 6000},
-                        ),
-                        width=3,
+                            style={"minHeight": "125px", "overflow": "visible", "position": "relative", "zIndex": 6000},
+                            ),                        width=3,
                     ),
                 ],
                 className="g-2 mb-3",

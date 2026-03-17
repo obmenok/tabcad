@@ -406,6 +406,7 @@ def toggle_bisect_edit_fields(b_type, is_open):
         Output("div-input-r-min-min", "style"),
         Output("input-rc-min", "disabled"),
         Output("input-rc-maj", "disabled"),
+        Output("sidebar-container", "style"),
     ],
     [Input("shape-dropdown", "value"), Input("profile-dropdown", "value"), Input("lang-store", "data")],
 )
@@ -413,6 +414,7 @@ def update_ui_visibility(shape, profile, lang):
     from core.i18n import t
     show = {"display": "block"}
     hide = {"display": "none"}
+    reveal_style = {"opacity": "1", "transition": "opacity 0.1s"}
 
     label_w = t("dim.w", lang)
     label_rc_min = t("dim.rc_min", lang)
@@ -513,6 +515,7 @@ def update_ui_visibility(shape, profile, lang):
         vis_r_min_min,
         rc_min_disabled,
         rc_maj_disabled,
+        reveal_style
     )
 
 

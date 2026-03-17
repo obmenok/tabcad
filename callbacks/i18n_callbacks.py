@@ -3,36 +3,44 @@ import dash
 from core.i18n import t
 
 @callback(
-    [Output("lang-store", "data"),
-     Output("btn-lang-en", "color"),
-     Output("btn-lang-ru", "color"),
-     Output("btn-lang-cn", "color")],
+    Output("lang-store", "data"),
     [Input("btn-lang-en", "n_clicks"),
      Input("btn-lang-ru", "n_clicks"),
      Input("btn-lang-cn", "n_clicks")],
     State("lang-store", "data"),
     prevent_initial_call=True
 )
-def update_language(n_en, n_ru, n_cn, current_lang):
+def set_language(n_en, n_ru, n_cn, current_lang):
     if not ctx.triggered_id:
         raise dash.exceptions.PreventUpdate
 
     btn_id = ctx.triggered_id
-    new_lang = current_lang
-
     if btn_id == "btn-lang-en":
-        new_lang = "en"
+        return "en"
     elif btn_id == "btn-lang-ru":
-        new_lang = "ru"
+        return "ru"
     elif btn_id == "btn-lang-cn":
-        new_lang = "cn"
+        return "cn"
+    return current_lang
 
-    # Стилизация кнопок
-    en_color = "primary" if new_lang == "en" else "outline-primary"
-    ru_color = "primary" if new_lang == "ru" else "outline-primary"
-    cn_color = "primary" if new_lang == "cn" else "outline-primary"
-
-    return new_lang, en_color, ru_color, cn_color
+dash.clientside_callback(
+    """
+    function(lang) {
+        const active = "primary";
+        const inactive = "outline-primary";
+        if (!lang) lang = "en";
+        return [
+            lang === "en" ? active : inactive,
+            lang === "ru" ? active : inactive,
+            lang === "cn" ? active : inactive
+        ];
+    }
+    """,
+    [Output("btn-lang-en", "color"),
+     Output("btn-lang-ru", "color"),
+     Output("btn-lang-cn", "color")],
+    Input("lang-store", "data")
+)
 
 @callback(
     [

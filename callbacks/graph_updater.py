@@ -259,19 +259,16 @@ def _build_calc_html(metrics, density, lang="en"):
     }
     unit_style = {"display": "inline-block"}
 
-    def metric_row(label, value, unit, label_min_width="112px"):
-        # Adjust width dynamically based on language
+    def metric_row(label, value, unit, label_min_width="95px"):
+        # Explicit width mapping for each language and column
         if lang == "ru":
-            # Russian texts are generally longer, add buffer
-            try:
-                base_w = int(label_min_width.replace("px", ""))
-                label_min_width = f"{base_w + 50}px"
-            except: pass
+            if label_min_width == "95px": label_min_width = "129px"
+            elif label_min_width == "107px": label_min_width = "130px"
+            elif label_min_width == "99px": label_min_width = "131px"
         elif lang == "cn":
-            # Specific widths for Chinese alignment
-            if label_min_width == "98px": label_min_width = "88px"
-            elif label_min_width == "118px": label_min_width = "88px"
-            elif label_min_width == "102px": label_min_width = "70px"
+            if label_min_width == "95px": label_min_width = "85px"
+            elif label_min_width == "107px": label_min_width = "90px"
+            elif label_min_width == "99px": label_min_width = "65px"
             
         return html.Div(
             [
@@ -301,33 +298,33 @@ def _build_calc_html(metrics, density, lang="en"):
                 [
                     html.Div(
                         [
-                            metric_row(t("calc.die_hole_sa", lang), m.get("Die_Hole_SA", 0), "mm²", label_min_width="98px"),
-                            metric_row(t("calc.cup_sa", lang), m.get("Cup_SA", 0), "mm²", label_min_width="98px"),
-                            metric_row(t("calc.cup_vol", lang), m.get("Cup_Volume", 0), "mm³", label_min_width="98px"),
+                            metric_row(t("calc.die_hole_sa", lang), m.get("Die_Hole_SA", 0), "mm²", label_min_width="95px"),
+                            metric_row(t("calc.cup_sa", lang), m.get("Cup_SA", 0), "mm²", label_min_width="95px"),
+                            metric_row(t("calc.cup_vol", lang), m.get("Cup_Volume", 0), "mm³", label_min_width="95px"),
                         ],
                         className="calc-col",
                         style={"minWidth": 0},
                     ),
                     html.Div(
                         [
-                            metric_row(t("calc.tablet_sa", lang), tablet_sa, "mm²", label_min_width="118px"),
-                            metric_row(t("calc.tablet_vol", lang), tablet_vol, "mm³", label_min_width="118px"),
-                            metric_row(t("calc.tablet_weight", lang), weight_val, "mg", label_min_width="118px"),
+                            metric_row(t("calc.tablet_sa", lang), tablet_sa, "mm²", label_min_width="107px"),
+                            metric_row(t("calc.tablet_vol", lang), tablet_vol, "mm³", label_min_width="107px"),
+                            metric_row(t("calc.tablet_weight", lang), weight_val, "mg", label_min_width="107px"),
                         ],
                         className="calc-col",
                         style={"minWidth": 0},
                     ),
                     html.Div(
                         [
-                            metric_row(t("calc.tablet_density", lang), density_val, "mg/mm³", label_min_width="102px"),
-                            metric_row(t("calc.tablet_sa_v", lang), tablet_sa_v, "1/mm", label_min_width="102px"),
-                            metric_row(t("calc.perimeter", lang), m.get("Perimeter", 0), "mm", label_min_width="102px"),
+                            metric_row(t("calc.tablet_density", lang), density_val, "mg/mm³", label_min_width="99px"),
+                            metric_row(t("calc.tablet_sa_v", lang), tablet_sa_v, "1/mm", label_min_width="99px"),
+                            metric_row(t("calc.perimeter", lang), m.get("Perimeter", 0), "mm", label_min_width="99px"),
                         ],
                         className="calc-col",
                         style={"minWidth": 0},
                     ),
                 ],
-                className="calc-grid",
+                className=f"calc-grid calc-grid-{lang}",
             ),
         ],
         style={"fontSize": "14px"},

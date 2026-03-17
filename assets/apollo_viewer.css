@@ -33,6 +33,10 @@
 .av-i-screenshot::before { content: "\e913"; }
 .av-i-shaded::before { content: "\e95f"; }
 
+#btn-lang-en, #btn-lang-ru, #btn-lang-cn {
+  transition: none !important;
+}
+
 .plotly-toolbar-wrap {
   overflow: visible !important;
   white-space: nowrap;
@@ -307,6 +311,22 @@
 }
 
 /* Sync wrapping based on the calculations container width */
+@media (max-width: 1600px) {
+  .calc-grid-ru .calc-row {
+    grid-template-columns: 1fr;
+    row-gap: 2px;
+  }
+
+  .calc-grid-ru .calc-num {
+    text-align: left !important;
+    min-width: 0 !important;
+  }
+
+  .calc-grid-ru .calc-value {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 1360px) {
   .calc-row {
     grid-template-columns: 1fr;
