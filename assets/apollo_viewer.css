@@ -282,7 +282,7 @@
 
 .calc-row {
   display: grid;
-  grid-template-columns: 100px 1fr;
+  grid-template-columns: var(--label-width, 100px) 1fr;
   column-gap: 6px;
   row-gap: 2px;
   align-items: center;

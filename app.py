@@ -28,6 +28,7 @@ from callbacks import graph_updater
 from callbacks import plotly_ui
 from callbacks import presets
 from callbacks import constraints_viewer
+from callbacks import i18n_callbacks
 
 if __name__ == '__main__':
     app.run(debug=True, port=8051)

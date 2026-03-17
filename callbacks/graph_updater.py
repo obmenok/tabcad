@@ -238,7 +238,8 @@ def _build_params(
     }
 
 
-def _build_calc_html(metrics, density):
+def _build_calc_html(metrics, density, lang="en"):
+    from core.i18n import t
     m = metrics
     tablet_sa = float(m.get("Tablet_SA", 0.0) or 0.0)
     tablet_vol = float(m.get("Tablet_Vol", 0.0) or 0.0)
@@ -259,11 +260,22 @@ def _build_calc_html(metrics, density):
     unit_style = {"display": "inline-block"}
 
     def metric_row(label, value, unit, label_min_width="112px"):
-        row_label_style = dict(label_style)
-        row_label_style["minWidth"] = label_min_width
+        # Adjust width dynamically based on language
+        if lang == "ru":
+            # Russian texts are generally longer, add buffer
+            try:
+                base_w = int(label_min_width.replace("px", ""))
+                label_min_width = f"{base_w + 50}px"
+            except: pass
+        elif lang == "cn":
+            # Specific widths for Chinese alignment
+            if label_min_width == "98px": label_min_width = "88px"
+            elif label_min_width == "118px": label_min_width = "88px"
+            elif label_min_width == "102px": label_min_width = "70px"
+            
         return html.Div(
             [
-                html.Span([f"{label}:", "\u00a0"], className="calc-label", style=row_label_style),
+                html.Span([f"{label}:", "\u00a0"], className="calc-label"),
                 html.Span(
                     [
                         html.Span(fmt4(value), className="calc-num", style=num_style),
@@ -275,13 +287,13 @@ def _build_calc_html(metrics, density):
                 ),
             ],
             className="calc-row",
-            style={"marginBottom": "4px"},
+            style={"--label-width": label_min_width, "marginBottom": "4px"},
         )
 
     return html.Div(
         [
             html.Div(
-                "Calculations",
+                t("calc.title", lang),
                 className="fw-bold text-secondary mb-2",
                 style={"fontSize": "1rem"},
             ),
@@ -289,27 +301,27 @@ def _build_calc_html(metrics, density):
                 [
                     html.Div(
                         [
-                            metric_row("Die Hole SA", m.get("Die_Hole_SA", 0), "mm\u00b2", label_min_width="98px"),
-                            metric_row("Cup SA", m.get("Cup_SA", 0), "mm\u00b2", label_min_width="98px"),
-                            metric_row("Cup Volume", m.get("Cup_Volume", 0), "mm\u00b3", label_min_width="98px"),
+                            metric_row(t("calc.die_hole_sa", lang), m.get("Die_Hole_SA", 0), "mm²", label_min_width="98px"),
+                            metric_row(t("calc.cup_sa", lang), m.get("Cup_SA", 0), "mm²", label_min_width="98px"),
+                            metric_row(t("calc.cup_vol", lang), m.get("Cup_Volume", 0), "mm³", label_min_width="98px"),
                         ],
                         className="calc-col",
                         style={"minWidth": 0},
                     ),
                     html.Div(
                         [
-                            metric_row("Tablet SA", tablet_sa, "mm\u00b2", label_min_width="118px"),
-                            metric_row("Tablet Volume", tablet_vol, "mm\u00b3", label_min_width="118px"),
-                            metric_row("Tablet Weight", weight_val, "mg", label_min_width="118px"),
+                            metric_row(t("calc.tablet_sa", lang), tablet_sa, "mm²", label_min_width="118px"),
+                            metric_row(t("calc.tablet_vol", lang), tablet_vol, "mm³", label_min_width="118px"),
+                            metric_row(t("calc.tablet_weight", lang), weight_val, "mg", label_min_width="118px"),
                         ],
                         className="calc-col",
                         style={"minWidth": 0},
                     ),
                     html.Div(
                         [
-                            metric_row("Tablet Density", density_val, "mg/mm\u00b3", label_min_width="102px"),
-                            metric_row("Tablet SA/V", tablet_sa_v, "1/mm", label_min_width="102px"),
-                            metric_row("Perimeter", m.get("Perimeter", 0), "mm", label_min_width="102px"),
+                            metric_row(t("calc.tablet_density", lang), density_val, "mg/mm³", label_min_width="102px"),
+                            metric_row(t("calc.tablet_sa_v", lang), tablet_sa_v, "1/mm", label_min_width="102px"),
+                            metric_row(t("calc.perimeter", lang), m.get("Perimeter", 0), "mm", label_min_width="102px"),
                         ],
                         className="calc-col",
                         style={"minWidth": 0},
@@ -488,6 +500,7 @@ def generate_graphics(
         Input("bisect-cruciform", "value"),
         Input("bisect-double-sided", "value"),
         Input("input-density", "value"),
+        Input("lang-store", "data"),
     ],
     prevent_initial_call=False,
 )
@@ -521,6 +534,7 @@ def update_calc_panel_live(
     b_cruciform,
     b_double_sided,
     density,
+    lang,
 ):
     if w is None or dc is None:
         return html.Div("Please enter valid dimensions", className="text-danger")
@@ -557,8 +571,9 @@ def update_calc_panel_live(
     )
 
     try:
+        lang = lang or "en"
         mesh_data = generate_mesh(params)
-        return _build_calc_html(mesh_data["metrics"], density)
+        return _build_calc_html(mesh_data["metrics"], density, lang)
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in update_calc_output: {e}")
         return html.Div(

@@ -1,3 +1,4 @@
+import dash
 from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
@@ -26,15 +27,32 @@ def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None
 
 def create_sidebar():
     return html.Div([
+        dcc.Store(id="lang-store", storage_type="local", data="en"),
         dcc.Store(id="bisect-edit-open", data=False),
         dcc.Store(id="is-loading-preset", data=False),
         dcc.Store(id="constraints-data", data=[]),
-        
-        html.H4("TabletCAD Pro", className="text-primary mb-2"),
-        
+
+        dbc.Row(
+            [
+                dbc.Col(html.H4("TabletCAD Pro", className="text-primary mb-0"), width="auto"),
+                dbc.Col(
+                    dbc.ButtonGroup(
+                        [
+                            dbc.Button("EN", id="btn-lang-en", color="primary", size="sm", style={"padding": "2px 6px", "fontSize": "10px"}),
+                            dbc.Button("RU", id="btn-lang-ru", color="outline-primary", size="sm", style={"padding": "2px 6px", "fontSize": "10px"}),
+                            dbc.Button("CN", id="btn-lang-cn", color="outline-primary", size="sm", style={"padding": "2px 6px", "fontSize": "10px"}),
+                        ],
+                    ),
+                    width="auto",
+                    className="ms-auto",
+                ),
+            ],
+            className="mb-3 align-items-center d-flex",
+        ),
+
         dbc.Modal(
             [
-                dbc.ModalHeader(dbc.ModalTitle("Constraints Inspector")),
+                dbc.ModalHeader(dbc.ModalTitle("Constraints Inspector", id="modal-title")),
                 dbc.ModalBody(
                     [
                         dbc.Row(
@@ -126,8 +144,8 @@ def create_sidebar():
             centered=True,
         ),
 
-        
-        html.Label("Tablet Shape", className="fw-bold mt-2 mb-1"),
+
+        html.Label("Tablet Shape", id="label-shape-title", className="fw-bold mt-2 mb-1"),
         dbc.ButtonGroup(
             [
                 dbc.Button("Round", id="shape-round-btn", color="light", class_name="plotly-toolbar-btn active"),
@@ -149,7 +167,7 @@ def create_sidebar():
 
         html.Div(
             [
-                html.Label("Cup Configuration", className="fw-bold m-0 mb-1"),
+                html.Label("Cup Configuration", id="label-cup-title", className="fw-bold m-0 mb-1"),
                 html.Div(
                     dbc.Checklist(
                         options=[{"label": "Modified Shape", "value": True}],
@@ -163,7 +181,8 @@ def create_sidebar():
             ],
             className="mb-1 mt-2",
             style={"display": "flex", "alignItems": "center", "justifyContent": "space-between"},
-        ),        dbc.ButtonGroup(
+        ),
+        dbc.ButtonGroup(
             [
                 dbc.Button(
                     "CON",
@@ -228,7 +247,7 @@ def create_sidebar():
 
         html.Div(
             [
-                html.Label("Dimensions", className="fw-bold mb-0"),
+                html.Label("Dimensions", id="label-dim-title", className="fw-bold mb-0"),
                 dbc.Button(
                     "Constraints",
                     id="constraints-open-btn",
@@ -245,12 +264,11 @@ def create_sidebar():
         make_input('input-l', 'Major Axis, mm', BASE_DEFAULTS["L"]),
         make_input('input-re', 'End Radius, mm', SHAPE_SPECIFIC["oval"]["re"]),
         make_input('input-rs', 'Side Radius, mm', SHAPE_SPECIFIC["oval"]["rs"], min_value=0.0),
-        
+
         make_input('input-dc', 'Cup Depth, mm', BASE_DEFAULTS["dc"]),
-        # Rc делаем справочными (disabled), как в оригинале!
         make_input('input-rc-min', 'Cup Radius, mm', PROFILE_DEFAULTS["concave"]["rc_min"], disabled=True),
         make_input('input-rc-maj', 'Cup Radius Major, mm', PROFILE_DEFAULTS["concave"]["rc_maj"], disabled=True),
-        
+
         make_input('input-r-maj-maj', 'Major Major Radius, mm', PROFILE_DEFAULTS["compound"]["r_maj_maj"]),
         make_input('input-r-maj-min', 'Major Minor Radius, mm', PROFILE_DEFAULTS["compound"]["r_maj_min"]),
         make_input('input-r-min-maj', 'Minor Major Radius, mm', PROFILE_DEFAULTS["compound"]["r_min_maj"]),
@@ -259,14 +277,14 @@ def create_sidebar():
         make_input('input-bev-a', 'Bevel Angle, °', PROFILE_DEFAULTS["cbe"]["bev_a"], step=0.01, max_value=60.0),
         make_input('input-r-edge', 'Radius Edge, mm', PROFILE_DEFAULTS["ffre"]["r_edge"]),
         make_input('input-blend-r', 'Blend Radius, mm', PROFILE_DEFAULTS["ffbe"]["blend_r"]),
-        
+
         make_input('input-land', 'Land, mm', BASE_DEFAULTS["land"]),
         make_input('input-hb', 'Belly Band, mm', BASE_DEFAULTS["hb"]),
-        make_input('input-tt', 'Tablet Thickness, mm', BASE_DEFAULTS["tt"]), # ТЕПЕРЬ ДОСТУПНО ДЛЯ ВВОДА!
+        make_input('input-tt', 'Tablet Thickness, mm', BASE_DEFAULTS["tt"]), 
         make_input('input-density', 'Tablet Density, mg/mm³', BASE_DEFAULTS["density"], step=0.01, min_value=0.01, debounce=True),
         make_input('input-weight', 'Tablet Weight, mg', None, step=0.01, min_value=0.0, debounce=True),
 
-        html.Label("Scoring Options", className="fw-bold mt-3 mb-1"),
+        html.Label("Scoring Options", id="label-scoring-title", className="fw-bold mt-3 mb-1"),
         dbc.ButtonGroup(
             [
                 dbc.Button("None", id="bisect-btn-none", color="light", class_name="plotly-toolbar-btn", title="None"),
