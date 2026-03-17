@@ -41,6 +41,7 @@ from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAP
         State("input-b-ri", "value"),
         State("bisect-cruciform", "value"),
         State("bisect-double-sided", "value"),
+        State("input-density", "value"),
     ],
     prevent_initial_call=True,
 )
@@ -74,6 +75,7 @@ def export_pdf_callback(
     b_ri,
     b_cruciform,
     b_double_sided,
+    density,
 ):
     if not n_clicks:
         return dash.no_update
@@ -108,6 +110,7 @@ def export_pdf_callback(
             b_ri,
             b_cruciform,
             b_double_sided,
+            density=density,
         )
 
         mesh_data = generate_mesh(params)
@@ -197,6 +200,7 @@ def _build_params(
     b_ri,
     b_cruciform,
     b_double_sided,
+    density=None,
     drawing_2d_shaded=False,
     view_preset="isometric",
     show_edges=False,
@@ -216,6 +220,7 @@ def _build_params(
         "Land": land if land is not None else BASE_DEFAULTS["land"],
         "Hb": hb if hb is not None else BASE_DEFAULTS["hb"],
         "Tt": tt if tt is not None else BASE_DEFAULTS["tt"],
+        "density": density if density is not None else BASE_DEFAULTS["density"],
         "Bev_D": bev_d if bev_d is not None else PROFILE_DEFAULTS["cbe"]["bev_d"],
         "Bev_A": bev_a if bev_a is not None else PROFILE_DEFAULTS["cbe"]["bev_a"],
         "R_edge": r_edge if r_edge is not None else PROFILE_DEFAULTS["ffre"]["r_edge"],
