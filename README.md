@@ -230,6 +230,22 @@ Recommended:
 
 ---
 
+## Preset Naming and Saving Logic
+
+The preset system automatically generates names based on the tablet's physical dimensions and features to ensure consistency.
+
+- **Naming Convention:** `TAB - [W]x[L] - [Tt] - [ProfileCode] - [ScoringCode] - [Suffix]`
+  - Example: `TAB-8x16-4,4-O-CON-00`
+- **Suffix Numbering:** Every preset name ends with a two-digit suffix (starting from `-00`). 
+  - When you click **Save As**, the system checks the database for existing presets with the same base name.
+  - If a preset with identical parameters exists, it will use its name.
+  - If parameters differ, it automatically finds the highest existing suffix and increments it (e.g., `-01`, `-02`), ensuring you never accidentally overwrite an existing preset even if the core dimensions are identical.
+- **Save vs. Save As:**
+  - **Save As:** Generates a unique name with a numeric suffix to prevent collision.
+  - **Save:** Overwrites the *currently loaded* preset without changing its name or suffix, allowing for iterative edits.
+
+---
+
 ## Notes
 
 - **Defaults & Params Flow (Single Source of Truth)**  

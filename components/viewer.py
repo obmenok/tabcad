@@ -25,6 +25,7 @@ def create_viewer():
                             [
                                 html.Div(
                                     "Saved Presets",
+                                    id="presets-title",
                                     className="fw-bold text-secondary mb-2",
                                     style={"fontSize": "1rem"},
                                 ),
@@ -42,10 +43,9 @@ def create_viewer():
                                 ),
                                 dbc.ButtonGroup(
                                     [
-                                        dbc.Button("Load", id="preset-load-btn", color="light", class_name="plotly-toolbar-btn"),
                                         dbc.Button("Save", id="preset-save-btn", color="light", class_name="plotly-toolbar-btn"),
                                         dbc.Button("Save\u00a0As", id="preset-save-as-btn", color="light", class_name="plotly-toolbar-btn"),
-                                        dbc.Button("Del", id="preset-delete-btn", color="light", class_name="plotly-toolbar-btn"),
+                                        dbc.Button("Delete", id="preset-delete-btn", color="light", class_name="plotly-toolbar-btn"),
                                     ],
                                     size="sm",
                                     className="plotly-toolbar-group preset-btn-group segmented-btn-group",
@@ -63,7 +63,7 @@ def create_viewer():
             dbc.Modal(
                 [
                     dbc.ModalHeader(
-                        dbc.ModalTitle("Save Preset As", style={"fontSize": "16px", "fontWeight": 600}),
+                        dbc.ModalTitle("Save Preset As", id="preset-modal-title", style={"fontSize": "16px", "fontWeight": 600}),
                         className="preset-modal-header",
                     ),
                     dbc.ModalBody(

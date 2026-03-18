@@ -74,5 +74,23 @@
   "modal": {
     "title": "约束检查器",
     "close": "关闭"
+  },
+  "presets": {
+    "title": "保存的预设",
+    "select": "选择预设...",
+    "save": "保存",
+    "save_as": "另存为",
+    "delete": "删除",
+    "modal_title": "预设另存为",
+    "placeholder": "输入预设名称...",
+    "cancel": "取消"
+  },
+  "units": {
+    "mm2": "mm²",
+    "mm3": "mm³",
+    "mg": "mg",
+    "mg_mm3": "mg/mm³",
+    "inv_mm": "1/mm",
+    "mm": "mm"
   }
 }

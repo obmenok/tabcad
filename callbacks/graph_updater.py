@@ -303,27 +303,27 @@ def _build_calc_html(metrics, density, lang="en"):
                 [
                     html.Div(
                         [
-                            metric_row(t("calc.die_hole_sa", lang), m.get("Die_Hole_SA", 0), "mm²", label_min_width="95px"),
-                            metric_row(t("calc.cup_sa", lang), m.get("Cup_SA", 0), "mm²", label_min_width="95px"),
-                            metric_row(t("calc.cup_vol", lang), m.get("Cup_Volume", 0), "mm³", label_min_width="95px"),
+                            metric_row(t("calc.die_hole_sa", lang), m.get("Die_Hole_SA", 0), t("units.mm2", lang), label_min_width="95px"),
+                            metric_row(t("calc.cup_sa", lang), m.get("Cup_SA", 0), t("units.mm2", lang), label_min_width="95px"),
+                            metric_row(t("calc.cup_vol", lang), m.get("Cup_Volume", 0), t("units.mm3", lang), label_min_width="95px"),
                         ],
                         className="calc-col",
                         style={"minWidth": 0},
                     ),
                     html.Div(
                         [
-                            metric_row(t("calc.tablet_sa", lang), tablet_sa, "mm²", label_min_width="107px"),
-                            metric_row(t("calc.tablet_vol", lang), tablet_vol, "mm³", label_min_width="107px"),
-                            metric_row(t("calc.tablet_weight", lang), weight_val, "mg", label_min_width="107px"),
+                            metric_row(t("calc.tablet_sa", lang), tablet_sa, t("units.mm2", lang), label_min_width="107px"),
+                            metric_row(t("calc.tablet_vol", lang), tablet_vol, t("units.mm3", lang), label_min_width="107px"),
+                            metric_row(t("calc.tablet_weight", lang), weight_val, t("units.mg", lang), label_min_width="107px"),
                         ],
                         className="calc-col",
                         style={"minWidth": 0},
                     ),
                     html.Div(
                         [
-                            metric_row(t("calc.tablet_density", lang), density_val, "mg/mm³", label_min_width="99px"),
-                            metric_row(t("calc.tablet_sa_v", lang), tablet_sa_v, "1/mm", label_min_width="99px"),
-                            metric_row(t("calc.perimeter", lang), m.get("Perimeter", 0), "mm", label_min_width="99px"),
+                            metric_row(t("calc.tablet_density", lang), density_val, t("units.mg_mm3", lang), label_min_width="99px"),
+                            metric_row(t("calc.tablet_sa_v", lang), tablet_sa_v, t("units.inv_mm", lang), label_min_width="99px"),
+                            metric_row(t("calc.perimeter", lang), m.get("Perimeter", 0), t("units.mm", lang), label_min_width="99px"),
                         ],
                         className="calc-col",
                         style={"minWidth": 0},

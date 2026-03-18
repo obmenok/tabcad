@@ -59,6 +59,15 @@ def get_all_preset_names() -> list:
     
     return [row[0] for row in rows]
 
+def get_preset_names_starting_with(base_name: str) -> list:
+    """Возвращает список имен пресетов, начинающихся с заданного префикса."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT name FROM presets WHERE name LIKE ? ORDER BY name COLLATE NOCASE ASC', (f"{base_name}%",))
+    rows = cursor.fetchall()
+    conn.close()
+    return [row[0] for row in rows]
+
 def delete_preset(name: str):
     """Удаляет пресет по имени."""
     conn = sqlite3.connect(DB_PATH)

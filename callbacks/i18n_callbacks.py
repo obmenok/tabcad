@@ -96,6 +96,14 @@ dash.clientside_callback(
         Output("modified-switch", "options"),
         Output("bisect-cruciform", "options"),
         Output("bisect-double-sided", "options"),
+        Output("presets-title", "children"),
+        Output("preset-save-btn", "children"),
+        Output("preset-save-as-btn", "children"),
+        Output("preset-delete-btn", "children"),
+        Output("preset-modal-title", "children"),
+        Output("preset-name-input", "placeholder"),
+        Output("preset-modal-save-btn", "children"),
+        Output("preset-modal-cancel-btn", "children"),
     ],
     Input("lang-store", "data")
 )
@@ -149,4 +157,12 @@ def update_texts(lang):
         [{"label": t("cup.modified", lang), "value": True}],
         [{"label": t("scoring.cross", lang), "value": "on"}],
         [{"label": t("scoring.double", lang), "value": "on"}],
+        t("presets.title", lang),
+        t("presets.save", lang),
+        t("presets.save_as", lang),
+        t("presets.delete", lang),
+        t("presets.modal_title", lang),
+        t("presets.placeholder", lang),
+        t("presets.save", lang),
+        t("presets.cancel", lang),
     )

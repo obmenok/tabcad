@@ -54,7 +54,10 @@ def create_sidebar():
 
         dbc.Modal(
             [
-                dbc.ModalHeader(dbc.ModalTitle("Constraints Inspector", id="modal-title")),
+                dbc.ModalHeader(
+                    dbc.ModalTitle("Constraints Inspector", id="modal-title", style={"fontSize": "16px", "fontWeight": 600}),
+                    className="preset-modal-header"
+                ),
                 dbc.ModalBody(
                     [
                         dbc.Row(
@@ -120,7 +123,6 @@ def create_sidebar():
                             ],
                             data=[],
                             page_size=12,
-                            sort_action="native",
                             style_table={"maxHeight": "55vh", "overflowY": "auto"},
                             style_cell={
                                 "fontSize": "0.85rem",
@@ -134,16 +136,25 @@ def create_sidebar():
                                 "backgroundColor": "#f6f7f9",
                             },
                         ),
-                    ]
+                    ],
+                    style={"paddingTop": 0}
                 ),
                 dbc.ModalFooter(
-                    dbc.Button("Close", id="constraints-close-btn", color="secondary")
+                    dbc.Button(
+                        "Close", 
+                        id="constraints-close-btn", 
+                        outline=True,
+                        color="secondary",
+                        className="outline-soft-btn preset-modal-btn"
+                    ),
+                    style={"justifyContent": "flex-end", "borderTop": "none", "gap": "8px", "paddingTop": 0}
                 ),
             ],
             id="constraints-modal",
             is_open=False,
             size="xl",
             centered=True,
+            className="preset-modal",
         ),
 
 

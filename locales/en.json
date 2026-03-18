@@ -74,5 +74,23 @@
   "modal": {
     "title": "Constraints Inspector",
     "close": "Close"
+  },
+  "presets": {
+    "title": "Saved Presets",
+    "select": "Select preset...",
+    "save": "Save",
+    "save_as": "Save As",
+    "delete": "Delete",
+    "modal_title": "Save Preset As",
+    "placeholder": "Enter preset name...",
+    "cancel": "Cancel"
+  },
+  "units": {
+    "mm2": "mm²",
+    "mm3": "mm³",
+    "mg": "mg",
+    "mg_mm3": "mg/mm³",
+    "inv_mm": "1/mm",
+    "mm": "mm"
   }
 }

@@ -129,7 +129,8 @@
 /* Presets button group: allow wrapping to prevent overflow */
 .preset-btn-group {
   display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
 }
 
 .preset-btn-group .btn {

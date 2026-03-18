@@ -14,7 +14,7 @@ PRESET_KEYS = [
 ]
 
 def _generate_preset_name(shape, profile, is_mod, w, l, tt, b_type, b_cruciform, b_double):
-    """Генерирует имя пресета на основе текущих параметров."""
+    """Генерирует имя пресета на основе текущих параметров, с автоматической нумерацией (-00, -01, etc)."""
     def fmt_num(val):
         if val is None: return ""
         if float(val).is_integer():
@@ -50,7 +50,22 @@ def _generate_preset_name(shape, profile, is_mod, w, l, tt, b_type, b_cruciform,
         elif shape in ("capsule", "oval") and bool(b_double):
             name_parts.append("D")
             
-    return "-".join(filter(bool, name_parts))
+    base_name = "-".join(filter(bool, name_parts))
+
+    # Поиск существующих пресетов с таким же базовым именем для определения следующего номера
+    existing_names = db.get_preset_names_starting_with(base_name)
+    
+    max_suffix = -1
+    for name in existing_names:
+        # Проверяем, имеет ли имя формат "base_name-XX"
+        if name.startswith(f"{base_name}-"):
+            suffix_part = name[len(base_name)+1:]
+            if suffix_part.isdigit() and len(suffix_part) == 2:
+                max_suffix = max(max_suffix, int(suffix_part))
+                
+    # Следующий доступный номер (если пресетов нет, будет 00)
+    next_suffix = max_suffix + 1
+    return f"{base_name}-{next_suffix:02d}"
 
 
 @callback(
@@ -127,29 +142,10 @@ def handle_preset_actions(save_btn, modal_save_btn, delete_btn, current_preset, 
             return name, get_options()
             
     if trig == "preset-save-btn" and current_preset:
-        # Автоматически пересчитываем имя на основе текущих параметров
-        new_calculated_name = _generate_preset_name(
-            params.get("shape-dropdown"),
-            params.get("profile-dropdown"),
-            params.get("modified-switch"),
-            params.get("input-w"),
-            params.get("input-l"),
-            params.get("input-tt"),
-            params.get("bisect-type"),
-            params.get("bisect-cruciform"),
-            params.get("bisect-double-sided")
-        )
-        
-        # Если значимые параметры изменились, сохраняем как новый пресет 
-        # (и удаляем старый, чтобы произошел "перенос" (rename))
-        if new_calculated_name != current_preset:
-            db.delete_preset(current_preset)
-            db.save_preset(new_calculated_name, params)
-            return new_calculated_name, get_options()
-        else:
-            # Иначе просто перезаписываем текущий (могли измениться только радиусы/фаски)
-            db.save_preset(current_preset, params)
-            return dash.no_update, dash.no_update
+        # Для кнопки "Save" мы перезаписываем текущий пресет.
+        # Имя не меняем, чтобы не плодить новые версии (-01, -02) при каждом редактировании.
+        db.save_preset(current_preset, params)
+        return dash.no_update, dash.no_update
         
     return dash.no_update, dash.no_update
 
