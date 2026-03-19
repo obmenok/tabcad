@@ -20,7 +20,7 @@ round compound,round,compound,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01
 round compound,round,compound,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
 round compound,round,compound,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
 round cbe,round,cbe,no,Diameter (W),8.0,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
-round cbe,round,cbe,no,Cup Depth (Dc),0.92,Editable,0.01,tangent limit,"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Diameter (W), Land, Cup Radius (Rc Min), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+round cbe,round,cbe,no,Cup Depth (Dc),0.92,Editable,Bevel Depth + 0.01,tangent limit,"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Diameter (W), Land, Cup Radius (Rc Min), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
 round cbe,round,cbe,no,Cup Radius (Rc Min),8.8,Editable,tangent limit,tangent limit,Cup Depth (Dc),"Cup Depth (Dc), Diameter (W), Land, Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
 round cbe,round,cbe,no,Bevel Depth,0.51,Editable,0.01,<= Dc,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
 round cbe,round,cbe,no,Bevel Angle,40.0,Editable,0.01,60.0,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
@@ -74,7 +74,7 @@ capsule cbe,capsule,cbe,no,Minor Axis (W),8.0,Editable,0.01,,"End Radius (Re) / 
 capsule cbe,capsule,cbe,no,Major Axis (L),16.0,Editable,0.01,,End Radius (Re) / Side Radius (Rs) bounds,,,callbacks/ui_updater.py
 capsule cbe,capsule,cbe,no,End Radius (Re),4.0,Locked,W/2,W/2,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
 capsule cbe,capsule,cbe,no,Side Radius (Rs),0.0,Locked,0.0,0.0,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
-capsule cbe,capsule,cbe,no,Cup Depth (Dc),0.92,Editable,0.01,tangent limit,"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land, Cup Radius (Rc Min), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Cup Depth (Dc),0.92,Editable,Bevel Depth + 0.01,tangent limit,"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land, Cup Radius (Rc Min), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
 capsule cbe,capsule,cbe,no,Cup Radius (Rc Min),8.8,Editable,tangent limit,tangent limit,Cup Depth (Dc),"Cup Depth (Dc), Minor Axis (W), Land, Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
 capsule cbe,capsule,cbe,no,Bevel Depth,0.51,Editable,0.01,<= Dc,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
 capsule cbe,capsule,cbe,no,Bevel Angle,40.0,Editable,0.01,60.0,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
@@ -87,7 +87,7 @@ capsule cbe modified,capsule,cbe,yes,Minor Axis (W),8.0,Editable,0.01,,"End Radi
 capsule cbe modified,capsule,cbe,yes,Major Axis (L),16.0,Editable,0.01,,End Radius (Re) / Side Radius (Rs) bounds,,,callbacks/ui_updater.py
 capsule cbe modified,capsule,cbe,yes,End Radius (Re),4.0,Editable,0.1,W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
 capsule cbe modified,capsule,cbe,yes,Side Radius (Rs),0.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
-capsule cbe modified,capsule,cbe,yes,Cup Depth (Dc),0.92,Editable,0.01,tangent limit,"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land, Cup Radius (Rc Min), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Cup Depth (Dc),0.92,Editable,Bevel Depth + 0.01,tangent limit,"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land, Cup Radius (Rc Min), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
 capsule cbe modified,capsule,cbe,yes,Cup Radius (Rc Min),8.8,Editable,tangent limit,tangent limit,Cup Depth (Dc),"Cup Depth (Dc), Minor Axis (W), Land, Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
 capsule cbe modified,capsule,cbe,yes,Bevel Depth,0.51,Editable,0.01,<= Dc,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
 capsule cbe modified,capsule,cbe,yes,Bevel Angle,40.0,Editable,0.01,60.0,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
@@ -192,7 +192,7 @@ oval cbe,oval,cbe,no,Minor Axis (W),8.0,Editable,0.01,,"End Radius (Re) / Side R
 oval cbe,oval,cbe,no,Major Axis (L),16.0,Editable,0.01,,"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
 oval cbe,oval,cbe,no,End Radius (Re),3.0,Editable,0.01,W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
 oval cbe,oval,cbe,no,Side Radius (Rs),16.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
-oval cbe,oval,cbe,no,Cup Depth (Dc),0.92,Editable,0.01,(W/2 - Land),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb), Cup Radius (Rc Maj)","Minor Axis (W), Land, Cup Radius (Rc Maj), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Cup Depth (Dc),0.92,Editable,Bevel Depth + 0.01,(W/2 - Land),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb), Cup Radius (Rc Maj)","Minor Axis (W), Land, Cup Radius (Rc Maj), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
 oval cbe,oval,cbe,no,Cup Radius (Rc Min),8.8,Locked,tangent limit,tangent limit,,"Cup Depth (Dc), Minor Axis (W), Land, Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
 oval cbe,oval,cbe,no,Cup Radius (Rc Maj),39.8,Editable,tangent limit,tangent limit,Cup Depth (Dc),"Cup Depth (Dc), Major Axis (L), Land, Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
 oval cbe,oval,cbe,no,Bevel Depth,0.51,Editable,0.01,<= Dc,"Cup Depth (Dc) max, Cup Radius (Rc Min), Cup Radius (Rc Maj)",,,callbacks/ui_updater.py

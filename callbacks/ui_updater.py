@@ -7,6 +7,7 @@ from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAP
 @callback(
     [
         Output("shape-dropdown", "value"),
+        Output("profile-dropdown", "value", allow_duplicate=True),
         Output("shape-round-btn", "class_name"),
         Output("shape-capsule-btn", "class_name"),
         Output("shape-oval-btn", "class_name"),
@@ -42,7 +43,7 @@ def update_shape_selection(round_clicks, capsule_clicks, oval_clicks):
     elif trig == "shape-oval-btn":
         new_shape = "oval"
     else:
-        return [dash.no_update] * 17
+        return [dash.no_update] * 18
 
     def get_class(shape):
         base = "plotly-toolbar-btn"
@@ -68,6 +69,7 @@ def update_shape_selection(round_clicks, capsule_clicks, oval_clicks):
     # а потом система сама его скинет.
     return (
         new_shape, 
+        "concave",
         get_class("round"), 
         get_class("capsule"), 
         get_class("oval"),
@@ -473,10 +475,9 @@ def update_ui_visibility(shape, profile, lang):
         rc_min_disabled = True
         rc_maj_disabled = True
     if shape == "oval" and profile == "cbe":
-        # User requirement list: minor cup radius locked, major cup radius editable.
+        # minor and major cup radius locked, controlled by cup depth.
         rc_min_disabled = True
-        rc_maj_disabled = False
-        label_rc_min = "Cup Radius Minor, mm" # Needs translation if required
+        rc_maj_disabled = True
     if shape == "oval" and profile in ("ffre", "ffbe"):
         rc_min_disabled = True
         rc_maj_disabled = True
@@ -724,7 +725,7 @@ def sync_bisect_logic(
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
         
     trigger = ctx.triggered_id
-    if dc is None or w is None:
+    if dc is None or w is None or profile is None:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     params = {
@@ -1268,13 +1269,16 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
         (shape == "round" and profile in ("concave", "cbe"))
         or (shape == "capsule" and profile in ("concave", "cbe"))
     )
-    editable_maj = shape == "oval" and profile == "cbe"
+    editable_maj = False
     is_round_concave = shape == "round" and profile == "concave"
     is_capsule_concave = shape == "capsule" and profile == "concave"
     is_oval_concave = shape == "oval" and profile == "concave"
 
-    # Ограничение Cup Depth (не меньше 0.01)
-    if dc_f < 0.01: dc_f = 0.01
+    # Ограничение Cup Depth
+    min_dc = 0.01
+    if profile == "cbe":
+        min_dc = round((bev_d if bev_d is not None else 0.51) + 0.01, 4)
+    if dc_f < min_dc: dc_f = min_dc
 
     # Round/Capsule/Oval Concave constraints
     concave_span = max(0.0, w_val / 2 - land_val)

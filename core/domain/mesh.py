@@ -154,8 +154,66 @@ def build_surface(params, x_grid, y_grid):
         z_blend = z_w_eq * (h_local / max(1e-6, dc))
         z[mask_cup] = z_blend[mask_cup]
 
+    elif profile == "cbe":
+        # 3. ГИБРИДНЫЙ ПОДХОД (Distance Field для фаски + Radial Sweep для центральной сферы)
+        # Это обеспечивает идеальную фаску постоянной ширины и плавную сферическую чашу внутри
+        bev_d = params.get("Bev_D", 0.51)
+        bev_a = params.get("Bev_A", 40.0)
+        alpha = np.radians(bev_a)
+        tan_a = np.tan(alpha)
+        w_b = bev_d / tan_a if tan_a > 0 else 0.0
+        
+        xe_c = max(0.0, l_val / 2 - re)
+        ys_c = w_val / 2 - rs
+        re_in = max(0.001, re - land) if land > 0 else re
+        rs_in = max(0.001, rs - land) if land > 0 else rs
+        
+        # Поле расстояний для точной фаски
+        m = np.abs(ys_c) / max(1e-9, xe_c)
+        is_end = yi < m * (xi - xe_c)
+        dist_end = np.sqrt((xi - xe_c)**2 + yi**2)
+        dist_side = np.sqrt(xi**2 + (yi - ys_c)**2)
+        d_edge = np.where(is_end, re_in - dist_end, rs_in - dist_side)
+        d_edge = np.maximum(0.0, d_edge)
+        
+        # Рассчитываем Z для фаски
+        z_bevel = np.minimum(d_edge * tan_a, bev_d)
+        
+        # Рассчитываем Z для внутренней сферы (Radial Sweep)
+        theta = np.arctan2(yi, np.maximum(1e-9, xi))
+        r_curr = np.sqrt(xi**2 + yi**2)
+        
+        re_inner_cup = max(0.001, re_in - w_b)
+        rs_inner_cup = max(0.001, rs_in - w_b)
+        
+        theta_tan_c = np.arctan2(np.abs(ys_c), max(1e-9, xe_c))
+        x_tan = xe_c + re_inner_cup * np.cos(theta_tan_c)
+        y_tan = re_inner_cup * np.sin(theta_tan_c)
+        theta_tan = np.arctan2(y_tan, x_tan)
+        
+        r_max_inner = np.zeros_like(theta)
+        mask_end_inner = theta <= theta_tan
+        mask_side_inner = ~mask_end_inner
+        
+        rad_end = np.maximum(0.0, re_inner_cup**2 - (xe_c * np.sin(theta[mask_end_inner]))**2)
+        r_max_inner[mask_end_inner] = xe_c * np.cos(theta[mask_end_inner]) + np.sqrt(rad_end)
+        
+        rad_side = np.maximum(0.0, rs_inner_cup**2 - (ys_c * np.cos(theta[mask_side_inner]))**2)
+        r_max_inner[mask_side_inner] = ys_c * np.sin(theta[mask_side_inner]) + np.sqrt(rad_side)
+        r_max_inner = np.maximum(1e-6, r_max_inner)
+        
+        hc = max(1e-6, dc - bev_d)
+        r_local = (r_max_inner**2 + hc**2) / (2 * hc)
+        rho_clamped = np.minimum(r_curr, r_max_inner)
+        z_inner_cup = bev_d + np.sqrt(np.maximum(0.0, r_local**2 - rho_clamped**2)) - (r_local - hc)
+        
+        # Смешиваем фаску и сферу: если расстояние от края больше ширины фаски, то это сфера
+        is_inner = d_edge > w_b
+        z_hybrid = np.where(is_inner, z_inner_cup, z_bevel)
+        z[mask_cup] = z_hybrid[mask_cup]
+
     else:
-        # 3. ПОЛЕ РАССТОЯНИЙ / DISTANCE FIELD (Для Bevel, Flat Radius и т.д.)
+        # 4. ПОЛЕ РАССТОЯНИЙ / DISTANCE FIELD (Для Flat Radius, Flat Bevel и т.д.)
         # Гарантирует фаску строго постоянной ширины без искажений по диагоналям
         xe_c = max(0.0, l_val / 2 - re)
         ys_c = w_val / 2 - rs

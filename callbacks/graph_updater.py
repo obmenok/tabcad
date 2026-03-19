@@ -415,7 +415,7 @@ def generate_graphics(
     b_cruciform,
     b_double_sided,
 ):
-    if w is None or dc is None:
+    if w is None or dc is None or profile is None:
         return dash.no_update, dash.no_update
 
     params = _build_params(
@@ -538,7 +538,7 @@ def update_calc_panel_live(
     density,
     lang,
 ):
-    if w is None or dc is None:
+    if w is None or dc is None or profile is None:
         return html.Div("Please enter valid dimensions", className="text-danger")
 
     params = _build_params(
