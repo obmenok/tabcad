@@ -1,4 +1,4 @@
-# TabletCAD
+﻿# TabletCAD
 
 TabletCAD is a Dash-based engineering app for **tablet punch geometry calculation** and **2D/3D drawing generation**.
 
@@ -8,35 +8,61 @@ It supports Round, Capsule, and Oval families with multiple cup configurations, 
 
 ## Features
 
-- Interactive parameter-driven tablet design UI
-- 2D technical drawing generation (dimensions + annotations)
-- 3D Plotly model viewer with compact icon toolbar
+- Interactive tablet design UI with segmented controls for:
+  - `Tablet Shape`: Round / Capsule / Oval
+  - `Cup Configuration`: CON / COM / CBE / FFRE / FFBE / MOD (profile set is shape-dependent)
 - Shape families:
   - Round
   - Capsule (standard + modified)
   - Oval
-- Cup profiles:
+- Cup profile support:
   - Concave
   - Compound Cup
   - Concave Bevel Edge
   - Flat Face Radius Edge
   - Flat Face Bevel Edge
-  - Modified Oval (for Oval family)
-- Bisect modes:
+  - Modified Oval (Oval only)
+- Scoring/Bisect modes:
   - None
   - Standard
   - Cut Through
   - Decreasing
-  - Optional cruciform / double-sided behavior (where applicable)
-- Derived metrics:
+  - Optional cruciform and double-sided options (profile-dependent)
+- Live calculations panel:
   - Die Hole SA
-  - Cup Volume
   - Cup SA
-  - Perimeter
+  - Cup Volume
   - Tablet SA
   - Tablet Volume
-- UI logic with geometric constraints and profile-dependent editability
-- Golden-regression tests comparing domain outputs vs reference formulas
+  - Tablet Weight
+  - Tablet Density
+  - Tablet SA/V
+  - Perimeter
+- 2D technical drawing renderer (dimensioned, annotation-based, optional shaded mode)
+- 3D Plotly viewer with compact icon toolbar:
+  - View presets (Front/Back/Left/Right/Top/Bottom/Isometric)
+  - Edge toggle
+  - Boundary box toggle
+  - Fullscreen
+  - Screenshot
+- Preset management (SQLite-backed):
+  - Load
+  - Save
+  - Save As
+  - Delete
+- Constraints Inspector modal (reads from `constraints.csv`)
+- Export:
+  - PDF specification export
+  - STL mesh export
+- Multilingual UI:
+  - English
+  - Russian
+  - Chinese
+- Constraint-aware UI behavior:
+  - Profile-dependent field visibility/editability
+  - Runtime clamping/validation of geometric parameters
+  - Coupled parameter synchronization in callbacks
+- Golden-regression tests vs reference equations
 
 ---
 
@@ -52,34 +78,57 @@ It supports Round, Capsule, and Oval families with multiple cup configurations, 
 
 ---
 
-## Project Structure
+## Runtime File Structure (Actually Used by the App)
 
 ```text
 tabcad/
-├─ app.py                      # Dash app entry point
-├─ assets/                     # Static assets (CSS, icon font)
-├─ callbacks/
-│  ├─ graph_updater.py         # Main generation callback (2D + 3D + metrics)
-│  ├─ ui_updater.py            # Dynamic UI visibility + constraints + sync logic
-│  └─ plotly_ui.py             # Client/UI callbacks (fullscreen, screenshot, toolbar state)
-├─ components/
-│  ├─ sidebar.py               # Input controls panel
-│  └─ viewer.py                # 2D/3D view layout
-├─ core/
-│  ├─ ARCHITECTURE.md          # Domain-first architecture notes
-│  ├─ engine.py                # Domain facade used by callbacks/renderers
-│  ├─ renderer.py              # 2D drawing renderer
-│  ├─ renderer_3d.py           # 3D Plotly renderer
-│  ├─ reference_bridge.py      # Bridge to reference forms (for parity/testing)
-│  ├─ domain/
-│  │  ├─ shapes.py             # Shape normalization + geometry helpers
-│  │  ├─ profiles.py           # Pure cup profile equations
-│  │  └─ mesh.py               # Mesh generation + bisect + metrics
-│  └─ natoli_forms/            # Integrated reference form logic/assets
-├─ references/                 # Legacy/reference source files
-└─ tests/
-   └─ test_golden_regression.py
+├── app.py                              # Entry point, layout wiring, callback registration
+├── constraints.csv                     # Data source for Constraints Inspector modal
+├── presets.db                          # SQLite presets storage (created/used at runtime)
+│
+├── assets/
+│   ├── apollo_viewer.css               # Global UI styles (sidebar, toolbars, modals)
+│   ├── ApolloViewerFonts.ttf           # Icon font for 2D/3D toolbar glyphs
+│   └── osifont.ttf                     # PDF-export font resource
+│
+├── locales/
+│   ├── en.json                         # i18n dictionary (EN)
+│   ├── ru.json                         # i18n dictionary (RU)
+│   └── cn.json                         # i18n dictionary (CN)
+│
+├── components/
+│   ├── sidebar.py                      # Left panel inputs + controls
+│   └── viewer.py                       # Calculations, 2D/3D panels, preset modal
+│
+├── callbacks/
+│   ├── ui_updater.py                   # Field visibility/editability + constraints sync
+│   ├── graph_updater.py                # Main generation callback (mesh/2D/3D/PDF/STL/metrics)
+│   ├── plotly_ui.py                    # 2D/3D viewer toolbar interactions
+│   ├── presets.py                      # Preset load/save/save-as/delete callbacks
+│   ├── constraints_viewer.py           # Constraints modal open/filter/table callbacks
+│   └── i18n_callbacks.py               # Language switching callbacks
+│
+└── core/
+    ├── defaults.py                     # Base/profile/bisect defaults and shape-specific defaults
+    ├── db.py                           # SQLite access layer for presets
+    ├── i18n.py                         # Translation loader/helper
+    ├── engine.py                       # Facade over domain geometry functions
+    ├── renderer.py                     # 2D drawing renderer (matplotlib -> image)
+    ├── renderer_3d.py                  # 3D renderer (Plotly mesh/scene)
+    ├── stl_exporter.py                 # STL export from generated mesh
+    ├── pdf_generator.py                # PDF export generator
+    └── domain/
+        ├── shapes.py                   # Shape geometry helpers
+        ├── profiles.py                 # Cup/profile equations
+        └── mesh.py                     # Mesh generation + metrics + bisect geometry
 ```
+
+### Not part of the live runtime path
+
+- `tests/` (test-only)
+- `references/` and `core/natoli_forms/` (reference/legacy/parity material)
+- `constraints.xlsx` (analytical helper file; runtime viewer reads `constraints.csv`)
+- `GEMINI.md`, PDFs in repo root (documentation/reference artifacts)
 
 ---
 
@@ -268,3 +317,4 @@ The preset system automatically generates names based on the tablet's physical d
 
 License is not defined yet in this repository.
 Add a `LICENSE` file before external distribution.
+

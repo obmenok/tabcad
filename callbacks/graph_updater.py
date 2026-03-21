@@ -119,6 +119,7 @@ def export_pdf_callback(
         # Generate high-res 2D drawing for PDF with SHADING enabled
         params_2d = dict(params)
         params_2d["render_2d_shaded"] = True
+        params_2d["render_2d_style"] = "iso_pdf"
         drawing_2d_b64 = render_tablet(mesh_data, params_2d, dpi=300)
 
         # Capture 3D view for PDF (Isometric only)
@@ -205,6 +206,7 @@ def _build_params(
     view_preset="isometric",
     show_edges=False,
     show_bbox=False,
+    render_2d_style="web",
 ):
     return {
         "shape": shape,
@@ -240,6 +242,7 @@ def _build_params(
         "render_mode": "edges" if bool(show_edges) else "shaded",
         "show_bbox": bool(show_bbox),
         "render_2d_shaded": bool(drawing_2d_shaded),
+        "render_2d_style": render_2d_style or "web",
     }
 
 

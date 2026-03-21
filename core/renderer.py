@@ -1,21 +1,77 @@
 import base64
 from io import BytesIO
+import os
+import re
 
 import matplotlib
 import numpy as np
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Arc
+from matplotlib.patches import Polygon
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
+from matplotlib import font_manager
 from types import SimpleNamespace
 
 from core.engine import get_1d_z_engine, get_compound_profile
 
-DIM_LINE_WIDTH, C_TEXT, ARROW_LENGTH = 0.6, "#000000", 10.0
-ARR_STYLE_DOUBLE = "<|-|>,head_length=1,head_width=0.175"
-ARR_STYLE_SINGLE = "-|>,head_length=1,head_width=0.175"
+# Web style - minimal config, most values are hardcoded in the drawing functions
+WEB_STYLE = {
+    "dim_line_width": 0.6,
+    "text_color": "#9467bd",
+}
+
+# ISO PDF style with configurable dimension presentation
+ISO_PDF_STYLE = {
+    # Line widths (matplotlib points, 1 pt ≈ 0.35 mm)
+    "dim_line_width": 0.72,       # Dimension line thickness
+    "ext_line_width": 0.72,       # Extension line thickness
+    
+    # Text settings
+    "text_color": "#000000",      # Dimension text color
+    "text_font_size": 12,         # Dimension text size in points
+    "text_gap_from_dim_line": 0.4, # Distance from text to dimension line
+    "text_bbox_pad": 0.2,         # Padding around text background box
+    
+    # Extension line settings
+    "ext_line_gap_from_feature": 0.0,  # Gap between feature edge and extension line start
+    "ext_line_overrun": 0.5,      # How far extension line extends past dimension line
+    
+    # Arrow settings (data units)
+    "arrow_length": 1.0,           # Arrow head length
+    "arrow_width": 0.3,            # Arrow head width
+    
+    # Text positioning
+    "outside_text_dist": 4.0,           # Length of right tail for external dimensions
+    "outside_text_offset_ratio": 0.7,   # Text position as fraction of outside_text_dist
+}
+
+# Global state (set in render_tablet based on selected style)
+DIM_LINE_WIDTH = WEB_STYLE["dim_line_width"]
+C_TEXT = WEB_STYLE["text_color"]
+EXT_LINE_WIDTH = ISO_PDF_STYLE["ext_line_width"]
+TEXT_FONT_SIZE = ISO_PDF_STYLE["text_font_size"]
+TEXT_GAP_FROM_DIM_LINE = ISO_PDF_STYLE["text_gap_from_dim_line"]
+TEXT_BBOX_PAD = ISO_PDF_STYLE["text_bbox_pad"]
+EXT_LINE_GAP_FROM_FEATURE = ISO_PDF_STYLE["ext_line_gap_from_feature"]
+EXT_LINE_OVERRUN = ISO_PDF_STYLE["ext_line_overrun"]
+OUTSIDE_TEXT_DIST = ISO_PDF_STYLE["outside_text_dist"]
+OUTSIDE_TEXT_OFFSET_RATIO = ISO_PDF_STYLE["outside_text_offset_ratio"]
+ARROW_LENGTH = ISO_PDF_STYLE["arrow_length"]
+ARROW_WIDTH = ISO_PDF_STYLE["arrow_width"]
+ISO_PDF_ACTIVE = False
+PDF_FONT_PROPERTIES = None
+
+# Load osifont for ISO PDF drawings
+_OSIFONT_PATH = os.path.join("assets", "osifont.ttf")
+if os.path.exists(_OSIFONT_PATH):
+    try:
+        font_manager.fontManager.addfont(_OSIFONT_PATH)
+        PDF_FONT_PROPERTIES = font_manager.FontProperties(fname=_OSIFONT_PATH)
+    except Exception as e:
+        print(f"Warning: Failed to load osifont: {e}")
+        PDF_FONT_PROPERTIES = None
 
 
 _REQUIRED_PARAM_KEYS = [
@@ -122,79 +178,295 @@ def _draw_solid_polygon(ax, x_poly, y_poly, color="#dec9bd", alpha=0.95, zorder=
     ax.fill(x, y, color=color, alpha=alpha, linewidth=0, zorder=zorder)
 
 
+def _safe_unit(vx, vy):
+    dist = np.hypot(vx, vy)
+    if dist <= 1e-12:
+        return 0.0, 0.0
+    return vx / dist, vy / dist
+
+
+def _format_dim_text(text):
+    """Format dimension text for ISO PDF: add prefixes, format numbers."""
+    if not ISO_PDF_ACTIVE:
+        return text
+    raw = str(text or "")
+    
+    # Determine prefix based on text content
+    prefix = ""
+    if "Diameter" in raw:
+        prefix = "\u2300"  # Diameter sign ⌀
+    elif "Radius" in raw:
+        prefix = "R"
+    
+    # Extract numeric value
+    m = re.search(r"[-+]?\d+(?:[.,]\d+)?", raw)
+    if not m:
+        return raw
+    token = m.group(0).replace(",", ".")
+    try:
+        val = float(token)
+    except ValueError:
+        return raw
+    
+    # Format number: 2 decimal places, remove trailing zeros
+    out = f"{val:.2f}".rstrip("0").rstrip(".").replace(".", ",")
+    
+    # Add degree sign if present in original
+    if "°" in raw:
+        out += "°"
+    
+    # Return with prefix
+    return f"{prefix}{out}" if prefix else out
+
+
+def _extension_segment(p0x, p0y, p1x, p1y):
+    ux, uy = _safe_unit(p1x - p0x, p1y - p0y)
+    sx = p0x + ux * EXT_LINE_GAP_FROM_FEATURE
+    sy = p0y + uy * EXT_LINE_GAP_FROM_FEATURE
+    ex = p1x + ux * EXT_LINE_OVERRUN
+    ey = p1y + uy * EXT_LINE_OVERRUN
+    return sx, sy, ex, ey
+
+
+def _dim_text_kwargs():
+    kwargs = {"fontsize": TEXT_FONT_SIZE}
+    if ISO_PDF_ACTIVE and PDF_FONT_PROPERTIES is not None:
+        kwargs["fontproperties"] = PDF_FONT_PROPERTIES
+    return kwargs
+
+
+def _draw_arrowhead(ax, tip_x, tip_y, out_x, out_y, length=None, width=None):
+    """
+    Draw arrowhead as a filled triangle.
+    Arrow orientation is computed from tip -> outer point vector.
+    tip_x, tip_y: position of arrow tip (touches extension line or profile)
+    out_x, out_y: point in direction arrow points (away from tip)
+    length, width: arrow dimensions (default from global ARROW_LENGTH, ARROW_WIDTH)
+    """
+    if length is None:
+        length = ARROW_LENGTH
+    if width is None:
+        width = ARROW_WIDTH
+    
+    ux, uy = _safe_unit(out_x - tip_x, out_y - tip_y)
+    if abs(ux) < 1e-12 and abs(uy) < 1e-12:
+        return
+    bx = tip_x + ux * length
+    by = tip_y + uy * length
+    nx, ny = -uy, ux
+    hw = width / 2.0
+    points = np.array(
+        [
+            [tip_x, tip_y],
+            [bx + nx * hw, by + ny * hw],
+            [bx - nx * hw, by - ny * hw],
+        ]
+    )
+    ax.add_patch(
+        Polygon(
+            points,
+            closed=True,
+            facecolor="black",
+            edgecolor="black",
+            linewidth=0,
+            antialiased=False,
+            joinstyle="miter",
+            zorder=5,
+        )
+    )
+
+
 def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, offset=(0, 0)):
+    """Draw internal dimension (arrows inside extension lines)."""
+    text = _format_dim_text(text)
     ex1, ey1 = px1 + dx, py1 + dy
     ex2, ey2 = px2 + dx, py2 + dy
-    sgx = np.sign(dx) if dx != 0 else 0
-    sgy = np.sign(dy) if dy != 0 else 0
-    ax.plot([px1, ex1 + sgx * 0.5], [py1, ey1 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
-    ax.plot([px2, ex2 + sgx * 0.5], [py2, ey2 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
-    ax.annotate(
-        "",
-        xy=(ex1, ey1),
-        xytext=(ex2, ey2),
-        arrowprops=dict(arrowstyle=ARR_STYLE_DOUBLE, color="black", lw=DIM_LINE_WIDTH, mutation_scale=ARROW_LENGTH),
-    )
-    ax.text(
-        (ex1 + ex2) / 2 + offset[0],
-        (ey1 + ey2) / 2 + offset[1],
-        text,
-        color=C_TEXT,
-        ha="center",
-        va="center",
-        bbox=dict(facecolor="#ffffff", edgecolor="none", pad=1),
-        fontsize=9,
-    )
+    
+    if not ISO_PDF_ACTIVE:
+        # Original web style - uses matplotlib annotate
+        sgx = np.sign(dx) if dx != 0 else 0
+        sgy = np.sign(dy) if dy != 0 else 0
+        ax.plot([px1, ex1 + sgx * 0.5], [py1, ey1 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
+        ax.plot([px2, ex2 + sgx * 0.5], [py2, ey2 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
+        ax.annotate(
+            "",
+            xy=(ex1, ey1),
+            xytext=(ex2, ey2),
+            arrowprops=dict(arrowstyle="<|-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+        )
+        ax.text(
+            (ex1 + ex2) / 2 + offset[0],
+            (ey1 + ey2) / 2 + offset[1],
+            text,
+            color=C_TEXT,
+            ha="center",
+            va="center",
+            bbox=dict(facecolor="#ffffff", edgecolor="none", pad=1),
+            fontsize=9,
+        )
+        return
+
+    # ISO PDF style - arrows touch extension lines exactly
+    # Draw extension lines
+    s1x, s1y, e1x, e1y = _extension_segment(px1, py1, ex1, ey1)
+    s2x, s2y, e2x, e2y = _extension_segment(px2, py2, ex2, ey2)
+    ax.plot([s1x, e1x], [s1y, e1y], "k-", lw=EXT_LINE_WIDTH)
+    ax.plot([s2x, e2x], [s2y, e2y], "k-", lw=EXT_LINE_WIDTH)
+
+    # Compute direction vector
+    vec_x, vec_y = ex2 - ex1, ey2 - ey1
+    dist = np.hypot(vec_x, vec_y)
+    if dist <= 1e-12:
+        return
+    ux, uy = vec_x / dist, vec_y / dist
+    
+    # Draw dimension line (stops before arrow tips)
+    ax.plot([ex1 + ux * ARROW_LENGTH, ex2 - ux * ARROW_LENGTH], 
+            [ey1 + uy * ARROW_LENGTH, ey2 - uy * ARROW_LENGTH], "k-", lw=DIM_LINE_WIDTH)
+    
+    # Draw arrowheads with tips at extension line positions
+    _draw_arrowhead(ax, ex1, ey1, ex1 + ux * ARROW_LENGTH, ey1 + uy * ARROW_LENGTH)
+    _draw_arrowhead(ax, ex2, ey2, ex2 - ux * ARROW_LENGTH, ey2 - uy * ARROW_LENGTH)
+    
+    # Determine if vertical dimension (for text rotation per ISO 129)
+    is_vertical = abs(ey2 - ey1) > abs(ex2 - ex1)
+    
+    # Text position - use TEXT_GAP_FROM_DIM_LINE for consistent spacing
+    tx = (ex1 + ex2) / 2
+    ty = (ey1 + ey2) / 2
+    
+    if is_vertical:
+        # Vertical dimension: text rotated 90° counter-clockwise, positioned left of dimension line
+        tx = min(ex1, ex2) - TEXT_GAP_FROM_DIM_LINE
+        ax.text(tx, ty, text, color=C_TEXT, ha="right", va="center", rotation=90, **_dim_text_kwargs())
+    else:
+        # Horizontal dimension: text above dimension line
+        ty += TEXT_GAP_FROM_DIM_LINE
+        ax.text(tx, ty, text, color=C_TEXT, ha="center", va="bottom", **_dim_text_kwargs())
 
 
 def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text):
+    """Draw external dimension (arrows outside extension lines)."""
+    text = _format_dim_text(text)
     ex1, ey1 = px1 + dx, py1 + dy
     ex2, ey2 = px2 + dx, py2 + dy
-    sgx = np.sign(dx) if dx != 0 else 0
-    sgy = np.sign(dy) if dy != 0 else 0
-    ax.plot([px1, ex1 + sgx * 0.5], [py1, ey1 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
-    ax.plot([px2, ex2 + sgx * 0.5], [py2, ey2 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
+    
+    if not ISO_PDF_ACTIVE:
+        # Original web style - uses matplotlib annotate
+        sgx = np.sign(dx) if dx != 0 else 0
+        sgy = np.sign(dy) if dy != 0 else 0
+        ax.plot([px1, ex1 + sgx * 0.5], [py1, ey1 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
+        ax.plot([px2, ex2 + sgx * 0.5], [py2, ey2 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
+        vec_x, vec_y = ex2 - ex1, ey2 - ey1
+        dist = np.sqrt(vec_x**2 + vec_y**2)
+        if dist == 0:
+            return
+        ux, uy = vec_x / dist, vec_y / dist
+        ax.annotate(
+            "",
+            xy=(ex1, ey1),
+            xytext=(ex1 - ux * 3, ey1 - uy * 3),
+            arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+        )
+        ax.annotate(
+            "",
+            xy=(ex2, ey2),
+            xytext=(ex2 + ux * 3, ey2 + uy * 3),
+            arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+        )
+        ax.text(
+            ex2 + ux * 5,
+            ey2 + uy * 5,
+            text,
+            color=C_TEXT,
+            ha="center",
+            va="center",
+            bbox=dict(facecolor="#ffffff", edgecolor="none", pad=1),
+            fontsize=9,
+        )
+        return
+
+    # ISO PDF style - arrows touch extension lines exactly
+    # Draw extension lines
+    s1x, s1y, e1x, e1y = _extension_segment(px1, py1, ex1, ey1)
+    s2x, s2y, e2x, e2y = _extension_segment(px2, py2, ex2, ey2)
+    ax.plot([s1x, e1x], [s1y, e1y], "k-", lw=EXT_LINE_WIDTH, solid_capstyle="butt")
+    ax.plot([s2x, e2x], [s2y, e2y], "k-", lw=EXT_LINE_WIDTH, solid_capstyle="butt")
+    
+    # Compute direction vector
     vec_x, vec_y = ex2 - ex1, ey2 - ey1
-    dist = np.sqrt(vec_x**2 + vec_y**2)
-    if dist == 0:
+    dist = np.hypot(vec_x, vec_y)
+    if dist <= 1e-12:
         return
     ux, uy = vec_x / dist, vec_y / dist
-    ax.annotate(
-        "",
-        xy=(ex1, ey1),
-        xytext=(ex1 - ux * 3, ey1 - uy * 3),
-        arrowprops=dict(arrowstyle=ARR_STYLE_SINGLE, color="black", lw=DIM_LINE_WIDTH, mutation_scale=ARROW_LENGTH),
-    )
-    ax.annotate(
-        "",
-        xy=(ex2, ey2),
-        xytext=(ex2 + ux * 3, ey2 + uy * 3),
-        arrowprops=dict(arrowstyle=ARR_STYLE_SINGLE, color="black", lw=DIM_LINE_WIDTH, mutation_scale=ARROW_LENGTH),
-    )
-    ax.text(
-        ex2 + ux * 5,
-        ey2 + uy * 5,
-        text,
-        color=C_TEXT,
-        ha="center",
-        va="center",
-        bbox=dict(facecolor="#ffffff", edgecolor="none", pad=1),
-        fontsize=9,
-    )
+    
+    # Extension beyond arrow tips (tail length)
+    # Right tail is longer to support text
+    line_extra_left = 2.0
+    line_extra_right = OUTSIDE_TEXT_DIST
+    
+    # Draw dimension line (extends beyond arrow tips)
+    ax.plot([ex1 - ux * line_extra_left, ex2 + ux * line_extra_right], 
+            [ey1 - uy * line_extra_left, ey2 + uy * line_extra_right], "k-", lw=DIM_LINE_WIDTH, solid_capstyle="butt")
+    
+    # Draw arrowheads with tips at extension line positions (pointing outward)
+    _draw_arrowhead(ax, ex1, ey1, ex1 - ux * ARROW_LENGTH, ey1 - uy * ARROW_LENGTH)
+    _draw_arrowhead(ax, ex2, ey2, ex2 + ux * ARROW_LENGTH, ey2 + uy * ARROW_LENGTH)
+    
+    # Position text
+    if abs(ex2 - ex1) >= abs(ey2 - ey1):
+        # Horizontal dimension
+        tx = max(ex1, ex2) + OUTSIDE_TEXT_DIST * OUTSIDE_TEXT_OFFSET_RATIO
+        ty = max(ey1, ey2) + TEXT_GAP_FROM_DIM_LINE
+        ax.text(tx, ty, text, color=C_TEXT, ha="center", va="bottom", **_dim_text_kwargs())
+    else:
+        # Vertical dimension: text rotated 90° counter-clockwise
+        tx = min(ex1, ex2) - TEXT_GAP_FROM_DIM_LINE
+        ty = (ey1 + ey2) / 2
+        ax.text(tx, ty, text, color=C_TEXT, ha="right", va="center", rotation=90, **_dim_text_kwargs())
 
 
 def draw_pointer(ax, p_target, p_text, text):
-    ax.annotate(
-        text,
-        xy=p_target,
-        xytext=p_text,
-        arrowprops=dict(arrowstyle=ARR_STYLE_SINGLE, color="black", lw=DIM_LINE_WIDTH, mutation_scale=ARROW_LENGTH),
-        color=C_TEXT,
-        ha="center",
-        va="center",
-        fontsize=9,
-        bbox=dict(facecolor="#ffffff", edgecolor="none", pad=0.5),
-    )
+    """Draw radius/pointer dimension. Arrow tip touches the profile."""
+    text = _format_dim_text(text)
+    tx, ty = p_text
+    px, py = p_target
+    
+    if not ISO_PDF_ACTIVE:
+        # Original web style - uses matplotlib annotate
+        ax.annotate(
+            text,
+            xy=p_target,
+            xytext=p_text,
+            arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+            color=C_TEXT,
+            ha="center",
+            va="center",
+            bbox=dict(facecolor="#ffffff", edgecolor="none", pad=0.5),
+            fontsize=9,
+        )
+        return
+
+    # ISO PDF style - arrow touches profile exactly
+    # Direction from text to target
+    vec_x = px - tx
+    vec_y = py - ty
+    dist = np.hypot(vec_x, vec_y)
+    if dist <= 1e-12:
+        return
+    ux, uy = vec_x / dist, vec_y / dist
+
+    # Draw leader line (stops before arrow)
+    ax.plot([tx, px - ux * ARROW_LENGTH], [ty, py - uy * ARROW_LENGTH], "k-", lw=DIM_LINE_WIDTH)
+    
+    # Draw arrowhead with tip at target (touching profile)
+    _draw_arrowhead(ax, px, py, px - ux * ARROW_LENGTH, py - uy * ARROW_LENGTH)
+    
+    # Draw text shelf and text
+    side = 1.0 if tx >= px else -1.0
+    shelf_end_x = tx + side * 3.25
+    ax.plot([tx, shelf_end_x], [ty, ty], "k-", lw=DIM_LINE_WIDTH)
+    ax.text((tx + shelf_end_x) / 2, ty + TEXT_GAP_FROM_DIM_LINE, text, color=C_TEXT, ha="center", va="bottom", **_dim_text_kwargs())
 
 
 def get_circle_contour(radius, density=300):
@@ -309,6 +581,33 @@ def apply_1d_groove(x_1d, z_surf, cfg, edge_rad):
 
 
 def render_tablet(mesh_data, params, dpi=120):
+    global DIM_LINE_WIDTH, C_TEXT
+    global EXT_LINE_WIDTH, TEXT_FONT_SIZE, TEXT_GAP_FROM_DIM_LINE
+    global TEXT_BBOX_PAD, EXT_LINE_GAP_FROM_FEATURE, EXT_LINE_OVERRUN, OUTSIDE_TEXT_DIST
+    global OUTSIDE_TEXT_OFFSET_RATIO, ARROW_LENGTH, ARROW_WIDTH, ISO_PDF_ACTIVE
+    
+    style_name = str(params.get("render_2d_style", "web")).lower()
+    ISO_PDF_ACTIVE = style_name == "iso_pdf"
+    
+    if ISO_PDF_ACTIVE:
+        style = ISO_PDF_STYLE
+        DIM_LINE_WIDTH = style["dim_line_width"]
+        EXT_LINE_WIDTH = style["ext_line_width"]
+        C_TEXT = style["text_color"]
+        TEXT_FONT_SIZE = style["text_font_size"]
+        TEXT_GAP_FROM_DIM_LINE = style["text_gap_from_dim_line"]
+        TEXT_BBOX_PAD = style["text_bbox_pad"]
+        EXT_LINE_GAP_FROM_FEATURE = style["ext_line_gap_from_feature"]
+        EXT_LINE_OVERRUN = style["ext_line_overrun"]
+        OUTSIDE_TEXT_DIST = style["outside_text_dist"]
+        OUTSIDE_TEXT_OFFSET_RATIO = style["outside_text_offset_ratio"]
+        ARROW_LENGTH = style["arrow_length"]
+        ARROW_WIDTH = style["arrow_width"]
+    else:
+        style = WEB_STYLE
+        DIM_LINE_WIDTH = style["dim_line_width"]
+        C_TEXT = style["text_color"]
+
     cfg = _validate_params(params)
     shape, is_modified, w_val, l_val, land, re, rs = _shape_meta(cfg)
     hb = cfg.Hb
@@ -636,16 +935,18 @@ def render_tablet(mesh_data, params, dpi=120):
         r_maj_maj = cfg.R_maj_maj
         r_maj_min = cfg.R_maj_min
         l_c = max(0.001, l_val / 2 - land)
+        # Use shorter leader for PDF, longer for web
+        leader_offset = 4 if ISO_PDF_ACTIVE else 7
         x_maj_pt = l_c * 0.30
         z_maj_pt = get_compound_profile(np.array([x_maj_pt]), r_maj_maj, r_maj_min, dc, l_c)[0]
         target_maj = (cx_side + hb / 2 + z_maj_pt, cy_side + x_maj_pt)
-        text_maj = (cx_side + hb / 2 + z_maj_pt + 7, cy_side + x_maj_pt + 2)
+        text_maj = (cx_side + hb / 2 + z_maj_pt + leader_offset, cy_side + x_maj_pt + 2)
         draw_pointer(ax, target_maj, text_maj, f"{r_maj_maj:g}\nMajor Major\nRadius")
 
         x_min_pt = l_c * 0.85
         z_min_pt = get_compound_profile(np.array([x_min_pt]), r_maj_maj, r_maj_min, dc, l_c)[0]
         target_min = (cx_side + hb / 2 + z_min_pt, cy_side - x_min_pt)
-        text_min = (cx_side + hb / 2 + z_min_pt + 7, cy_side - x_min_pt + 2.5)
+        text_min = (cx_side + hb / 2 + z_min_pt + leader_offset, cy_side - x_min_pt + 2.5)
         draw_pointer(ax, target_min, text_min, f"{r_maj_min:g}\nMajor Minor\nRadius")
 
     span_front = max(0.001, w_val / 2 - land)
@@ -700,30 +1001,62 @@ def render_tablet(mesh_data, params, dpi=120):
 
     if land > 0:
         l_land_coord = span_front
-        ax.plot([cx_front + l_land_coord, cx_front + l_land_coord], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=DIM_LINE_WIDTH)
-        ax.plot([cx_front + w_val / 2, cx_front + w_val / 2], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=DIM_LINE_WIDTH)
-        ax.annotate(
-            "",
-            xy=(cx_front + l_land_coord, cy_front + tt / 2 + 2),
-            xytext=(cx_front + l_land_coord - 2.5, cy_front + tt / 2 + 2),
-            arrowprops=dict(arrowstyle=ARR_STYLE_SINGLE, color="black", lw=DIM_LINE_WIDTH, mutation_scale=ARROW_LENGTH),
-        )
-        ax.annotate(
-            "",
-            xy=(cx_front + w_val / 2, cy_front + tt / 2 + 2),
-            xytext=(cx_front + w_val / 2 + 2.5, cy_front + tt / 2 + 2),
-            arrowprops=dict(arrowstyle=ARR_STYLE_SINGLE, color="black", lw=DIM_LINE_WIDTH, mutation_scale=ARROW_LENGTH),
-        )
-        ax.text(
-            cx_front + w_val / 2 + 4.2,
-            cy_front + tt / 2 + 2,
-            f"{land:g}\nBld. Land",
-            color=C_TEXT,
-            ha="center",
-            va="center",
-            bbox=dict(facecolor="#ffffff", edgecolor="none", pad=0.5),
-            fontsize=9,
-        )
+        
+        if not ISO_PDF_ACTIVE:
+            # Original web style
+            ax.plot([cx_front + l_land_coord, cx_front + l_land_coord], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=DIM_LINE_WIDTH)
+            ax.plot([cx_front + w_val / 2, cx_front + w_val / 2], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=DIM_LINE_WIDTH)
+            ax.annotate(
+                "",
+                xy=(cx_front + l_land_coord, cy_front + tt / 2 + 2),
+                xytext=(cx_front + l_land_coord - 2.5, cy_front + tt / 2 + 2),
+                arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+            )
+            ax.annotate(
+                "",
+                xy=(cx_front + w_val / 2, cy_front + tt / 2 + 2),
+                xytext=(cx_front + w_val / 2 + 2.5, cy_front + tt / 2 + 2),
+                arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+            )
+            ax.text(
+                cx_front + w_val / 2 + 4.2,
+                cy_front + tt / 2 + 2,
+                f"{land:g}\nBld. Land",
+                color=C_TEXT,
+                ha="center",
+                va="center",
+                bbox=dict(facecolor="#ffffff", edgecolor="none", pad=0.5),
+                fontsize=9,
+            )
+        else:
+            # ISO PDF style - arrows touch extension lines with tails
+            ax.plot([cx_front + l_land_coord, cx_front + l_land_coord], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=EXT_LINE_WIDTH)
+            ax.plot([cx_front + w_val / 2, cx_front + w_val / 2], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=EXT_LINE_WIDTH)
+            
+            y_dim = cy_front + tt / 2 + 2
+            x_left = cx_front + l_land_coord
+            x_right = cx_front + w_val / 2
+            
+            # Tail lengths (right tail longer for text support)
+            tail_left = 2.0
+            tail_right = OUTSIDE_TEXT_DIST
+            
+            # Dimension line with tails
+            ax.plot([x_left - tail_left, x_right + tail_right], [y_dim, y_dim], "k-", lw=DIM_LINE_WIDTH)
+            
+            # Arrows pointing outward
+            _draw_arrowhead(ax, x_left, y_dim, x_left - ARROW_LENGTH, y_dim)
+            _draw_arrowhead(ax, x_right, y_dim, x_right + ARROW_LENGTH, y_dim)
+            
+            ax.text(
+                cx_front + w_val / 2 + OUTSIDE_TEXT_DIST * OUTSIDE_TEXT_OFFSET_RATIO,
+                cy_front + tt / 2 + 2 + TEXT_GAP_FROM_DIM_LINE,
+                _format_dim_text(f"{land:g}"),
+                color=C_TEXT,
+                ha="center",
+                va="bottom",
+                **_dim_text_kwargs(),
+            )
 
     if profile in ("cbe", "ffbe"):
         alpha_rad = np.radians(bev_a)
@@ -749,8 +1082,8 @@ def render_tablet(mesh_data, params, dpi=120):
             color=C_TEXT,
             ha="center",
             va="center",
-            fontsize=9,
-            bbox=dict(facecolor="#ffffff", edgecolor="none", pad=0.5),
+            bbox=dict(facecolor="#ffffff", edgecolor="none", pad=TEXT_BBOX_PAD),
+            **_dim_text_kwargs(),
         )
 
     if profile == "modified_oval" and shape == "oval":
