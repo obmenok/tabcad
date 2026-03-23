@@ -2,7 +2,7 @@
 
 TabletCAD is a Dash-based engineering app for **tablet punch geometry calculation** and **2D/3D drawing generation**.
 
-It supports Round, Capsule, and Oval families with multiple cup configurations, bisect options, and reference-style dimensioning inspired by legacy Natoli scripts.
+It supports Round, Capsule, and Oval families with multiple cup configurations, bisect options, and reference-style dimensioning.
 
 ---
 
@@ -62,7 +62,129 @@ It supports Round, Capsule, and Oval families with multiple cup configurations, 
   - Profile-dependent field visibility/editability
   - Runtime clamping/validation of geometric parameters
   - Coupled parameter synchronization in callbacks
-- Golden-regression tests vs reference equations
+
+
+---
+
+## TODO / Roadmap
+
+### Priority 1: Critical Improvements
+
+#### 1.1 Visual Validation Feedback
+- [ ] Red border highlight for constraint violations in input fields
+- [ ] Tooltip/popover with violation reason on hover
+- [ ] Visual indicator for auto-corrected values (e.g., yellow flash)
+- [ ] Real-time constraint summary panel
+
+#### 1.2 History and Undo/Redo
+- [ ] Undo/Redo functionality (Ctrl+Z / Ctrl+Y)
+- [ ] Session history stored in localStorage
+- [ ] Auto-save every 30 seconds
+- [ ] "Restore last session" on page load
+
+---
+
+### Priority 2: Feature Extensions
+
+#### 2.1 Material Library
+- [ ] Material database (Mannitol, Lactose, MCC, etc.)
+- [ ] Custom material creation
+- [ ] Auto-fill density from selected material
+- [ ] Material-specific validation rules
+
+#### 2.2 Multi-Tablet Design
+- [ ] Multiple tablets in single project
+- [ ] Side-by-side parameter comparison
+- [ ] Batch PDF export
+- [ ] Tablet set management (blister pack design)
+
+#### 2.3 Tooling Constraints
+- [ ] Press parameters input (max force, turret speed)
+- [ ] Tooling type selection (D-tool / B-tool)
+- [ ] Compression force validation
+- [ ] Tool hardness recommendations
+
+#### 2.4 CAD/CAM Integration
+- [ ] STEP/IGES export
+- [ ] DXF/DWG export for AutoCAD
+- [ ] JSON export/import for system integration
+- [ ] Excel/CSV parameter import
+
+---
+
+### Priority 3: Analytics & Reporting
+
+#### 3.1 Comparative Analysis
+- [ ] Compare multiple designs side-by-side
+- [ ] Delta percentage calculation
+- [ ] Export comparison report
+
+#### 3.2 Geometry Optimization
+- [ ] Target function definition (min SA/V, max cup volume, etc.)
+- [ ] Automatic parameter optimization
+- [ ] Constraint-aware optimization bounds
+
+#### 3.3 Enhanced Documentation
+- [ ] Multi-page PDF reports
+- [ ] Revision history table
+- [ ] Electronic signature support
+- [ ] QR code with parameters
+
+---
+
+### Priority 4: UX/UI Improvements
+
+#### 4.1 Visual Enhancements
+- [ ] Dark theme
+- [ ] Customizable 3D model colors
+- [ ] Smooth view transition animations
+- [ ] Interactive tooltips on geometry hover
+
+#### 4.2 Keyboard Shortcuts
+```
+Ctrl+G    — Generate Drawing
+Ctrl+S    — Save Preset
+Ctrl+E    — Export PDF
+Ctrl+Z    — Undo
+Ctrl+Y    — Redo
+1-8       — Switch 3D View Preset
+```
+
+#### 4.3 Mobile Support
+- [ ] Responsive design for tablets
+- [ ] Touch-friendly controls
+- [ ] Simplified mobile interface
+
+---
+
+### Priority 5: Enterprise Features
+
+#### 5.1 Multi-User Support
+- [ ] User authentication
+- [ ] Shared preset libraries
+- [ ] Role-based access control
+
+#### 5.2 API Integration
+```python
+# REST API endpoints
+POST /api/tablet/generate
+GET  /api/tablet/export/pdf
+GET  /api/tablet/export/stl
+```
+
+#### 5.3 LIMS/ERP Integration
+- [ ] Export to laboratory systems
+- [ ] SAP/Oracle integration
+- [ ] CLI batch processing mode
+
+---
+
+### Performance Optimization
+
+- [ ] Adaptive mesh resolution for PDF export (lower mesh_n)
+- [ ] Reduced 3D surface points for PDF (lower theta/rr)
+- [ ] Numba JIT compilation for profile calculations
+- [ ] Contour caching for unchanged shapes
 
 ---
 
@@ -125,8 +247,6 @@ tabcad/
 
 ### Not part of the live runtime path
 
-- `tests/` (test-only)
-- `references/` and `core/natoli_forms/` (reference/legacy/parity material)
 - `constraints.xlsx` (analytical helper file; runtime viewer reads `constraints.csv`)
 - `GEMINI.md`, PDFs in repo root (documentation/reference artifacts)
 
@@ -237,12 +357,6 @@ Run all tests:
 pytest -q
 ```
 
-Golden regression test:
-
-- `tests/test_golden_regression.py`
-
-It compares domain metrics against reference outputs from `core/reference_bridge.py` across representative shape/profile cases with per-case tolerances.
-
 ---
 
 ## Branching Strategy
@@ -308,8 +422,7 @@ The preset system automatically generates names based on the tablet's physical d
 - **Constraints file (reference helper)**  
   There is a constraints file used mainly as a reference to visualize parameter limits and relationships. It is only lightly integrated (the constraints viewer is hooked into the UI), and the file itself exists primarily for human inspection due to the complexity/volume of constraints.
 
-- Some legacy/reference files are intentionally kept for parity and auditability.
-- Architecture goal is domain-first single-runtime path after complete parity and regression confidence.
+- Architecture goal is domain-first single-runtime path.
 
 ---
 
