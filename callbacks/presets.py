@@ -8,7 +8,7 @@ PRESET_KEYS = [
     "input-dc", "input-rc-min", "input-rc-maj", 
     "input-r-maj-maj", "input-r-maj-min", "input-r-min-maj", "input-r-min-min",
     "input-bev-d", "input-bev-a", "input-r-edge", "input-blend-r", 
-    "input-land", "input-hb", "input-tt", "input-density", "input-weight",
+    "input-land", "input-hb", "input-tt", "input-density", "input-weight", "input-tip-force-steel",
     "bisect-type", "bisect-cruciform", "bisect-double-sided",
     "input-b-width", "input-b-depth", "input-b-angle", "input-b-ri"
 ]
@@ -210,4 +210,3 @@ def reset_loading_flag(is_loading):
     if is_loading is True:
         return False
     return dash.no_update
-

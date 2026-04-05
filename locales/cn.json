@@ -92,5 +92,13 @@
     "mg_mm3": "mg/mm³",
     "inv_mm": "1/mm",
     "mm": "mm"
+  },
+  "physical": {
+    "title": "物理参数"
+  },
+  "tip_force": {
+    "title": "压片力",
+    "steel": "钢号",
+    "max": "最大压片力, kN"
   }
 }

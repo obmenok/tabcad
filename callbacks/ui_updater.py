@@ -2,6 +2,7 @@ import dash
 import numpy as np
 from dash import Input, Output, State, callback, ctx
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
+from core.tip_force import calculate_tip_force
 
 
 @callback(
@@ -1069,6 +1070,97 @@ def sync_weight_density_with_volume(
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in sync_weight_density_with_volume: {e}")
         return dash.no_update, dash.no_update
+
+
+@callback(
+    Output("tip-force-value", "value"),
+    [
+        Input("shape-dropdown", "value"),
+        Input("profile-dropdown", "value"),
+        Input("modified-switch", "value"),
+        Input("input-w", "value"),
+        Input("input-l", "value"),
+        Input("input-re", "value"),
+        Input("input-rs", "value"),
+        Input("input-dc", "value"),
+        Input("input-rc-min", "value"),
+        Input("input-rc-maj", "value"),
+        Input("input-land", "value"),
+        Input("input-hb", "value"),
+        Input("input-tt", "value"),
+        Input("input-bev-d", "value"),
+        Input("input-bev-a", "value"),
+        Input("input-r-edge", "value"),
+        Input("input-blend-r", "value"),
+        Input("input-r-maj-maj", "value"),
+        Input("input-r-maj-min", "value"),
+        Input("input-r-min-maj", "value"),
+        Input("input-r-min-min", "value"),
+        Input("bisect-type", "value"),
+        Input("bisect-cruciform", "value"),
+        Input("bisect-double-sided", "value"),
+        Input("input-tip-force-steel", "value"),
+    ],
+)
+def update_tip_force_value(
+    shape,
+    profile,
+    is_mod,
+    w,
+    l,
+    re,
+    rs,
+    dc,
+    rc_min,
+    rc_maj,
+    land,
+    hb,
+    tt,
+    bev_d,
+    bev_a,
+    r_edge,
+    blend_r,
+    r_maj_maj,
+    r_maj_min,
+    r_min_maj,
+    r_min_min,
+    b_type,
+    b_cruciform,
+    b_double_sided,
+    steel,
+):
+    params = {
+        "shape": shape,
+        "profile": profile,
+        "is_modified": bool(is_mod),
+        "W": w if w is not None else BASE_DEFAULTS["W"],
+        "L": l if l is not None else BASE_DEFAULTS["L"],
+        "Re": re if re is not None else SHAPE_SPECIFIC["oval"]["re"],
+        "Rs": rs if rs is not None else SHAPE_SPECIFIC["oval"]["rs"],
+        "Dc": dc if dc is not None else BASE_DEFAULTS["dc"],
+        "Rc_min": rc_min if rc_min is not None else PROFILE_DEFAULTS["concave"]["rc_min"],
+        "Rc_maj": rc_maj if rc_maj is not None else PROFILE_DEFAULTS["concave"]["rc_maj"],
+        "Land": land if land is not None else BASE_DEFAULTS["land"],
+        "Hb": hb if hb is not None else BASE_DEFAULTS["hb"],
+        "Tt": tt if tt is not None else BASE_DEFAULTS["tt"],
+        "Bev_D": bev_d if bev_d is not None else PROFILE_DEFAULTS["cbe"]["bev_d"],
+        "Bev_A": bev_a if bev_a is not None else PROFILE_DEFAULTS["cbe"]["bev_a"],
+        "R_edge": r_edge if r_edge is not None else PROFILE_DEFAULTS["ffre"]["r_edge"],
+        "Blend_R": blend_r if blend_r is not None else PROFILE_DEFAULTS["ffbe"]["blend_r"],
+        "R_maj_maj": r_maj_maj if r_maj_maj is not None else PROFILE_DEFAULTS["compound"]["r_maj_maj"],
+        "R_maj_min": r_maj_min if r_maj_min is not None else PROFILE_DEFAULTS["compound"]["r_maj_min"],
+        "R_min_maj": r_min_maj if r_min_maj is not None else PROFILE_DEFAULTS["compound"]["r_min_maj"],
+        "R_min_min": r_min_min if r_min_min is not None else PROFILE_DEFAULTS["compound"]["r_min_min"],
+        "b_type": b_type if b_type is not None else "none",
+        "b_cruciform": bool(b_cruciform and "on" in b_cruciform),
+        "b_double_sided": bool(b_double_sided and "on" in b_double_sided),
+        "tip_force_steel": steel if steel else BASE_DEFAULTS["tip_force_steel"],
+    }
+
+    tip_force = calculate_tip_force(params)
+    if not tip_force["supported"] or tip_force["selected_force"] is None:
+        return "N/A"
+    return f'{tip_force["selected_force"]}'
 
 
 def _calc_rc_from_dc(span, dc):

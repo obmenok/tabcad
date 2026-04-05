@@ -9,6 +9,7 @@ BASE_DEFAULTS = {
     "hb": 2.55,         # Belly Band
     "tt": 4.39,         # Tablet Thickness
     "density": 1.19,    # Tablet Density
+    "tip_force_steel": "S7",
 }
 
 # Дефолты для специфических профилей

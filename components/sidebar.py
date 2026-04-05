@@ -294,10 +294,58 @@ def create_sidebar():
         make_input('input-land', 'Land, mm', BASE_DEFAULTS["land"]),
         make_input('input-hb', 'Belly Band, mm', BASE_DEFAULTS["hb"]),
         make_input('input-tt', 'Tablet Thickness, mm', BASE_DEFAULTS["tt"]), 
+        html.Label("Physical Parameters", id="label-physical-title", className="fw-bold mb-1", style={"marginTop": "4px"}),
         make_input('input-density', 'Tablet Density, mg/mm³', BASE_DEFAULTS["density"], step=0.01, min_value=0.01, debounce=True),
         make_input('input-weight', 'Tablet Weight, mg', None, step=0.01, min_value=0.0, debounce=True),
+        html.Label("Tip force", id="label-tip-force-title", className="fw-bold mb-1", style={"marginTop": "4px"}),
+        dbc.Row(
+            [
+                dbc.Col(
+                    html.Label(
+                        "Steel type",
+                        id="label-tip-force-steel",
+                        className="tablet-input-label mb-0",
+                        style={"lineHeight": "30px"},
+                    ),
+                    width=3,
+                ),
+                dbc.Col(
+                    dbc.Select(
+                        id="input-tip-force-steel",
+                        options=[
+                            {"label": "S7", "value": "S7"},
+                            {"label": "D2", "value": "D2"},
+                        ],
+                        value=BASE_DEFAULTS["tip_force_steel"],
+                        size="sm",
+                    ),
+                    width=3,
+                    style={"paddingRight": "12px"},
+                ),
+                dbc.Col(
+                    html.Label(
+                        "Max tip force",
+                        id="label-tip-force-value",
+                        className="tablet-input-label mb-0",
+                        style={"lineHeight": "30px", "paddingLeft": "20px"},
+                    ),
+                    width=4,
+                ),
+                dbc.Col(
+                    dbc.Input(
+                        id="tip-force-value",
+                        type="text",
+                        value="N/A",
+                        readonly=True,
+                        size="sm",
+                    ),
+                    width=2,
+                ),
+            ],
+            className="g-1 mb-2",
+        ),
 
-        html.Label("Scoring Options", id="label-scoring-title", className="fw-bold mt-3 mb-1"),
+        html.Label("Scoring Options", id="label-scoring-title", className="fw-bold mb-1", style={"marginTop": "4px"}),
         dbc.ButtonGroup(
             [
                 dbc.Button("None", id="bisect-btn-none", color="light", class_name="plotly-toolbar-btn", title="None"),

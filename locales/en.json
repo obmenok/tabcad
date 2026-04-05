@@ -92,5 +92,13 @@
     "mg_mm3": "mg/mm³",
     "inv_mm": "1/mm",
     "mm": "mm"
+  },
+  "physical": {
+    "title": "Physical Parameters"
+  },
+  "tip_force": {
+    "title": "Tip force",
+    "steel": "Steel type",
+    "max": "Max tip force, kN"
   }
 }
