@@ -305,10 +305,22 @@ def create_sidebar():
                         "Steel type",
                         id="label-tip-force-steel",
                         className="tablet-input-label mb-0",
-                        style={"lineHeight": "30px"},
                     ),
-                    width=3,
+                    width=6,
                 ),
+                dbc.Col(
+                    html.Label(
+                        "Max tip force",
+                        id="label-tip-force-value",
+                        className="tablet-input-label mb-0",
+                    ),
+                    width=6,
+                ),
+            ],
+            className="g-1 mb-1",
+        ),
+        dbc.Row(
+            [
                 dbc.Col(
                     dbc.Select(
                         id="input-tip-force-steel",
@@ -319,17 +331,7 @@ def create_sidebar():
                         value=BASE_DEFAULTS["tip_force_steel"],
                         size="sm",
                     ),
-                    width=3,
-                    style={"paddingRight": "12px"},
-                ),
-                dbc.Col(
-                    html.Label(
-                        "Max tip force",
-                        id="label-tip-force-value",
-                        className="tablet-input-label mb-0",
-                        style={"lineHeight": "30px", "paddingLeft": "20px"},
-                    ),
-                    width=4,
+                    width=6,
                 ),
                 dbc.Col(
                     dbc.Input(
@@ -339,7 +341,7 @@ def create_sidebar():
                         readonly=True,
                         size="sm",
                     ),
-                    width=2,
+                    width=6,
                 ),
             ],
             className="g-1 mb-2",
