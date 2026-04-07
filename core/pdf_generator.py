@@ -23,6 +23,7 @@ from PIL import Image
 import base64
 import numpy as np
 from datetime import datetime
+from core.tip_force import calculate_tip_force
 
 class TabletPDFGenerator:
     def __init__(self, filename, params, metrics, drawing_2d_b64=None, views_3d=None):
@@ -149,31 +150,43 @@ class TabletPDFGenerator:
         self.c.drawImage(ir, self.left_m, y_bot, width=self.content_w, height=h, preserveAspectRatio=True, mask='auto')
 
     def draw_data_tables(self):
-        x, y = self.left_m + 5 * mm, self.bot_m + 50 * mm
+        scale = self.content_w / (180 * mm)
+        x, y = self.left_m, self.bot_m + 36 * mm * scale
         m = self.metrics
         vol = m.get('Tablet_Vol', 0)
         sa = m.get('Tablet_SA', 0)
         density = float(self.params["density"])
         weight = vol * density
         
+        tip_force_data = calculate_tip_force(self.params)
+        tip_force_val = tip_force_data.get("selected_force")
+        tip_force_str = f"{tip_force_val:.2f}" if tip_force_val is not None else "N/A"
+        steel = self.params.get("tip_force_steel", "S7")
+        
         data = [
             ["ENGINEERING DATA", "VALUE", "UNIT"],
-            ["Total Volume", f"{vol:.2f}", "mm³"],
-            ["Surface Area", f"{sa:.2f}", "mm²"],
-            ["Tablet Weight", f"{weight:.2f}", "mg"],
-            ["Density", f"{density:.2f}", "mg/mm³"],
             ["Perimeter", f"{m.get('Perimeter', 0):.2f}", "mm"],
-            ["Belly Band (Hb)", f"{float(self.params['Hb']):.2f}", "mm"],
-            ["Cup Depth (Dc)", f"{float(self.params['Dc']):.2f}", "mm"],
-            ["Total Thickness", f"{float(self.params['Tt']):.2f}", "mm"],
+            ["Die Hole SA", f"{m.get('Die_Hole_SA', 0):.2f}", "mm²"],
+            ["Cup SA", f"{m.get('Cup_SA', 0):.2f}", "mm²"],
+            ["Cup Volume", f"{m.get('Cup_Volume', 0):.2f}", "mm³"],
+            ["Tablet SA", f"{sa:.2f}", "mm²"],
+            ["Tablet Volume", f"{vol:.2f}", "mm³"],
+            ["Tablet SA/V", f"{sa/vol if vol else 0:.2f}", "1/mm"],
+            ["Tablet Density", f"{density:.2f}", "mg/mm³"],
+            ["Tablet Weight", f"{weight:.2f}", "mg"],
+            ["Max Tip Force", tip_force_str, "kN"],
         ]
-        t = Table(data, colWidths=[45*mm, 25*mm, 15*mm])
+        
+        col_value = 25 * mm
+        col_unit = 15 * mm
+        col_data = 80 * mm * scale - col_value - col_unit
+        t = Table(data, colWidths=[col_data, col_value, col_unit])
         t.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 0.3*mm, colors.black),
             ('FONTNAME', (0,0), (-1,-1), self.font_name),
             ('FONTSIZE', (0,0), (-1,-1), 10),
-            ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
         ]))
         t.wrapOn(self.c, self.width, self.height)
         t.drawOn(self.c, x, y)
@@ -186,8 +199,9 @@ class TabletPDFGenerator:
         
         def place_v(label, vx, vy):
             if label in views_dict:
-                img = ImageReader(BytesIO(base64.b64decode(views_dict[label].split(",")[1])))
-                self.c.drawImage(img, vx, vy, width=v_size, height=v_size, preserveAspectRatio=True)
+                _, encoded = views_dict[label].split(",", 1)
+                img = ImageReader(BytesIO(base64.b64decode(encoded)))
+                self.c.drawImage(img, vx, vy, width=v_size, height=v_size, preserveAspectRatio=True, mask='auto')
                 self.c.setFont(self.font_name, 8)
                 self.c.drawCentredString(vx + v_size/2, vy - 3*mm, label.upper())
 

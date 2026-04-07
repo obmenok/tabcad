@@ -287,7 +287,7 @@ def create_sidebar():
         make_input('input-r-min-maj', 'Minor Major Radius, mm', PROFILE_DEFAULTS["compound"]["r_min_maj"], visible=False),
         make_input('input-r-min-min', 'Minor Minor Radius, mm', PROFILE_DEFAULTS["compound"]["r_min_min"], visible=False),
         make_input('input-bev-d', 'Bevel Depth, mm', PROFILE_DEFAULTS["cbe"]["bev_d"], visible=False),
-        make_input('input-bev-a', 'Bevel Angle, °', PROFILE_DEFAULTS["cbe"]["bev_a"], step=0.01, max_value=60.0, visible=False),
+        make_input('input-bev-a', 'Bevel Angle, °', PROFILE_DEFAULTS["cbe"]["bev_a"], step=1.0, max_value=60.0, visible=False),
         make_input('input-r-edge', 'Radius Edge, mm', PROFILE_DEFAULTS["ffre"]["r_edge"], visible=False),
         make_input('input-blend-r', 'Blend Radius, mm', PROFILE_DEFAULTS["ffbe"]["blend_r"], visible=False),
 
@@ -412,7 +412,7 @@ def create_sidebar():
         ),
         make_input('input-b-width', 'Width, mm', BISECT_DEFAULTS["standard"]["width"], visible=False),
         make_input('input-b-depth', 'Depth, mm', BISECT_DEFAULTS["standard"]["depth"], visible=False),
-        make_input('input-b-angle', 'Angle, °', BISECT_DEFAULTS["standard"]["angle"], visible=False),
+        make_input('input-b-angle', 'Angle, °', BISECT_DEFAULTS["standard"]["angle"], step=1.0, visible=False),
         make_input('input-b-ri', 'Radius Inner, mm', BISECT_DEFAULTS["standard"]["ri"], visible=False),
 
         html.Hr(),
