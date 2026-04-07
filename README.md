@@ -235,6 +235,7 @@ tabcad/
     ├── db.py                           # SQLite access layer for presets
     ├── i18n.py                         # Translation loader/helper
     ├── engine.py                       # Facade over domain geometry functions
+    ├── preset_naming.py                # Shared preset and PDF drawing-number naming helper
     ├── renderer.py                     # 2D drawing renderer (matplotlib -> image)
     ├── renderer_3d.py                  # 3D renderer (Plotly mesh/scene)
     ├── stl_exporter.py                 # STL export from generated mesh
@@ -430,4 +431,3 @@ The preset system automatically generates names based on the tablet's physical d
 
 License is not defined yet in this repository.
 Add a `LICENSE` file before external distribution.
-

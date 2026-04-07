@@ -5,7 +5,7 @@ from core.engine import generate_mesh
 from core.renderer import render_tablet
 from core.renderer_3d import render_tablet_3d
 from core.stl_exporter import generate_tablet_stl
-from core.pdf_generator import TabletPDFGenerator
+from core.pdf_generator import TabletPDFGenerator, pdf_supports_svg_drawings
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
 
 
@@ -120,6 +120,7 @@ def export_pdf_callback(
         params_2d = dict(params)
         params_2d["render_2d_shaded"] = True
         params_2d["render_2d_style"] = "iso_pdf"
+        params_2d["render_2d_format"] = "svg" if pdf_supports_svg_drawings() else "png"
         drawing_2d_b64 = render_tablet(mesh_data, params_2d, dpi=300)
 
         # Capture 3D view for PDF (Isometric only)
@@ -207,6 +208,7 @@ def _build_params(
     show_edges=False,
     show_bbox=False,
     render_2d_style="web",
+    render_2d_format="svg",
 ):
     return {
         "shape": shape,
@@ -243,6 +245,7 @@ def _build_params(
         "show_bbox": bool(show_bbox),
         "render_2d_shaded": bool(drawing_2d_shaded),
         "render_2d_style": render_2d_style or "web",
+        "render_2d_format": render_2d_format or "svg",
     }
 
 
@@ -342,6 +345,7 @@ def _build_calc_html(metrics, density, lang="en"):
 @callback(
     [
         Output("tablet-drawing", "src"),
+        Output("drawing-2d-png-src", "data"),
         Output("tablet-3d", "children"),
     ],
     [
@@ -419,7 +423,7 @@ def generate_graphics(
     b_double_sided,
 ):
     if w is None or dc is None or profile is None:
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
 
     params = _build_params(
         shape,
@@ -459,6 +463,9 @@ def generate_graphics(
     try:
         mesh_data = generate_mesh(params)
         img_src = render_tablet(mesh_data, params)
+        params_png = dict(params)
+        params_png["render_2d_format"] = "png"
+        png_src = render_tablet(mesh_data, params_png)
         fig = render_tablet_3d(mesh_data, params)
         fig_3d = dcc.Graph(
             figure=fig,
@@ -466,10 +473,10 @@ def generate_graphics(
             config={"displaylogo": False, "displayModeBar": False, "responsive": True},
             id="tablet-3d-graph",
         )
-        return img_src, fig_3d
+        return img_src, png_src, fig_3d
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in generate_graphics: {e}")
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
 
 
 

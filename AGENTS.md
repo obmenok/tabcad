@@ -70,6 +70,7 @@ tabcad/
     ├── db.py                 # SQLite access layer
     ├── i18n.py               # Translation helper
     ├── engine.py             # Facade over domain geometry
+    ├── preset_naming.py      # Shared preset/PDF drawing-number naming helper
     ├── renderer.py           # 2D drawing (matplotlib)
     ├── renderer_3d.py        # 3D rendering (Plotly)
     ├── stl_exporter.py       # STL mesh export
@@ -122,6 +123,7 @@ tabcad/
 │  core/renderer_3d.py   → 3D Plotly mesh                            │
 │  core/pdf_generator.py → PDF specification                         │
 │  core/stl_exporter.py  → STL mesh file                             │
+│  core/preset_naming.py → Shared preset + drawing-number naming     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -438,6 +440,7 @@ label = t("dim.w", lang)  # lang from "lang-store"
 |------|---------|
 | `core/defaults.py` | All default values |
 | `core/engine.py` | Geometry facade |
+| `core/preset_naming.py` | Shared preset and PDF drawing-number naming |
 | `callbacks/ui_updater.py` | Validation & sync logic |
 | `callbacks/graph_updater.py` | Main generation callback |
 
@@ -448,6 +451,7 @@ label = t("dim.w", lang)  # lang from "lang-store"
 | `_build_params()` | `callbacks/graph_updater.py` | Assemble params dict |
 | `render_tablet()` | `core/renderer.py` | 2D drawing |
 | `render_tablet_3d()` | `core/renderer_3d.py` | 3D Plotly mesh |
+| `build_preset_base_name()` | `core/preset_naming.py` | Shared naming for presets and drawing numbers |
 
 ### Important Callbacks
 | Callback | File | Triggers |

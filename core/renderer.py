@@ -580,7 +580,7 @@ def apply_1d_groove(x_1d, z_surf, cfg, edge_rad):
     return np.minimum(z_surf, z_g)
 
 
-def render_tablet(mesh_data, params, dpi=120):
+def render_tablet(mesh_data, params, dpi=120, output_format=None):
     global DIM_LINE_WIDTH, C_TEXT
     global EXT_LINE_WIDTH, TEXT_FONT_SIZE, TEXT_GAP_FROM_DIM_LINE
     global TEXT_BBOX_PAD, EXT_LINE_GAP_FROM_FEATURE, EXT_LINE_OVERRUN, OUTSIDE_TEXT_DIST
@@ -1223,8 +1223,16 @@ def render_tablet(mesh_data, params, dpi=120):
     ax.set_xlim(center_x - max_range / 2 - max_range * 0.05, center_x + max_range / 2 + max_range * 0.05)
     ax.set_ylim(center_y - max_range / 2 - max_range * 0.05, center_y + max_range / 2 + max_range * 0.05)
 
+    export_format = str(output_format or params.get("render_2d_format", "png")).lower()
+    if export_format not in ("png", "svg"):
+        export_format = "png"
+
     buf = BytesIO()
     plt.tight_layout()
-    plt.savefig(buf, format="png", bbox_inches="tight", dpi=dpi)
+    save_kwargs = {"format": export_format, "bbox_inches": "tight"}
+    if export_format == "png":
+        save_kwargs["dpi"] = dpi
+    plt.savefig(buf, **save_kwargs)
     plt.close(fig)
-    return f"data:image/png;base64,{base64.b64encode(buf.getbuffer()).decode('ascii')}"
+    mime = "image/svg+xml" if export_format == "svg" else "image/png"
+    return f"data:{mime};base64,{base64.b64encode(buf.getbuffer()).decode('ascii')}"

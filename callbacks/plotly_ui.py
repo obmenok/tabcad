@@ -1,4 +1,8 @@
-from dash import Input, Output, State, callback, clientside_callback, ctx
+import dash
+import base64
+from urllib.parse import unquote
+
+from dash import Input, Output, State, callback, clientside_callback, ctx, dcc
 
 
 clientside_callback(
@@ -166,30 +170,40 @@ clientside_callback(
 )
 
 
-clientside_callback(
-    """
-    function(n) {
-        if (!n) {
-            return window.dash_clientside.no_update;
-        }
-        const img = document.getElementById("tablet-drawing");
-        if (!img || !img.src) {
-            return "drawing-screenshot:image_not_found";
-        }
-        try {
-            const a = document.createElement("a");
-            a.href = img.src;
-            a.download = "tabletcad-2d.png";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            return "drawing-screenshot:ok:" + String(n);
-        } catch (e) {
-            return "drawing-screenshot:error";
-        }
-    }
-    """,
-    Output("drawing-screenshot-signal", "children"),
-    Input("drawing-screenshot-btn", "n_clicks"),
+@callback(
+    Output("download-2d", "data"),
+    Input("drawing-download-png-btn", "n_clicks"),
+    Input("drawing-download-svg-btn", "n_clicks"),
+    State("tablet-drawing", "src"),
+    State("drawing-2d-png-src", "data"),
     prevent_initial_call=True,
 )
+def download_2d_screenshot(png_clicks, svg_clicks, svg_src, png_src):
+    trig = ctx.triggered_id
+    img_src = png_src if trig == "drawing-download-png-btn" else svg_src
+    if not img_src or not img_src.startswith("data:"):
+        return dash.no_update
+
+    try:
+        header, payload = img_src.split(",", 1)
+    except ValueError:
+        return dash.no_update
+
+    is_base64 = ";base64" in header
+    mime = header[5:].split(";")[0]
+
+    if trig == "drawing-download-svg-btn" and mime == "image/svg+xml":
+        filename = "tabletcad-2d.svg"
+        if is_base64:
+            content = base64.b64decode(payload).decode("utf-8")
+        else:
+            content = unquote(payload)
+        return dict(content=content, filename=filename, type=mime)
+
+    if trig == "drawing-download-png-btn" and mime == "image/png":
+        filename = "tabletcad-2d.png"
+        if not is_base64:
+            return dash.no_update
+        return dcc.send_bytes(lambda buffer: buffer.write(base64.b64decode(payload)), filename)
+
+    return dash.no_update
