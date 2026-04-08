@@ -409,6 +409,19 @@ label = t("dim.w", lang)  # lang from "lang-store"
 
 ---
 
+## PDF 2D Scale Logic
+
+When updating PDF export/layout, keep scale behavior consistent with these rules:
+
+- PDF 2D is placed into a fixed target window (orientation-specific in `core/pdf_generator.py`)
+- Scale must be selected from ISO factors `10, 5, 4, 2.5, 2, 1, 0.5, 0.4, 0.25, 0.2, 0.1`
+- Use the largest factor that fits both width and height into the target window
+- Use renderer annotated bounds (geometry + dimension labels) for fitting, not full canvas size
+- Clip final drawing to the target window rectangle
+- Show scale in title block as `N:1` for enlargement and `1:N` for reduction
+
+---
+
 ## Code Style
 
 ### Python

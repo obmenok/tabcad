@@ -594,7 +594,12 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         DIM_LINE_WIDTH = style["dim_line_width"]
         EXT_LINE_WIDTH = style["ext_line_width"]
         C_TEXT = style["text_color"]
-        TEXT_FONT_SIZE = style["text_font_size"]
+        pdf_scale_ratio = float(params.get("render_2d_pdf_scale_ratio", 1.0) or 1.0)
+        if pdf_scale_ratio <= 0:
+            pdf_scale_ratio = 1.0
+        # Keep text size visually fixed in PDF even when geometry is scaled in placement.
+        # User-requested boost: 4x larger labels in PDF 2D drawing.
+        TEXT_FONT_SIZE = (style["text_font_size"] * 4.0) / pdf_scale_ratio
         TEXT_GAP_FROM_DIM_LINE = style["text_gap_from_dim_line"]
         TEXT_BBOX_PAD = style["text_bbox_pad"]
         EXT_LINE_GAP_FROM_FEATURE = style["ext_line_gap_from_feature"]
@@ -1216,6 +1221,40 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         rc_min = cfg.Rc_min
         draw_pointer(ax, (cx_front, cy_front + hb / 2 + dc), (cx_front - w_val / 4, cy_front + hb / 2 + dc + 4), f"{rc_min:g}\nCup Radius")
 
+    def _compute_annotated_data_bounds():
+        """Bounds in data units using geometry + dimension texts."""
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+
+        if ax.dataLim is not None and np.isfinite(ax.dataLim.bounds).all():
+            x0, y0, w0, h0 = ax.dataLim.bounds
+            xmin, xmax = x0, x0 + w0
+            ymin, ymax = y0, y0 + h0
+        else:
+            xmin = xmax = 0.0
+            ymin = ymax = 0.0
+
+        for txt in ax.texts:
+            if not txt.get_visible():
+                continue
+            try:
+                bbox = txt.get_window_extent(renderer=renderer)
+            except Exception:
+                continue
+            if bbox is None:
+                continue
+            if not np.isfinite([bbox.x0, bbox.y0, bbox.x1, bbox.y1]).all():
+                continue
+            p0, p1 = ax.transData.inverted().transform(
+                [[bbox.x0, bbox.y0], [bbox.x1, bbox.y1]]
+            )
+            xmin = min(xmin, p0[0], p1[0])
+            xmax = max(xmax, p0[0], p1[0])
+            ymin = min(ymin, p0[1], p1[1])
+            ymax = max(ymax, p0[1], p1[1])
+
+        return xmin, xmax, ymin, ymax
+
     x_min_val, x_max_val = cx_side - tt / 2 - 12, cx_top + w_val / 2 + 15
     y_min_val, y_max_val = cy_front - tt / 2 - 8, cy_top + l_val / 2 + 8
     center_x, center_y = (x_max_val + x_min_val) / 2, (y_max_val + y_min_val) / 2
@@ -1223,13 +1262,49 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     ax.set_xlim(center_x - max_range / 2 - max_range * 0.05, center_x + max_range / 2 + max_range * 0.05)
     ax.set_ylim(center_y - max_range / 2 - max_range * 0.05, center_y + max_range / 2 + max_range * 0.05)
 
+    use_annotation_bounds = bool(params.get("render_2d_use_annotation_bounds", False))
+    content_bounds = (x_min_val, x_max_val, y_min_val, y_max_val)
+    if use_annotation_bounds:
+        # Two passes: first pass estimates text extents, second stabilizes after x/y limits change.
+        for _ in range(2):
+            xmin, xmax, ymin, ymax = _compute_annotated_data_bounds()
+            w_box = max(1e-6, xmax - xmin)
+            h_box = max(1e-6, ymax - ymin)
+            span = max(w_box, h_box)
+            pad = span * 0.03
+            cx = (xmin + xmax) / 2
+            cy = (ymin + ymax) / 2
+            span_p = span + 2 * pad
+            ax.set_xlim(cx - span_p / 2, cx + span_p / 2)
+            ax.set_ylim(cy - span_p / 2, cy + span_p / 2)
+            content_bounds = (xmin, xmax, ymin, ymax)
+
+    view_xmin, view_xmax = ax.get_xlim()
+    view_ymin, view_ymax = ax.get_ylim()
+    params["_render_2d_bounds"] = {
+        "content_xmin": float(content_bounds[0]),
+        "content_xmax": float(content_bounds[1]),
+        "content_ymin": float(content_bounds[2]),
+        "content_ymax": float(content_bounds[3]),
+        "view_xmin": float(view_xmin),
+        "view_xmax": float(view_xmax),
+        "view_ymin": float(view_ymin),
+        "view_ymax": float(view_ymax),
+    }
+
     export_format = str(output_format or params.get("render_2d_format", "png")).lower()
     if export_format not in ("png", "svg"):
         export_format = "png"
 
+    tight_bbox = bool(params.get("render_2d_tight_bbox", True))
     buf = BytesIO()
-    plt.tight_layout()
-    save_kwargs = {"format": export_format, "bbox_inches": "tight"}
+    if tight_bbox:
+        plt.tight_layout()
+        save_kwargs = {"format": export_format, "bbox_inches": "tight"}
+    else:
+        # Deterministic canvas for PDF scale control: no auto-cropping by content.
+        fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        save_kwargs = {"format": export_format}
     if export_format == "png":
         save_kwargs["dpi"] = dpi
     plt.savefig(buf, **save_kwargs)

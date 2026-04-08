@@ -335,6 +335,18 @@ Current 2D toolbar includes:
 
 ---
 
+## PDF 2D Scale Logic
+
+PDF export uses a fixed 2D drawing window (depends on orientation in `core/pdf_generator.py`).
+
+- Scale is chosen automatically from ISO factors: `10, 5, 4, 2.5, 2, 1, 0.5, 0.4, 0.25, 0.2, 0.1`
+- The selected factor is the largest one that fits both width and height into the target window
+- Fitting uses annotated bounds from the 2D renderer (geometry + dimension texts), not the full canvas frame
+- The drawing is clipped to the window rectangle to keep layout stable
+- Title block `Scale` is formatted as `N:1` for enlargements and `1:N` for reductions
+
+---
+
 ## Validation & Constraints
 
 The UI enforces profile- and shape-dependent rules, including:

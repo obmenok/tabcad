@@ -5,8 +5,39 @@ from core.engine import generate_mesh
 from core.renderer import render_tablet
 from core.renderer_3d import render_tablet_3d
 from core.stl_exporter import generate_tablet_stl
-from core.pdf_generator import TabletPDFGenerator, pdf_supports_svg_drawings
+from core.pdf_generator import (
+    TabletPDFGenerator,
+    pdf_supports_svg_drawings,
+    PDF_ORIENTATION,
+    ISO_SCALE_FACTORS,
+)
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
+
+
+def _pdf_drawing_zone_size_mm():
+    if str(PDF_ORIENTATION).lower() == "landscape":
+        # Fixed zone from core/pdf_generator.py::_landscape_drawing_zone
+        return 130.0, 130.0
+    # Fixed zone from core/pdf_generator.py::_portrait_drawing_zone
+    return 130.0, 130.0
+
+
+def _pick_iso_scale_from_bounds(bounds, zone_w_mm, zone_h_mm):
+    if not isinstance(bounds, dict):
+        return 1.0
+    try:
+        obj_w = float(bounds["content_xmax"]) - float(bounds["content_xmin"])
+        obj_h = float(bounds["content_ymax"]) - float(bounds["content_ymin"])
+    except Exception:
+        return 1.0
+    obj_w = max(1e-6, obj_w)
+    obj_h = max(1e-6, obj_h)
+    fits = [
+        s
+        for s in ISO_SCALE_FACTORS
+        if obj_w * s <= zone_w_mm and obj_h * s <= zone_h_mm
+    ]
+    return max(fits) if fits else 1.0
 
 
 @callback(
@@ -123,8 +154,26 @@ def export_pdf_callback(
         params_2d = dict(params)
         params_2d["render_2d_shaded"] = True
         params_2d["render_2d_style"] = "iso_pdf"
+        params_2d["render_2d_tight_bbox"] = False
+        params_2d["render_2d_use_annotation_bounds"] = True
+        zone_w_mm, zone_h_mm = _pdf_drawing_zone_size_mm()
         params_2d["render_2d_format"] = "svg" if pdf_supports_svg_drawings() else "png"
-        drawing_2d_b64 = render_tablet(mesh_data, params_2d, dpi=300)
+        # Two-pass stabilization:
+        # 1) detect ISO scale by true annotated bounds
+        # 2) render with inverse text compensation for fixed visual font size in PDF
+        iso_scale_ratio = 1.0
+        for _ in range(2):
+            params_2d["render_2d_pdf_scale_ratio"] = iso_scale_ratio
+            drawing_2d_b64 = render_tablet(mesh_data, params_2d, dpi=300)
+            detected = _pick_iso_scale_from_bounds(
+                params_2d.get("_render_2d_bounds"),
+                zone_w_mm,
+                zone_h_mm,
+            )
+            if abs(detected - iso_scale_ratio) < 1e-9:
+                break
+            iso_scale_ratio = detected
+        params_2d["_render_2d_scale_ratio"] = iso_scale_ratio
 
         # Capture 3D view for PDF (Isometric only)
         import base64
@@ -158,7 +207,13 @@ def export_pdf_callback(
         fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix=f"tablet_specification_{shape}_{profile}_")
         os.close(fd)
 
-        gen = TabletPDFGenerator(temp_pdf_path, params, metrics, drawing_2d_b64=drawing_2d_b64, views_3d=views_3d)
+        gen = TabletPDFGenerator(
+            temp_pdf_path,
+            params_2d,
+            metrics,
+            drawing_2d_b64=drawing_2d_b64,
+            views_3d=views_3d,
+        )
         gen.generate()
 
         # Define the filename the user will see when downloading

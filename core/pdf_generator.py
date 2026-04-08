@@ -38,7 +38,9 @@ def pdf_supports_svg_drawings():
 
 # "portrait" (default) keeps current layout.
 # Switch to "landscape" to test landscape PDF layout.
-PDF_ORIENTATION = "landscape"
+PDF_ORIENTATION = "portrait"
+# ISO 5455 preferred scales: enlargement and reduction factors.
+ISO_SCALE_FACTORS = (10.0, 5.0, 4.0, 2.5, 2.0, 1.0, 0.5, 0.4, 0.25, 0.2, 0.1)
 
 class TabletPDFGenerator:
     def __init__(self, filename, params, metrics, drawing_2d_b64=None, views_3d=None):
@@ -120,6 +122,122 @@ class TabletPDFGenerator:
             "title_h": 36 * mm,
         }
 
+    def _model_bbox_mm(self):
+        bounds = self.params.get("_render_2d_bounds")
+        if isinstance(bounds, dict):
+            req = [
+                "content_xmin",
+                "content_xmax",
+                "content_ymin",
+                "content_ymax",
+                "view_xmin",
+                "view_xmax",
+                "view_ymin",
+                "view_ymax",
+            ]
+            if all(k in bounds for k in req):
+                obj_xmin = float(bounds["content_xmin"])
+                obj_xmax = float(bounds["content_xmax"])
+                obj_ymin = float(bounds["content_ymin"])
+                obj_ymax = float(bounds["content_ymax"])
+                view_xmin = float(bounds["view_xmin"])
+                view_xmax = float(bounds["view_xmax"])
+                view_ymin = float(bounds["view_ymin"])
+                view_ymax = float(bounds["view_ymax"])
+                view_w = max(1e-6, view_xmax - view_xmin)
+                view_h = max(1e-6, view_ymax - view_ymin)
+                return {
+                    "obj_w": max(1e-6, obj_xmax - obj_xmin),
+                    "obj_h": max(1e-6, obj_ymax - obj_ymin),
+                    "obj_cx": (obj_xmin + obj_xmax) / 2,
+                    "obj_cy": (obj_ymin + obj_ymax) / 2,
+                    "view_w": view_w,
+                    "view_h": view_h,
+                    "view_xmin": view_xmin,
+                    "view_ymin": view_ymin,
+                }
+
+        # Geometry-only bounds used for scale selection (ignores web white frame).
+        w_val = float(self.params["W"])
+        l_val = float(self.params["L"])
+        tt = float(self.params["Tt"])
+
+        cx_top, cy_top = 0.0, 0.0
+        cx_side, cy_side = -(w_val / 2 + tt / 2 + 15.0), 0.0
+        cx_front, cy_front = 0.0, -(l_val / 2 + tt / 2 + 15.0)
+
+        obj_xmin = cx_side - tt / 2
+        obj_xmax = cx_top + w_val / 2
+        obj_ymin = cy_front - tt / 2
+        obj_ymax = cy_top + l_val / 2
+
+        x_min_val = cx_side - tt / 2 - 12.0
+        x_max_val = cx_top + w_val / 2 + 15.0
+        y_min_val = cy_front - tt / 2 - 8.0
+        y_max_val = cy_top + l_val / 2 + 8.0
+        center_x = (x_max_val + x_min_val) / 2
+        center_y = (y_max_val + y_min_val) / 2
+        max_range = max(x_max_val - x_min_val, y_max_val - y_min_val)
+        view_w = max_range * 1.10
+        view_h = max_range * 1.10
+        view_xmin = center_x - view_w / 2
+        view_ymin = center_y - view_h / 2
+
+        return {
+            "obj_w": obj_xmax - obj_xmin,
+            "obj_h": obj_ymax - obj_ymin,
+            "obj_cx": (obj_xmin + obj_xmax) / 2,
+            "obj_cy": (obj_ymin + obj_ymax) / 2,
+            "view_w": view_w,
+            "view_h": view_h,
+            "view_xmin": view_xmin,
+            "view_ymin": view_ymin,
+        }
+
+    def _pick_iso_scale(self, zone_w_mm, zone_h_mm):
+        forced_scale = self.params.get("_render_2d_scale_ratio")
+        try:
+            forced_scale = float(forced_scale)
+            if forced_scale > 0:
+                return forced_scale
+        except Exception:
+            pass
+
+        bbox = self._model_bbox_mm()
+        fits = [
+            s
+            for s in ISO_SCALE_FACTORS
+            if bbox["obj_w"] * s <= zone_w_mm and bbox["obj_h"] * s <= zone_h_mm
+        ]
+        if fits:
+            return max(fits)
+        return 1.0
+
+    def _format_scale_text(self, scale_ratio):
+        scale_ratio = float(scale_ratio)
+        if scale_ratio >= 1.0:
+            return f"{scale_ratio:g}:1"
+        return f"1:{(1.0 / scale_ratio):g}"
+
+    def _landscape_drawing_zone(self):
+        zone_x = 40 * mm
+        zone_y = 60 * mm
+        zone_w = 130 * mm
+        zone_h = 130 * mm
+        return zone_x, zone_y, zone_w, zone_h
+
+    def _portrait_drawing_zone(self):
+        zone_x = 50 * mm
+        zone_y = 140 * mm
+        zone_w = 130 * mm
+        zone_h = 130 * mm
+        return zone_x, zone_y, zone_w, zone_h
+
+    def _drawing_zone(self):
+        if self.is_landscape:
+            return self._landscape_drawing_zone()
+        return self._portrait_drawing_zone()
+
     def draw_frame(self):
         """Тонкая внешняя рамка (0.3мм)"""
         self.c.setLineWidth(0.3 * mm)
@@ -174,7 +292,6 @@ class TabletPDFGenerator:
                 self.c.drawCentredString(bx + s(cx + cw/2), val_y, value)
         
         title_name = self._full_title_name()
-        w_val = float(self.params["W"])
         dwg_no = build_preset_base_name(
             self.params.get("shape"),
             self.params.get("profile"),
@@ -187,6 +304,9 @@ class TabletPDFGenerator:
             self.params.get("b_double_sided"),
         )
         date_str = datetime.now().strftime('%d.%m.%Y')
+        _, _, zone_w, zone_h = self._drawing_zone()
+        scale_ratio = self._pick_iso_scale(zone_w / mm, zone_h / mm)
+        scale_text = self._format_scale_text(scale_ratio)
 
         # Row 1 (top, y=24..36)
         draw_cell(0, 24*mm, 80*mm, 12*mm, "Title:", title_name, val_size=10, bold=True)
@@ -206,7 +326,7 @@ class TabletPDFGenerator:
         draw_cell(0, 0, 80*mm, 12*mm, "Drawing number:", dwg_no)
         draw_cell(80*mm, 0, 20*mm, 12*mm, "Language:", "EN", val_align="center")
         draw_cell(100*mm, 0, 40*mm, 12*mm, "Issue date:", date_str, val_align="center")
-        draw_cell(140*mm, 0, 20*mm, 12*mm, "Revision:", "A", val_align="center")
+        draw_cell(140*mm, 0, 20*mm, 12*mm, "Scale:", scale_text, val_align="center")
         draw_cell(160*mm, 0, 20*mm, 12*mm, "Sheet:", "1 / 1", val_align="center")
 
     def insert_main_drawing(self):
@@ -214,34 +334,45 @@ class TabletPDFGenerator:
             return
 
         header, encoded = self.drawing_2d_b64.split(",", 1)
+        zone_x, zone_y, zone_w, zone_h = self._drawing_zone()
+        bbox = self._model_bbox_mm()
+        scale_ratio = self._pick_iso_scale(zone_w / mm, zone_h / mm)
 
-        if self.is_landscape:
-            regions = self._landscape_regions()
-            y_bot = self.bot_m + 56 * mm
-            h = (self.height - self.top_m - 4 * mm) - y_bot
-            x_draw = regions["left_x"]
-            w_draw = regions["left_w"]
-        else:
-            y_bot = self.bot_m + 105 * mm
-            h = (self.height - self.top_m - 10 * mm) - y_bot
-            x_draw = self.left_m
-            w_draw = self.content_w
+        # Requested printed size based on model bounds (not render frame).
+        img_w = bbox["view_w"] * scale_ratio * mm
+        img_h = bbox["view_h"] * scale_ratio * mm
 
-        if self._draw_svg_main_drawing(header, encoded, y_bot, h):
+        rel_x = (bbox["obj_cx"] - bbox["view_xmin"]) / bbox["view_w"]
+        rel_y = (bbox["obj_cy"] - bbox["view_ymin"]) / bbox["view_h"]
+        zone_cx = zone_x + zone_w / 2
+        zone_cy = zone_y + zone_h / 2
+
+        # Align model center with zone center; clip to zone to hide extra frame.
+        x_draw = zone_cx - rel_x * img_w
+        y_draw = zone_cy - rel_y * img_h
+
+        path = self.c.beginPath()
+        path.rect(zone_x, zone_y, zone_w, zone_h)
+        self.c.saveState()
+        self.c.clipPath(path, stroke=0, fill=0)
+
+        if self._draw_svg_main_drawing(header, encoded, x_draw, y_draw, img_w, img_h):
+            self.c.restoreState()
             return
 
         ir = ImageReader(BytesIO(base64.b64decode(encoded)))
         self.c.drawImage(
             ir,
             x_draw,
-            y_bot,
-            width=w_draw,
-            height=h,
-            preserveAspectRatio=True,
-            mask='auto',
+            y_draw,
+            width=img_w,
+            height=img_h,
+            preserveAspectRatio=False,
+            mask="auto",
         )
+        self.c.restoreState()
 
-    def _draw_svg_main_drawing(self, header, encoded, y_bot, height_pt):
+    def _draw_svg_main_drawing(self, header, encoded, x_draw, y_bot, width_pt, height_pt):
         if "image/svg+xml" not in header or svg2rlg is None:
             return False
 
@@ -253,18 +384,10 @@ class TabletPDFGenerator:
         if drawing is None or not getattr(drawing, "width", None) or not getattr(drawing, "height", None):
             return False
 
-        if self.is_landscape:
-            regions = self._landscape_regions()
-            x_draw = regions["left_x"]
-            w_draw = regions["left_w"]
-        else:
-            x_draw = self.left_m
-            w_draw = self.content_w
-
-        scale = min(w_draw / drawing.width, height_pt / drawing.height)
+        scale = min(width_pt / drawing.width, height_pt / drawing.height)
         draw_w = drawing.width * scale
         draw_h = drawing.height * scale
-        x = x_draw + (w_draw - draw_w) / 2
+        x = x_draw + (width_pt - draw_w) / 2
         y = y_bot + (height_pt - draw_h) / 2
 
         self.c.saveState()
