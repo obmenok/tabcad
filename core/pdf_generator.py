@@ -10,7 +10,7 @@ if sys.version_info < (3, 9):
         return _original_md5(*args, **kwargs)
     hashlib.md5 = _md5_patched
 
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from reportlab.lib import colors
@@ -36,6 +36,10 @@ except Exception:
 def pdf_supports_svg_drawings():
     return svg2rlg is not None
 
+# "portrait" (default) keeps current layout.
+# Switch to "landscape" to test landscape PDF layout.
+PDF_ORIENTATION = "landscape"
+
 class TabletPDFGenerator:
     def __init__(self, filename, params, metrics, drawing_2d_b64=None, views_3d=None):
         self.filename = filename
@@ -43,8 +47,10 @@ class TabletPDFGenerator:
         self.metrics = metrics
         self.drawing_2d_b64 = drawing_2d_b64
         self.views_3d = views_3d or []
-        self.c = canvas.Canvas(filename, pagesize=A4)
-        self.width, self.height = A4
+        self.is_landscape = str(PDF_ORIENTATION).lower() == "landscape"
+        self.page_size = landscape(A4) if self.is_landscape else A4
+        self.c = canvas.Canvas(filename, pagesize=self.page_size)
+        self.width, self.height = self.page_size
         
         # --- ШРИФТ ISO 3098 (OSIFONT) ---
         self.font_name = "Helvetica"
@@ -98,6 +104,22 @@ class TabletPDFGenerator:
 
         return f"{shape_name} {profile_name}".strip()
 
+    def _landscape_regions(self):
+        right_table_w = 88 * mm
+        gap = 8 * mm
+        x_right_table = self.width - self.right_m - right_table_w
+        left_x = self.left_m
+        left_w = max(40 * mm, x_right_table - self.left_m - gap)
+
+        return {
+            "right_table_x": x_right_table,
+            "right_table_w": right_table_w,
+            "left_x": left_x,
+            "left_w": left_w,
+            "title_w": 180 * mm,
+            "title_h": 36 * mm,
+        }
+
     def draw_frame(self):
         """Тонкая внешняя рамка (0.3мм)"""
         self.c.setLineWidth(0.3 * mm)
@@ -105,11 +127,15 @@ class TabletPDFGenerator:
 
     def draw_title_block(self):
         """Отрисовка штампа (основной надписи) в стиле ISO 7200"""
-        bx = self.left_m
+        if self.is_landscape:
+            title_w = 180 * mm
+            bx = self.width - self.right_m - title_w
+            scale = 1.0
+        else:
+            bx = self.left_m
+            # Portrait keeps historical behavior (stretched title block).
+            scale = self.content_w / (180 * mm)
         by = self.bot_m
-        
-        # Масштаб для растягивания с 180mm до ширины рамки (185mm)
-        scale = self.content_w / (180 * mm)
         
         def s(val):
             return val * scale
@@ -118,7 +144,7 @@ class TabletPDFGenerator:
         
         # Внешняя рамка штампа
         self.c.setLineWidth(line_width_mm * mm)
-        self.c.rect(bx, by, self.content_w, s(36 * mm))
+        self.c.rect(bx, by, s(180 * mm), s(36 * mm))
         
         # Горизонтальные линии штампа
         self._line(bx, by + s(12*mm), bx + s(180*mm), by + s(12*mm), width=line_width_mm)
@@ -188,17 +214,28 @@ class TabletPDFGenerator:
             return
 
         header, encoded = self.drawing_2d_b64.split(",", 1)
-        y_bot = self.bot_m + 105 * mm
-        h = (self.height - self.top_m - 10 * mm) - y_bot
+
+        if self.is_landscape:
+            regions = self._landscape_regions()
+            y_bot = self.bot_m + 56 * mm
+            h = (self.height - self.top_m - 4 * mm) - y_bot
+            x_draw = regions["left_x"]
+            w_draw = regions["left_w"]
+        else:
+            y_bot = self.bot_m + 105 * mm
+            h = (self.height - self.top_m - 10 * mm) - y_bot
+            x_draw = self.left_m
+            w_draw = self.content_w
+
         if self._draw_svg_main_drawing(header, encoded, y_bot, h):
             return
 
         ir = ImageReader(BytesIO(base64.b64decode(encoded)))
         self.c.drawImage(
             ir,
-            self.left_m,
+            x_draw,
             y_bot,
-            width=self.content_w,
+            width=w_draw,
             height=h,
             preserveAspectRatio=True,
             mask='auto',
@@ -216,10 +253,18 @@ class TabletPDFGenerator:
         if drawing is None or not getattr(drawing, "width", None) or not getattr(drawing, "height", None):
             return False
 
-        scale = min(self.content_w / drawing.width, height_pt / drawing.height)
+        if self.is_landscape:
+            regions = self._landscape_regions()
+            x_draw = regions["left_x"]
+            w_draw = regions["left_w"]
+        else:
+            x_draw = self.left_m
+            w_draw = self.content_w
+
+        scale = min(w_draw / drawing.width, height_pt / drawing.height)
         draw_w = drawing.width * scale
         draw_h = drawing.height * scale
-        x = self.left_m + (self.content_w - draw_w) / 2
+        x = x_draw + (w_draw - draw_w) / 2
         y = y_bot + (height_pt - draw_h) / 2
 
         self.c.saveState()
@@ -233,45 +278,15 @@ class TabletPDFGenerator:
         scale = self.content_w / (180 * mm)
         x, y = self.left_m, self.bot_m + 36 * mm * scale
         m = self.metrics
-        vol = m.get('Tablet_Vol', 0)
-        sa = m.get('Tablet_SA', 0)
+        vol = m.get("Tablet_Vol", 0)
+        sa = m.get("Tablet_SA", 0)
         density = float(self.params["density"])
         weight = vol * density
-        
+
         tip_force_data = calculate_tip_force(self.params)
         tip_force_val = tip_force_data.get("selected_force")
-        tip_force_str = f"{tip_force_val:.2f}" if tip_force_val is not None else "N/A"
+        tip_force_str = str(int(round(float(tip_force_val)))) if tip_force_val is not None else "N/A"
         steel = self.params.get("tip_force_steel", "S7")
-        
-        data = [
-            ["ENGINEERING DATA", ""],
-            ["Perimeter", f"{m.get('Perimeter', 0):.2f} mm"],
-            ["Die Hole SA", f"{m.get('Die_Hole_SA', 0):.2f} mm²"],
-            ["Cup SA", f"{m.get('Cup_SA', 0):.2f} mm²"],
-            ["Cup Volume", f"{m.get('Cup_Volume', 0):.2f} mm³"],
-            ["Tablet SA", f"{sa:.2f} mm²"],
-            ["Tablet Volume", f"{vol:.2f} mm³"],
-            ["Tablet SA/V", f"{sa/vol if vol else 0:.2f} 1/mm"],
-            ["PHISICAL PARAMETERS", ""],
-            ["Tablet Density", f"{density:.2f} mg/mm³"],
-            ["Tablet Weight", f"{weight:.2f} mg"],
-        ]
-        
-        col_data = 35 * mm
-        col_value = 30 * mm
-        t = Table(data, colWidths=[col_data, col_value])
-        t.setStyle(TableStyle([
-            ('GRID', (0,0), (-1,-1), 0.3*mm, colors.black),
-            ('FONTNAME', (0,0), (-1,-1), self.font_name),
-            ('FONTSIZE', (0,0), (-1,-1), 10),
-            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-            ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
-            ('SPAN', (0,0), (-1,0)),
-            ('BACKGROUND', (0,8), (-1,8), colors.whitesmoke),
-            ('SPAN', (0,8), (-1,8)),
-        ]))
-        t.wrapOn(self.c, self.width, self.height)
-        t.drawOn(self.c, x, y)
 
         b_type = str(self.params.get("b_type", "none") or "none").lower()
         shape = str(self.params.get("shape", "") or "").lower()
@@ -309,12 +324,102 @@ class TabletPDFGenerator:
             except (TypeError, ValueError):
                 return ""
 
+        if self.is_landscape:
+            regions = self._landscape_regions()
+            tx = regions["right_table_x"] + 10 * mm
+            ty = self.bot_m + 45 * mm
+            col_label = 40 * mm
+            col_value = 25 * mm
+
+            table_data = [
+                ["ENGINEERING DATA", ""],
+                ["Perimeter", f"{m.get('Perimeter', 0):.2f} mm"],
+                ["Die Hole SA", f"{m.get('Die_Hole_SA', 0):.2f} mm2"],
+                ["Cup SA", f"{m.get('Cup_SA', 0):.2f} mm2"],
+                ["Cup Volume", f"{m.get('Cup_Volume', 0):.2f} mm3"],
+                ["Tablet SA", f"{sa:.2f} mm2"],
+                ["Tablet Volume", f"{vol:.2f} mm3"],
+                ["Tablet SA/V", f"{sa/vol if vol else 0:.2f} 1/mm"],
+                ["PHYSICAL PARAMETERS", ""],
+                ["Tablet Density", f"{density:.2f} mg/mm3"],
+                ["Tablet Weight", f"{weight:.2f} mg"],
+                ["TIP FORCE DATA", ""],
+                ["Punch Steel Grade", steel],
+                ["Max Tip Force", f"{tip_force_str} kN" if tip_force_str != "N/A" else "N/A"],
+            ]
+
+            table_styles = [
+                ("GRID", (0,0), (-1,-1), 0.3*mm, colors.black),
+                ("FONTNAME", (0,0), (-1,-1), self.font_name),
+                ("FONTSIZE", (0,0), (-1,-1), 10),
+                ("ALIGN", (0,0), (-1,-1), "LEFT"),
+                ("BACKGROUND", (0,0), (-1,0), colors.whitesmoke),
+                ("SPAN", (0,0), (-1,0)),
+                ("BACKGROUND", (0,8), (-1,8), colors.whitesmoke),
+                ("SPAN", (0,8), (-1,8)),
+                ("BACKGROUND", (0,11), (-1,11), colors.whitesmoke),
+                ("SPAN", (0,11), (-1,11)),
+            ]
+
+            if has_scoring:
+                start = len(table_data)
+                table_data.extend([
+                    ["SCORING DATA", ""],
+                    ["Scoring type", scoring_type],
+                    ["Scoring option", scoring_option],
+                    ["Width", fmt_score_value(self.params.get("b_width"), "mm")],
+                    ["Depth", fmt_score_value(self.params.get("b_depth"), "mm")],
+                    ["Angle", fmt_score_angle(self.params.get("b_angle"), "deg")],
+                    ["Inner Radius", fmt_score_value(self.params.get("b_Ri"), "mm")],
+                    ["Outer Radius", "0.38 mm"],
+                ])
+                table_styles.extend([
+                    ("BACKGROUND", (0,start), (-1,start), colors.whitesmoke),
+                    ("SPAN", (0,start), (-1,start)),
+                ])
+
+            t = Table(table_data, colWidths=[col_label, col_value])
+            t.setStyle(TableStyle(table_styles))
+            t.wrapOn(self.c, self.width, self.height)
+            t.drawOn(self.c, tx, ty)
+            return
+
+        data = [
+            ["ENGINEERING DATA", ""],
+            ["Perimeter", f"{m.get('Perimeter', 0):.2f} mm"],
+            ["Die Hole SA", f"{m.get('Die_Hole_SA', 0):.2f} mm2"],
+            ["Cup SA", f"{m.get('Cup_SA', 0):.2f} mm2"],
+            ["Cup Volume", f"{m.get('Cup_Volume', 0):.2f} mm3"],
+            ["Tablet SA", f"{sa:.2f} mm2"],
+            ["Tablet Volume", f"{vol:.2f} mm3"],
+            ["Tablet SA/V", f"{sa/vol if vol else 0:.2f} 1/mm"],
+            ["PHYSICAL PARAMETERS", ""],
+            ["Tablet Density", f"{density:.2f} mg/mm3"],
+            ["Tablet Weight", f"{weight:.2f} mg"],
+        ]
+
+        col_data = 35 * mm
+        col_value = 30 * mm
+        t = Table(data, colWidths=[col_data, col_value])
+        t.setStyle(TableStyle([
+            ("GRID", (0,0), (-1,-1), 0.3*mm, colors.black),
+            ("FONTNAME", (0,0), (-1,-1), self.font_name),
+            ("FONTSIZE", (0,0), (-1,-1), 10),
+            ("ALIGN", (0,0), (-1,-1), "LEFT"),
+            ("BACKGROUND", (0,0), (-1,0), colors.whitesmoke),
+            ("SPAN", (0,0), (-1,0)),
+            ("BACKGROUND", (0,8), (-1,8), colors.whitesmoke),
+            ("SPAN", (0,8), (-1,8)),
+        ]))
+        t.wrapOn(self.c, self.width, self.height)
+        t.drawOn(self.c, x, y)
+
         t2_data = []
         t2_styles = [
-            ('GRID', (0,0), (-1,-1), 0.3*mm, colors.black),
-            ('FONTNAME', (0,0), (-1,-1), self.font_name),
-            ('FONTSIZE', (0,0), (-1,-1), 10),
-            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ("GRID", (0,0), (-1,-1), 0.3*mm, colors.black),
+            ("FONTNAME", (0,0), (-1,-1), self.font_name),
+            ("FONTSIZE", (0,0), (-1,-1), 10),
+            ("ALIGN", (0,0), (-1,-1), "LEFT"),
         ]
         row_idx = 0
 
@@ -330,8 +435,8 @@ class TabletPDFGenerator:
                 ["Outer Radius", "0.38 mm"],
             ])
             t2_styles.extend([
-                ('BACKGROUND', (0,row_idx), (-1,row_idx), colors.whitesmoke),
-                ('SPAN', (0,row_idx), (1,row_idx)),
+                ("BACKGROUND", (0,row_idx), (-1,row_idx), colors.whitesmoke),
+                ("SPAN", (0,row_idx), (1,row_idx)),
             ])
             row_idx += 8
 
@@ -341,8 +446,8 @@ class TabletPDFGenerator:
             ["Max Tip Force", f"{tip_force_str} kN" if tip_force_str != "N/A" else "N/A"],
         ])
         t2_styles.extend([
-            ('BACKGROUND', (0,row_idx), (-1,row_idx), colors.whitesmoke),
-            ('SPAN', (0,row_idx), (1,row_idx)),
+            ("BACKGROUND", (0,row_idx), (-1,row_idx), colors.whitesmoke),
+            ("SPAN", (0,row_idx), (1,row_idx)),
         ])
 
         sx = x + 65 * mm
@@ -356,10 +461,15 @@ class TabletPDFGenerator:
 
     def draw_visuals_block(self):
         """Одиночный 3D вид (без рамок)"""
-        x_start, y_start = self.left_m + 22 * mm, self.bot_m + 127 * mm
-        v_size = 25 * mm
+        if self.is_landscape:
+            regions = self._landscape_regions()
+            x_start, y_start = regions["left_x"] + 6 * mm, self.bot_m + 10 * mm
+            v_size = 40 * mm
+        else:
+            x_start, y_start = self.left_m + 22 * mm, self.bot_m + 127 * mm
+            v_size = 25 * mm
         views_dict = {label: b64 for b64, label in self.views_3d}
-        
+
         def place_v(label, vx, vy):
             if label in views_dict:
                 _, encoded = views_dict[label].split(",", 1)
@@ -379,6 +489,12 @@ class TabletPDFGenerator:
         self.c.showPage()
         self.c.save()
         return self.filename
+
+
+
+
+
+
 
 
 
