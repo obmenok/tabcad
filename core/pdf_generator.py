@@ -241,31 +241,34 @@ class TabletPDFGenerator:
         tip_force_data = calculate_tip_force(self.params)
         tip_force_val = tip_force_data.get("selected_force")
         tip_force_str = f"{tip_force_val:.2f}" if tip_force_val is not None else "N/A"
+        steel = self.params.get("tip_force_steel", "S7")
         
         data = [
-            ["ENGINEERING DATA", "VALUE", "UNIT"],
-            ["Perimeter", f"{m.get('Perimeter', 0):.2f}", "mm"],
-            ["Die Hole SA", f"{m.get('Die_Hole_SA', 0):.2f}", "mm²"],
-            ["Cup SA", f"{m.get('Cup_SA', 0):.2f}", "mm²"],
-            ["Cup Volume", f"{m.get('Cup_Volume', 0):.2f}", "mm³"],
-            ["Tablet SA", f"{sa:.2f}", "mm²"],
-            ["Tablet Volume", f"{vol:.2f}", "mm³"],
-            ["Tablet SA/V", f"{sa/vol if vol else 0:.2f}", "1/mm"],
-            ["Tablet Density", f"{density:.2f}", "mg/mm³"],
-            ["Tablet Weight", f"{weight:.2f}", "mg"],
-            ["Max Tip Force", tip_force_str, "kN"],
+            ["ENGINEERING DATA", ""],
+            ["Perimeter", f"{m.get('Perimeter', 0):.2f} mm"],
+            ["Die Hole SA", f"{m.get('Die_Hole_SA', 0):.2f} mm²"],
+            ["Cup SA", f"{m.get('Cup_SA', 0):.2f} mm²"],
+            ["Cup Volume", f"{m.get('Cup_Volume', 0):.2f} mm³"],
+            ["Tablet SA", f"{sa:.2f} mm²"],
+            ["Tablet Volume", f"{vol:.2f} mm³"],
+            ["Tablet SA/V", f"{sa/vol if vol else 0:.2f} 1/mm"],
+            ["PHISICAL PARAMETERS", ""],
+            ["Tablet Density", f"{density:.2f} mg/mm³"],
+            ["Tablet Weight", f"{weight:.2f} mg"],
         ]
         
-        col_value = 25 * mm
-        col_unit = 15 * mm
-        col_data = 80 * mm * scale - col_value - col_unit
-        t = Table(data, colWidths=[col_data, col_value, col_unit])
+        col_data = 35 * mm
+        col_value = 30 * mm
+        t = Table(data, colWidths=[col_data, col_value])
         t.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 0.3*mm, colors.black),
             ('FONTNAME', (0,0), (-1,-1), self.font_name),
             ('FONTSIZE', (0,0), (-1,-1), 10),
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
             ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
+            ('SPAN', (0,0), (-1,0)),
+            ('BACKGROUND', (0,8), (-1,8), colors.whitesmoke),
+            ('SPAN', (0,8), (-1,8)),
         ]))
         t.wrapOn(self.c, self.width, self.height)
         t.drawOn(self.c, x, y)
@@ -290,60 +293,70 @@ class TabletPDFGenerator:
         else:
             scoring_option = "None"
 
-        def fmt_score_value(value):
+        def fmt_score_value(value, unit):
             if not has_scoring or value is None:
                 return ""
             try:
-                return f"{float(value):.2f}"
+                return f"{float(value):.2f} {unit}"
             except (TypeError, ValueError):
                 return ""
 
-        def fmt_score_angle(value):
+        def fmt_score_angle(value, unit):
             if not has_scoring or value is None:
                 return ""
             try:
-                return str(int(round(float(value))))
+                return f"{int(round(float(value)))} {unit}"
             except (TypeError, ValueError):
                 return ""
+
+        t2_data = []
+        t2_styles = [
+            ('GRID', (0,0), (-1,-1), 0.3*mm, colors.black),
+            ('FONTNAME', (0,0), (-1,-1), self.font_name),
+            ('FONTSIZE', (0,0), (-1,-1), 10),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ]
+        row_idx = 0
 
         if has_scoring:
-            scoring_data = [
-                ["SCORING DATA", "", ""],
-                ["Scoring type", scoring_type, ""],
-                ["Scoring option", scoring_option, ""],
-                ["Dimensions", "Value", "Unit"],
-                ["Width", fmt_score_value(self.params.get("b_width")), "mm"],
-                ["Depth", fmt_score_value(self.params.get("b_depth")), "mm"],
-                ["Angle", fmt_score_angle(self.params.get("b_angle")), "deg"],
-                ["Inner Radius", fmt_score_value(self.params.get("b_Ri")), "mm"],
-                ["Outer Radius", "0.38", "mm"],
-            ]
+            t2_data.extend([
+                ["SCORING DATA", ""],
+                ["Scoring type", scoring_type],
+                ["Scoring option", scoring_option],
+                ["Width", fmt_score_value(self.params.get("b_width"), "mm")],
+                ["Depth", fmt_score_value(self.params.get("b_depth"), "mm")],
+                ["Angle", fmt_score_angle(self.params.get("b_angle"), "deg")],
+                ["Inner Radius", fmt_score_value(self.params.get("b_Ri"), "mm")],
+                ["Outer Radius", "0.38 mm"],
+            ])
+            t2_styles.extend([
+                ('BACKGROUND', (0,row_idx), (-1,row_idx), colors.whitesmoke),
+                ('SPAN', (0,row_idx), (1,row_idx)),
+            ])
+            row_idx += 8
 
-            gap = 8 * mm * scale
-            scoring_total = 75 * mm * scale
-            sx = x + (80 * mm * scale) + gap
-            s_col_label = 30 * mm * scale
-            s_col_value = 30 * mm * scale
-            s_col_unit = scoring_total - s_col_label - s_col_value
+        t2_data.extend([
+            ["TIP FORCE DATA", ""],
+            ["Punch Steel Grade", steel],
+            ["Max Tip Force", f"{tip_force_str} kN" if tip_force_str != "N/A" else "N/A"],
+        ])
+        t2_styles.extend([
+            ('BACKGROUND', (0,row_idx), (-1,row_idx), colors.whitesmoke),
+            ('SPAN', (0,row_idx), (1,row_idx)),
+        ])
 
-            t2 = Table(scoring_data, colWidths=[s_col_label, s_col_value, s_col_unit])
-            t2.setStyle(TableStyle([
-                ('GRID', (0,0), (-1,-1), 0.3*mm, colors.black),
-                ('FONTNAME', (0,0), (-1,-1), self.font_name),
-                ('FONTSIZE', (0,0), (-1,-1), 10),
-                ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-                ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
-                ('BACKGROUND', (0,3), (-1,3), colors.whitesmoke),
-                ('SPAN', (0,0), (2,0)),
-                ('SPAN', (1,1), (2,1)),
-                ('SPAN', (1,2), (2,2)),
-            ]))
-            t2.wrapOn(self.c, self.width, self.height)
-            t2.drawOn(self.c, sx, y)
+        sx = x + 65 * mm
+        s_col_label = 35 * mm
+        s_col_value = 30 * mm
+
+        t2 = Table(t2_data, colWidths=[s_col_label, s_col_value])
+        t2.setStyle(TableStyle(t2_styles))
+        t2.wrapOn(self.c, self.width, self.height)
+        t2.drawOn(self.c, sx, y)
 
     def draw_visuals_block(self):
         """Одиночный 3D вид (без рамок)"""
-        x_start, y_start = self.left_m + 22 * mm, self.bot_m + 117 * mm
+        x_start, y_start = self.left_m + 22 * mm, self.bot_m + 127 * mm
         v_size = 25 * mm
         views_dict = {label: b64 for b64, label in self.views_3d}
         

@@ -42,6 +42,7 @@ from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAP
         State("bisect-cruciform", "value"),
         State("bisect-double-sided", "value"),
         State("input-density", "value"),
+        State("input-tip-force-steel", "value"),
     ],
     prevent_initial_call=True,
 )
@@ -76,6 +77,7 @@ def export_pdf_callback(
     b_cruciform,
     b_double_sided,
     density,
+    tip_force_steel,
 ):
     if not n_clicks:
         return dash.no_update
@@ -112,6 +114,7 @@ def export_pdf_callback(
             b_double_sided,
             density=density,
         )
+        params["tip_force_steel"] = tip_force_steel if tip_force_steel else BASE_DEFAULTS["tip_force_steel"]
 
         mesh_data = generate_mesh(params)
         metrics = mesh_data.get("metrics", {})
