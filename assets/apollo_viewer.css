@@ -32,6 +32,7 @@
 .av-i-fullscreen::before { content: "\e94e"; }
 .av-i-screenshot::before { content: "\e913"; }
 .av-i-shaded::before { content: "\e95f"; }
+.av-i-settings::before { content: "\e97a"; }
 
 #btn-lang-en, #btn-lang-ru, #btn-lang-cn {
   transition: none !important;
@@ -446,6 +447,11 @@
 }
 
 .outline-soft-btn.btn.btn-outline-secondary:hover,
+.outline-soft-btn.btn.btn-outline-secondary:active {
+  background-color: #e9ecef !important;
+}
+
+.outline-soft-btn.btn.btn-outline-secondary:hover,
 .outline-soft-btn.btn.btn-outline-secondary:focus,
 .outline-soft-btn.btn.btn-outline-secondary:active,
 .outline-soft-btn.btn.btn-outline-secondary:focus-visible {
@@ -457,7 +463,22 @@
   top: 0 !important;
   border-color: #9aa0a6 !important;
   color: #495057 !important;
-    background-color: #e9ecef !important;
   box-shadow: none !important;
   transform: none !important;
+}
+
+#btn-open-settings.outline-soft-btn {
+  height: 26px !important;
+  min-width: 32px !important;
+  padding: 0 8px !important;
+  line-height: 24px !important;
+}
+
+#btn-open-settings.outline-soft-btn:hover,
+#btn-open-settings.outline-soft-btn:active,
+#btn-open-settings.outline-soft-btn:focus {
+  height: 26px !important;
+  min-width: 32px !important;
+  padding: 0 8px !important;
+  line-height: 24px !important;
 }

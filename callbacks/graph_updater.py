@@ -8,14 +8,14 @@ from core.stl_exporter import generate_tablet_stl
 from core.pdf_generator import (
     TabletPDFGenerator,
     pdf_supports_svg_drawings,
-    PDF_ORIENTATION,
     ISO_SCALE_FACTORS,
 )
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
 
 
-def _pdf_drawing_zone_size_mm():
-    if str(PDF_ORIENTATION).lower() == "landscape":
+def _pdf_drawing_zone_size_mm(params):
+    orientation = str(params.get("pdf_orientation", "portrait")).lower()
+    if orientation == "landscape":
         # Fixed zone from core/pdf_generator.py::_landscape_drawing_zone
         return 130.0, 130.0
     # Fixed zone from core/pdf_generator.py::_portrait_drawing_zone
@@ -74,6 +74,7 @@ def _pick_iso_scale_from_bounds(bounds, zone_w_mm, zone_h_mm):
         State("bisect-double-sided", "value"),
         State("input-density", "value"),
         State("input-tip-force-steel", "value"),
+        State("app-settings-store", "data"),
     ],
     prevent_initial_call=True,
 )
@@ -109,6 +110,7 @@ def export_pdf_callback(
     b_double_sided,
     density,
     tip_force_steel,
+    app_settings,
 ):
     if not n_clicks:
         return dash.no_update
@@ -146,6 +148,8 @@ def export_pdf_callback(
             density=density,
         )
         params["tip_force_steel"] = tip_force_steel if tip_force_steel else BASE_DEFAULTS["tip_force_steel"]
+        if app_settings:
+            params.update(app_settings)
 
         mesh_data = generate_mesh(params)
         metrics = mesh_data.get("metrics", {})
@@ -156,7 +160,7 @@ def export_pdf_callback(
         params_2d["render_2d_style"] = "iso_pdf"
         params_2d["render_2d_tight_bbox"] = False
         params_2d["render_2d_use_annotation_bounds"] = True
-        zone_w_mm, zone_h_mm = _pdf_drawing_zone_size_mm()
+        zone_w_mm, zone_h_mm = _pdf_drawing_zone_size_mm(params)
         params_2d["render_2d_format"] = "svg" if pdf_supports_svg_drawings() else "png"
         # Two-pass stabilization:
         # 1) detect ISO scale by true annotated bounds
@@ -442,6 +446,7 @@ def _build_calc_html(metrics, density, lang="en"):
         State("input-b-ri", "value"),
         State("bisect-cruciform", "value"),
         State("bisect-double-sided", "value"),
+        State("app-settings-store", "data"),
     ],
     prevent_initial_call=True,
 )
@@ -479,6 +484,7 @@ def generate_graphics(
     b_ri,
     b_cruciform,
     b_double_sided,
+    app_settings,
 ):
     if w is None or dc is None or profile is None:
         return dash.no_update, dash.no_update, dash.no_update
@@ -517,6 +523,8 @@ def generate_graphics(
         show_edges=show_edges,
         show_bbox=show_bbox,
     )
+    if app_settings:
+        params.update(app_settings)
 
     try:
         mesh_data = generate_mesh(params)

@@ -62,3 +62,31 @@ SHAPE_SPECIFIC = {
         "rs": 0.0,
     }
 }
+
+DEFAULT_APP_SETTINGS = {
+    # Web 2D Settings
+    "web_2d_fill_color": "#dec9bd",
+    "web_2d_dim_color": "#9467bd",
+
+    # Web 3D Settings
+    "web_3d_model_color": "#db7b3b",
+    "web_3d_lighting_ambient": 0.4,
+    "web_3d_lighting_diffuse": 0.8,
+    "web_3d_lighting_specular": 0.3,
+    "web_3d_lighting_roughness": 0.6,
+    "web_3d_lighting_fresnel": 0.1,
+
+    # Web 3D Lighting Bot/Band
+    "web_3d_lighting_bot_ambient": 0.7,
+    "web_3d_lighting_bot_diffuse": 0.4,
+    "web_3d_lighting_bot_specular": 0.1,
+    "web_3d_lighting_bot_roughness": 0.8,
+    "web_3d_lighting_bot_fresnel": 0.2,
+
+    # PDF Export Settings
+    "pdf_orientation": "portrait",
+    "pdf_2d_fill_color": "#dec9bd",
+    "pdf_2d_shaded": True,
+    "pdf_created_by": "TabCAD Pro",
+    "pdf_approved_by": "Buyakov S.",
+}

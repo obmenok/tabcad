@@ -306,10 +306,23 @@ def render_tablet_3d(mesh_data, params):
     yb = np.tile(r_boundary * np.sin(theta), (len(z_line), 1))
     zb = np.tile(z_line[:, None], (1, len(theta)))
 
-    cad_colorscale = [[0, "#db7b3b"], [1, "#db7b3b"]]
+    model_color = params.get("web_3d_model_color", "#db7b3b")
+    cad_colorscale = [[0, model_color], [1, model_color]]
     vector_light = dict(x=-1, y=1, z=0.2)
-    lighting_top = dict(ambient=0.4, diffuse=0.8, specular=0.3, roughness=0.6, fresnel=0.1)
-    lighting_bot = dict(ambient=0.7, diffuse=0.4, specular=0.1, roughness=0.8, fresnel=0.2)
+    lighting_top = dict(
+        ambient=float(params.get("web_3d_lighting_ambient", 0.4)),
+        diffuse=float(params.get("web_3d_lighting_diffuse", 0.8)),
+        specular=float(params.get("web_3d_lighting_specular", 0.3)),
+        roughness=float(params.get("web_3d_lighting_roughness", 0.6)),
+        fresnel=float(params.get("web_3d_lighting_fresnel", 0.1)),
+    )
+    lighting_bot = dict(
+        ambient=float(params.get("web_3d_lighting_bot_ambient", 0.7)),
+        diffuse=float(params.get("web_3d_lighting_bot_diffuse", 0.4)),
+        specular=float(params.get("web_3d_lighting_bot_specular", 0.1)),
+        roughness=float(params.get("web_3d_lighting_bot_roughness", 0.8)),
+        fresnel=float(params.get("web_3d_lighting_bot_fresnel", 0.2)),
+    )
 
     render_mode = (params["render_mode"] or "shaded").lower()
     show_bbox = bool(params["show_bbox"])

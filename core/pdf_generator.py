@@ -38,7 +38,7 @@ def pdf_supports_svg_drawings():
 
 # "portrait" (default) keeps current layout.
 # Switch to "landscape" to test landscape PDF layout.
-PDF_ORIENTATION = "portrait"
+PDF_ORIENTATION = "landscape"
 # ISO 5455 preferred scales: enlargement and reduction factors.
 ISO_SCALE_FACTORS = (10.0, 5.0, 4.0, 2.5, 2.0, 1.0, 0.5, 0.4, 0.25, 0.2, 0.1)
 
@@ -49,7 +49,9 @@ class TabletPDFGenerator:
         self.metrics = metrics
         self.drawing_2d_b64 = drawing_2d_b64
         self.views_3d = views_3d or []
-        self.is_landscape = str(PDF_ORIENTATION).lower() == "landscape"
+        
+        ori = self.params.get("pdf_orientation", "portrait")
+        self.is_landscape = str(ori).lower() == "landscape"
         self.page_size = landscape(A4) if self.is_landscape else A4
         self.c = canvas.Canvas(filename, pagesize=self.page_size)
         self.width, self.height = self.page_size
@@ -220,7 +222,7 @@ class TabletPDFGenerator:
         return f"1:{(1.0 / scale_ratio):g}"
 
     def _landscape_drawing_zone(self):
-        zone_x = 40 * mm
+        zone_x = 50 * mm
         zone_y = 60 * mm
         zone_w = 130 * mm
         zone_h = 130 * mm
@@ -308,20 +310,22 @@ class TabletPDFGenerator:
         scale_ratio = self._pick_iso_scale(zone_w / mm, zone_h / mm)
         scale_text = self._format_scale_text(scale_ratio)
 
+        pdf_created_by = self.params.get("pdf_created_by", "TabCAD Pro")
+        pdf_approved_by = self.params.get("pdf_approved_by", "Buyakov S.")
+
         # Row 1 (top, y=24..36)
         draw_cell(0, 24*mm, 80*mm, 12*mm, "Title:", title_name, val_size=10, bold=True)
-        draw_cell(80*mm, 24*mm, 60*mm, 12*mm, "Created by:", "TabCAD Pro")
-        
+        draw_cell(80*mm, 24*mm, 60*mm, 12*mm, "Created by:", pdf_created_by)
+
         # Owner Cell (y=12..36)
         self.c.setFont(self.font_name, s(7))
         self.c.drawString(bx + s(140*mm) + s(1*mm), by + s(12*mm + 24*mm) - s(3*mm), "Owner:")
         self.c.setFont(self.font_name, s(10))
         self.c.drawCentredString(bx + s(140*mm + 20*mm), by + s(12*mm + 10*mm), "TabCAD AI")
-        
+
         # Row 2 (middle, y=12..24)
         draw_cell(0, 12*mm, 80*mm, 12*mm, "Document type:", "Tablet Specification")
-        draw_cell(80*mm, 12*mm, 60*mm, 12*mm, "Approved by:", "Buyakov S.")
-        
+        draw_cell(80*mm, 12*mm, 60*mm, 12*mm, "Approved by:", pdf_approved_by)        
         # Row 3 (bottom, y=0..12)
         draw_cell(0, 0, 80*mm, 12*mm, "Drawing number:", dwg_no)
         draw_cell(80*mm, 0, 20*mm, 12*mm, "Language:", "EN", val_align="center")
@@ -507,6 +511,9 @@ class TabletPDFGenerator:
             t.drawOn(self.c, tx, ty)
             return
 
+        x = self.width - self.right_m - 120 * mm - 5 * mm
+        y = self.bot_m + 36 * mm * scale + 5 * mm
+
         data = [
             ["ENGINEERING DATA", ""],
             ["Perimeter", f"{m.get('Perimeter', 0):.2f} mm"],
@@ -522,7 +529,7 @@ class TabletPDFGenerator:
         ]
 
         col_data = 35 * mm
-        col_value = 30 * mm
+        col_value = 25 * mm
         t = Table(data, colWidths=[col_data, col_value])
         t.setStyle(TableStyle([
             ("GRID", (0,0), (-1,-1), 0.3*mm, colors.black),
@@ -573,9 +580,9 @@ class TabletPDFGenerator:
             ("SPAN", (0,row_idx), (1,row_idx)),
         ])
 
-        sx = x + 65 * mm
+        sx = x + 60 * mm
         s_col_label = 35 * mm
-        s_col_value = 30 * mm
+        s_col_value = 25 * mm
 
         t2 = Table(t2_data, colWidths=[s_col_label, s_col_value])
         t2.setStyle(TableStyle(t2_styles))
@@ -589,7 +596,7 @@ class TabletPDFGenerator:
             x_start, y_start = regions["left_x"] + 6 * mm, self.bot_m + 10 * mm
             v_size = 40 * mm
         else:
-            x_start, y_start = self.left_m + 22 * mm, self.bot_m + 127 * mm
+            x_start, y_start = self.left_m + 142 * mm, self.bot_m + 127 * mm
             v_size = 25 * mm
         views_dict = {label: b64 for b64, label in self.views_3d}
 

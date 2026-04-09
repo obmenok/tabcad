@@ -1,7 +1,8 @@
 import dash
 from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
-from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
+from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC, DEFAULT_APP_SETTINGS
+from components.settings_modal import create_settings_modal
 
 def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None, debounce=True, disabled=False, visible=True):
     step_value = "any" if disabled else step
@@ -30,6 +31,7 @@ def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None
 def create_sidebar():
     return html.Div([
         dcc.Store(id="lang-store", storage_type="local", data="en"),
+        dcc.Store(id="app-settings-store", storage_type="local", data=DEFAULT_APP_SETTINGS),
         dcc.Store(id="bisect-edit-open", data=False),
         dcc.Store(id="is-loading-preset", data=False),
         dcc.Store(id="constraints-data", data=[]),
@@ -48,9 +50,24 @@ def create_sidebar():
                     width="auto",
                     className="ms-auto",
                 ),
+                dbc.Col(
+                    dbc.Button(
+                        html.Span(className="apollo-icon av-i-settings"),
+                        id="btn-open-settings",
+                        outline=True,
+                        color="secondary",
+                        size="sm",
+                        className="outline-soft-btn",
+                        title="Settings",
+                    ),
+                    width="auto",
+                    className="ps-1",
+                ),
             ],
             className="mb-3 align-items-center d-flex",
         ),
+        
+        create_settings_modal(),
 
         dbc.Modal(
             [
