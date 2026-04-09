@@ -8,6 +8,12 @@ This document provides essential context for any AI model working on the **Table
 
 **TabletCAD** is a Dash-based engineering application for calculating tablet punch geometry and generating 2D/3D technical drawings. It is used by pharmaceutical engineers to design tablet tooling.
 
+### Latest Changes (commit f4ace88)
+- Persistent app settings (stored in SQLite)
+- PDF layout fixes
+- Unified 2D/3D rendering styles (WEB_STYLE + ISO_PDF_STYLE)
+- ISO 129-compliant dimension annotations for PDF export
+
 ### Target Users
 - Pharmaceutical formulation scientists
 - Tablet tooling engineers
@@ -55,7 +61,8 @@ tabcad/
 │
 ├── components/
 │   ├── sidebar.py            # Left panel inputs
-│   └── viewer.py             # 2D/3D panels, preset modal
+│   ├── viewer.py             # 2D/3D panels, preset modal
+│   └── settings_modal.py     # Persistent settings modal
 │
 ├── callbacks/
 │   ├── ui_updater.py         # Field visibility, validation, sync
@@ -63,6 +70,7 @@ tabcad/
 │   ├── plotly_ui.py          # 3D toolbar interactions
 │   ├── presets.py            # Preset CRUD operations
 │   ├── constraints_viewer.py # Constraints modal
+│   ├── settings_callbacks.py # Settings persistence
 │   └── i18n_callbacks.py     # Language switching
 │
 └── core/
@@ -446,6 +454,35 @@ When updating PDF export/layout, keep scale behavior consistent with these rules
 
 ---
 
+## 2D Rendering Styles
+
+### WEB_STYLE vs ISO_PDF_STYLE
+The renderer supports two rendering styles controlled by `params["render_2d_style"]`:
+
+| Parameter | WEB_STYLE (default) | ISO_PDF_STYLE |
+|-----------|---------------------|---------------|
+| Dimension line | matplotlib annotate | Custom polygon arrows |
+| Extension lines | Default gap | Configurable gap + overrun |
+| Text position | Near dimension line | Offset with ratio control |
+| Font | Default | osifont (if available) |
+
+### ISO_PDF_STYLE Configuration
+Located in `core/renderer.py`:
+```python
+ISO_PDF_STYLE = {
+    "dim_line_width": 0.72,
+    "ext_line_width": 0.72,
+    "arrow_length": 1.0,
+    "arrow_width": 0.35,
+    "text_gap_from_dim_line": 0.4,
+    "outside_text_dist": 4.0,
+    "outside_text_offset_ratio": 0.7,
+    # ...
+}
+```
+
+---
+
 ## Quick Reference
 
 ### Key Files to Know
@@ -454,17 +491,22 @@ When updating PDF export/layout, keep scale behavior consistent with these rules
 | `core/defaults.py` | All default values |
 | `core/engine.py` | Geometry facade |
 | `core/preset_naming.py` | Shared preset and PDF drawing-number naming |
+| `core/renderer.py` | 2D drawing (WEB_STYLE + ISO_PDF_STYLE) |
 | `callbacks/ui_updater.py` | Validation & sync logic |
 | `callbacks/graph_updater.py` | Main generation callback |
+| `callbacks/settings_callbacks.py` | Persistent settings storage |
+| `components/settings_modal.py` | Settings UI modal |
 
 ### Key Functions
 | Function | Location | Purpose |
 |----------|----------|---------|
 | `generate_mesh()` | `core/engine.py` | Generate geometry + metrics |
 | `_build_params()` | `callbacks/graph_updater.py` | Assemble params dict |
-| `render_tablet()` | `core/renderer.py` | 2D drawing |
+| `render_tablet()` | `core/renderer.py` | 2D drawing (WEB_STYLE + ISO_PDF_STYLE) |
 | `render_tablet_3d()` | `core/renderer_3d.py` | 3D Plotly mesh |
 | `build_preset_base_name()` | `core/preset_naming.py` | Shared naming for presets and drawing numbers |
+| `draw_ext()`, `draw_ext_outside()`, `draw_pointer()` | `core/renderer.py` | Dimension annotation helpers |
+| `_draw_arrowhead()` | `core/renderer.py` | ISO-compliant filled triangle arrow |
 
 ### Important Callbacks
 | Callback | File | Triggers |

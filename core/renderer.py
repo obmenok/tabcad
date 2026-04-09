@@ -31,7 +31,7 @@ ISO_PDF_STYLE = {
     
     # Text settings
     "text_color": "#000000",      # Dimension text color
-    "text_font_size": 12,         # Dimension text size in points
+    "text_font_size": 8,          # Dimension text size in points
     "text_gap_from_dim_line": 0.4, # Distance from text to dimension line
     "text_bbox_pad": 0.2,         # Padding around text background box
     
@@ -599,8 +599,9 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         if pdf_scale_ratio <= 0:
             pdf_scale_ratio = 1.0
         # Keep text size visually fixed in PDF even when geometry is scaled in placement.
-        # User-requested boost: 4x larger labels in PDF 2D drawing.
-        TEXT_FONT_SIZE = (style["text_font_size"] * 4.0) / pdf_scale_ratio
+        # User-requested boost: 7x larger labels in PDF 2D drawing.
+        pdf_dim_font_size = params.get("pdf_2d_dim_font_size", 8)
+        TEXT_FONT_SIZE = (pdf_dim_font_size * 7.0) / pdf_scale_ratio
         TEXT_GAP_FROM_DIM_LINE = style["text_gap_from_dim_line"]
         TEXT_BBOX_PAD = style["text_bbox_pad"]
         EXT_LINE_GAP_FROM_FEATURE = style["ext_line_gap_from_feature"]

@@ -40,20 +40,12 @@ def create_settings_modal():
                             )
                         ], className="mb-2 align-items-center"),
                         html.Hr(className="my-2"),
-                        html.Label("Surface Lighting (Top)", className="fw-bold mb-2", style={"fontSize": "12px"}),
+                        html.Label("Surface Lighting", className="fw-bold mb-2", style={"fontSize": "12px"}),
                         _make_slider("set-web-3d-ambient", "Ambient", 0, 1, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_ambient"]),
                         _make_slider("set-web-3d-diffuse", "Diffuse", 0, 1, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_diffuse"]),
                         _make_slider("set-web-3d-specular", "Specular", 0, 2, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_specular"]),
                         _make_slider("set-web-3d-roughness", "Roughness", 0, 1, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_roughness"]),
                         _make_slider("set-web-3d-fresnel", "Fresnel", 0, 5, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_fresnel"]),
-                        
-                        html.Hr(className="my-2"),
-                        html.Label("Surface Lighting (Bottom/Side)", className="fw-bold mb-2", style={"fontSize": "12px"}),
-                        _make_slider("set-web-3d-bot-ambient", "Ambient", 0, 1, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_bot_ambient"]),
-                        _make_slider("set-web-3d-bot-diffuse", "Diffuse", 0, 1, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_bot_diffuse"]),
-                        _make_slider("set-web-3d-bot-specular", "Specular", 0, 2, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_bot_specular"]),
-                        _make_slider("set-web-3d-bot-roughness", "Roughness", 0, 1, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_bot_roughness"]),
-                        _make_slider("set-web-3d-bot-fresnel", "Fresnel", 0, 5, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_bot_fresnel"]),
                     ], title="Web 3D Settings"),
 
                     # PDF EXPORT SETTINGS
@@ -81,9 +73,34 @@ def create_settings_modal():
                             )
                         ], className="mb-2 align-items-center"),
                         dbc.Row([
+                            dbc.Col(html.Label("Dimension Font Size", className="tablet-input-label"), width=6),
+                            dbc.Col(
+                                dbc.Select(
+                                    id="set-pdf-dim-font-size",
+                                    options=[
+                                        {"label": "8 pt", "value": 8},
+                                        {"label": "9 pt", "value": 9},
+                                        {"label": "10 pt", "value": 10},
+                                        {"label": "11 pt", "value": 11},
+                                        {"label": "12 pt", "value": 12},
+                                    ],
+                                    value=DEFAULT_APP_SETTINGS["pdf_2d_dim_font_size"],
+                                    size="sm"
+                                ),
+                                width=6
+                            )
+                        ], className="mb-2 align-items-center"),
+                        dbc.Row([
                             dbc.Col(html.Label("Enable 2D Shading", className="tablet-input-label"), width=6),
                             dbc.Col(
                                 dbc.Checkbox(id="set-pdf-2d-shaded", value=DEFAULT_APP_SETTINGS["pdf_2d_shaded"]),
+                                width=6
+                            )
+                        ], className="mb-2 align-items-center"),
+                        dbc.Row([
+                            dbc.Col(html.Label("Include 3D View", className="tablet-input-label"), width=6),
+                            dbc.Col(
+                                dbc.Checkbox(id="set-pdf-include-3d", value=DEFAULT_APP_SETTINGS["pdf_include_3d"]),
                                 width=6
                             )
                         ], className="mb-2 align-items-center"),
@@ -104,16 +121,40 @@ def create_settings_modal():
                     ], title="PDF Export Settings"),
                 ], start_collapsed=False, flush=True)
             ]),
-            dbc.ModalFooter([
-                dbc.Button("Reset to Default", id="btn-settings-reset", color="danger", outline=True, size="sm", className="me-auto"),
-                dbc.Button("Cancel", id="btn-settings-cancel", color="light", size="sm"),
-                dbc.Button("Save Settings", id="btn-settings-save", color="primary", size="sm")
-            ], style={"padding": "0.5rem"}),
+            dbc.ModalFooter(
+                html.Div([
+                    dbc.Button(
+                        "Reset to Default",
+                        id="btn-settings-reset",
+                        outline=True,
+                        color="secondary",
+                        className="outline-soft-btn preset-modal-btn",
+                    ),
+                    html.Div([
+                        dbc.Button(
+                            "Cancel",
+                            id="btn-settings-cancel",
+                            outline=True,
+                            color="secondary",
+                            className="outline-soft-btn preset-modal-btn",
+                        ),
+                        dbc.Button(
+                            "Save Settings",
+                            id="btn-settings-save",
+                            outline=True,
+                            color="secondary",
+                            className="outline-soft-btn preset-modal-btn",
+                        ),
+                    ], style={"display": "flex", "gap": "8px"}),
+                ], style={"display": "flex", "width": "100%", "justifyContent": "space-between"}),
+                style={"borderTop": "none", "padding": "0.5rem"},
+            ),
         ],
         id="settings-modal",
         is_open=False,
         size="md",
         centered=True,
+        className="preset-modal",
     )
 
 def _make_slider(id_name, label, min_val, max_val, step, default_val):

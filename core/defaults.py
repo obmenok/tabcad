@@ -76,17 +76,12 @@ DEFAULT_APP_SETTINGS = {
     "web_3d_lighting_roughness": 0.6,
     "web_3d_lighting_fresnel": 0.1,
 
-    # Web 3D Lighting Bot/Band
-    "web_3d_lighting_bot_ambient": 0.7,
-    "web_3d_lighting_bot_diffuse": 0.4,
-    "web_3d_lighting_bot_specular": 0.1,
-    "web_3d_lighting_bot_roughness": 0.8,
-    "web_3d_lighting_bot_fresnel": 0.2,
-
     # PDF Export Settings
     "pdf_orientation": "portrait",
     "pdf_2d_fill_color": "#dec9bd",
+    "pdf_2d_dim_font_size": 8,
     "pdf_2d_shaded": True,
+    "pdf_include_3d": True,
     "pdf_created_by": "TabCAD Pro",
     "pdf_approved_by": "Buyakov S.",
 }

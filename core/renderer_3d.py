@@ -309,19 +309,12 @@ def render_tablet_3d(mesh_data, params):
     model_color = params.get("web_3d_model_color", "#db7b3b")
     cad_colorscale = [[0, model_color], [1, model_color]]
     vector_light = dict(x=-1, y=1, z=0.2)
-    lighting_top = dict(
+    lighting = dict(
         ambient=float(params.get("web_3d_lighting_ambient", 0.4)),
         diffuse=float(params.get("web_3d_lighting_diffuse", 0.8)),
         specular=float(params.get("web_3d_lighting_specular", 0.3)),
         roughness=float(params.get("web_3d_lighting_roughness", 0.6)),
         fresnel=float(params.get("web_3d_lighting_fresnel", 0.1)),
-    )
-    lighting_bot = dict(
-        ambient=float(params.get("web_3d_lighting_bot_ambient", 0.7)),
-        diffuse=float(params.get("web_3d_lighting_bot_diffuse", 0.4)),
-        specular=float(params.get("web_3d_lighting_bot_specular", 0.1)),
-        roughness=float(params.get("web_3d_lighting_bot_roughness", 0.8)),
-        fresnel=float(params.get("web_3d_lighting_bot_fresnel", 0.2)),
     )
 
     render_mode = (params["render_mode"] or "shaded").lower()
@@ -339,19 +332,19 @@ def render_tablet_3d(mesh_data, params):
     fig.add_trace(
         go.Surface(
             x=x_s, y=y_s, z=zt_s, colorscale=cad_colorscale, showscale=False, hoverinfo="skip", name="Top",
-            lighting=lighting_top, lightposition=vector_light, opacity=top_opacity, hidesurface=hide_surface,
+            lighting=lighting, lightposition=vector_light, opacity=top_opacity, hidesurface=hide_surface,
         )
     )
     fig.add_trace(
         go.Surface(
             x=x_s, y=y_s, z=zb_s, colorscale=cad_colorscale, showscale=False, hoverinfo="skip", name="Bottom",
-            lighting=lighting_bot, lightposition=vector_light, opacity=bottom_opacity, hidesurface=hide_surface,
+            lighting=lighting, lightposition=vector_light, opacity=bottom_opacity, hidesurface=hide_surface,
         )
     )
     fig.add_trace(
         go.Surface(
             x=xb, y=yb, z=zb, colorscale=cad_colorscale, showscale=False, hoverinfo="skip", name="Band",
-            lighting=lighting_bot, lightposition=vector_light, opacity=band_opacity, hidesurface=hide_surface,
+            lighting=lighting, lightposition=vector_light, opacity=band_opacity, hidesurface=hide_surface,
         )
     )
 

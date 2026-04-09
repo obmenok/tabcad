@@ -179,29 +179,30 @@ def export_pdf_callback(
             iso_scale_ratio = detected
         params_2d["_render_2d_scale_ratio"] = iso_scale_ratio
 
-        # Capture 3D view for PDF (Isometric only)
+        # Capture 3D view for PDF (Isometric only) - only if enabled in settings
         import base64
         views_3d = []
-        for preset in ["Isometric"]:
-            p_3d = dict(params)
-            p_3d["view_preset"] = preset.lower()
-            p_3d["render_mode"] = "shaded"
-            p_3d["show_bbox"] = False
-            fig_3d = render_tablet_3d(mesh_data, p_3d)
+        if params.get("pdf_include_3d", True):
+            for preset in ["Isometric"]:
+                p_3d = dict(params)
+                p_3d["view_preset"] = preset.lower()
+                p_3d["render_mode"] = "shaded"
+                p_3d["show_bbox"] = False
+                fig_3d = render_tablet_3d(mesh_data, p_3d)
 
-            # Absolute clean layout for export
-            fig_3d.update_layout(
-                paper_bgcolor="white",
-                plot_bgcolor="white",
-                scene=dict(
-                    xaxis=dict(visible=False),
-                    yaxis=dict(visible=False),
-                    zaxis=dict(visible=False)
+                # Absolute clean layout for export
+                fig_3d.update_layout(
+                    paper_bgcolor="white",
+                    plot_bgcolor="white",
+                    scene=dict(
+                        xaxis=dict(visible=False),
+                        yaxis=dict(visible=False),
+                        zaxis=dict(visible=False)
+                    )
                 )
-            )
-            img_bytes = fig_3d.to_image(format="png", width=500, height=500)
-            b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
-            views_3d.append((b64, preset))
+                img_bytes = fig_3d.to_image(format="png", width=500, height=500)
+                b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
+                views_3d.append((b64, preset))
 
         # Generate PDF in a temporary file
         import tempfile
