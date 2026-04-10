@@ -150,6 +150,7 @@ def export_pdf_callback(
         params["tip_force_steel"] = tip_force_steel if tip_force_steel else BASE_DEFAULTS["tip_force_steel"]
         if app_settings:
             params.update(app_settings)
+        params["is_pdf_export"] = True
 
         mesh_data = generate_mesh(params)
         metrics = mesh_data.get("metrics", {})

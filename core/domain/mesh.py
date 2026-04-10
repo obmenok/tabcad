@@ -315,7 +315,17 @@ def generate_mesh(params):
     shape, _, w_val, l_val, _, _, _ = shape_params(params)
     dc = max(0.0, params["Dc"])
 
-    mesh_n = 300
+    quality = params.get("pdf_3d_quality", "medium")
+    if params.get("is_pdf_export"):
+        if quality == "low":
+            mesh_n = 150
+        elif quality == "high":
+            mesh_n = 450
+        else:
+            mesh_n = 300
+    else:
+        mesh_n = 300
+
     x_grid = np.linspace(-l_val / 2, l_val / 2, mesh_n)
     y_grid = np.linspace(-w_val / 2, w_val / 2, mesh_n)
     x_arr, y_arr, z, rho, mask_cup, perimeter, die_hole_sa = build_surface(params, x_grid, y_grid)

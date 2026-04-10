@@ -286,8 +286,19 @@ def render_tablet_3d(mesh_data, params):
     z_top_grid = mesh_data["Z_cup_top"]
     z_bot_grid = mesh_data.get("Z_cup_bottom", mesh_data["Z"])
 
-    theta = np.linspace(0, 2 * np.pi, 320)
-    rr = np.linspace(0, 1, 160)
+    quality = params.get("pdf_3d_quality", "medium")
+    if params.get("is_pdf_export"):
+        if quality == "low":
+            t_res, r_res = 160, 80
+        elif quality == "high":
+            t_res, r_res = 480, 240
+        else:
+            t_res, r_res = 320, 160
+    else:
+        t_res, r_res = 320, 160
+
+    theta = np.linspace(0, 2 * np.pi, t_res)
+    rr = np.linspace(0, 1, r_res)
     rr_grid, tt_grid = np.meshgrid(rr, theta, indexing="ij")
 
     x_c, y_c = _shape_contour(params)

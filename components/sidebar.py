@@ -52,7 +52,7 @@ def create_sidebar():
                 ),
                 dbc.Col(
                     dbc.Button(
-                        html.Span(className="apollo-icon av-i-settings"),
+                        html.Span(className="apollo-icon av-i-settings", style={"fontSize": "14px"}),
                         id="btn-open-settings",
                         outline=True,
                         color="secondary",

@@ -482,3 +482,9 @@
   padding: 0 8px !important;
   line-height: 24px !important;
 }
+
+
+/* Compact sliders for settings modal */
+.preset-modal .rc-slider {
+  padding: 5px 0 !important;
+}

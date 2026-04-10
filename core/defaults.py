@@ -82,6 +82,7 @@ DEFAULT_APP_SETTINGS = {
     "pdf_2d_dim_font_size": 8,
     "pdf_2d_shaded": True,
     "pdf_include_3d": True,
+    "pdf_3d_quality": "medium",
     "pdf_created_by": "TabCAD Pro",
     "pdf_approved_by": "Buyakov S.",
 }

@@ -40,7 +40,7 @@ def create_settings_modal():
                             )
                         ], className="mb-2 align-items-center"),
                         html.Hr(className="my-2"),
-                        html.Label("Surface Lighting", className="fw-bold mb-2", style={"fontSize": "12px"}),
+                        html.Label("Surface Lighting", className="tablet-input-label mb-2"),
                         _make_slider("set-web-3d-ambient", "Ambient", 0, 1, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_ambient"]),
                         _make_slider("set-web-3d-diffuse", "Diffuse", 0, 1, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_diffuse"]),
                         _make_slider("set-web-3d-specular", "Specular", 0, 2, 0.1, DEFAULT_APP_SETTINGS["web_3d_lighting_specular"]),
@@ -101,6 +101,22 @@ def create_settings_modal():
                             dbc.Col(html.Label("Include 3D View", className="tablet-input-label"), width=6),
                             dbc.Col(
                                 dbc.Checkbox(id="set-pdf-include-3d", value=DEFAULT_APP_SETTINGS["pdf_include_3d"]),
+                                width=6
+                            )
+                        ], className="mb-2 align-items-center"),
+                        dbc.Row([
+                            dbc.Col(html.Label("3D Model Quality", className="tablet-input-label"), width=6),
+                            dbc.Col(
+                                dbc.Select(
+                                    id="set-pdf-3d-quality",
+                                    options=[
+                                        {"label": "Low (Fast)", "value": "low"},
+                                        {"label": "Medium (Balanced)", "value": "medium"},
+                                        {"label": "High (Detailed)", "value": "high"}
+                                    ],
+                                    value=DEFAULT_APP_SETTINGS["pdf_3d_quality"],
+                                    size="sm"
+                                ),
                                 width=6
                             )
                         ], className="mb-2 align-items-center"),
@@ -168,9 +184,22 @@ def _make_slider(id_name, label, min_val, max_val, step, default_val):
                 step=step,
                 value=default_val,
                 marks=None,
-                tooltip={"placement": "bottom", "always_visible": False},
+                updatemode="drag",
                 className="p-0 m-0"
             ),
-            width=8
+            width=6,
+            style={"display": "flex", "alignItems": "center"}
+        ),
+        dbc.Col(
+            dbc.Input(
+                id=f"{id_name}-val",
+                type="number",
+                value=default_val,
+                readonly=True,
+                size="sm",
+                style={"padding": "2px 4px", "textAlign": "center", "fontSize": "12px", "backgroundColor": "#f8f9fa", "cursor": "default", "height": "24px"}
+            ),
+            width=2,
+            className="ps-1"
         )
-    ], className="mb-2 align-items-center")
+    ], className="mb-1 align-items-center")

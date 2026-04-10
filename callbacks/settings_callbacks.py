@@ -23,7 +23,7 @@ def toggle_settings_modal(n_open, n_cancel, n_save, is_open):
     [Output(f"set-{k}", "value", allow_duplicate=True) for k in [
         "web-2d-fill", "web-2d-dim", "web-3d-model-color",
         "web-3d-ambient", "web-3d-diffuse", "web-3d-specular", "web-3d-roughness", "web-3d-fresnel",
-        "pdf-orientation", "pdf-2d-fill", "pdf-dim-font-size", "pdf-2d-shaded", "pdf-include-3d", "pdf-created-by", "pdf-approved-by",
+        "pdf-orientation", "pdf-2d-fill", "pdf-dim-font-size", "pdf-2d-shaded", "pdf-include-3d", "pdf-3d-quality", "pdf-created-by", "pdf-approved-by",
     ]],
     [
         Input("btn-settings-save", "n_clicks"),
@@ -43,6 +43,7 @@ def toggle_settings_modal(n_open, n_cancel, n_save, is_open):
         State("set-pdf-dim-font-size", "value"),
         State("set-pdf-2d-shaded", "value"),
         State("set-pdf-include-3d", "value"),
+        State("set-pdf-3d-quality", "value"),
         State("set-pdf-created-by", "value"),
         State("set-pdf-approved-by", "value"),
         State("app-settings-store", "data"),
@@ -53,12 +54,12 @@ def save_settings(
     n_save, n_reset,
     w2d_fill, w2d_dim,
     w3d_color, w3d_amb, w3d_diff, w3d_spec, w3d_rough, w3d_fresnel,
-    pdf_ori, pdf_2d_fill, pdf_dim_font_size, pdf_2d_shaded, pdf_include_3d, pdf_created, pdf_approved,
+    pdf_ori, pdf_2d_fill, pdf_dim_font_size, pdf_2d_shaded, pdf_include_3d, pdf_3d_quality, pdf_created, pdf_approved,
     current_data
 ):
     trigger = ctx.triggered_id
     if not trigger:
-        return [dash.no_update] * 16
+        return [dash.no_update] * 17
     
     if trigger == "btn-settings-reset":
         return [DEFAULT_APP_SETTINGS] + [
@@ -75,6 +76,7 @@ def save_settings(
             DEFAULT_APP_SETTINGS["pdf_2d_dim_font_size"],
             DEFAULT_APP_SETTINGS["pdf_2d_shaded"],
             DEFAULT_APP_SETTINGS["pdf_include_3d"],
+            DEFAULT_APP_SETTINGS["pdf_3d_quality"],
             DEFAULT_APP_SETTINGS["pdf_created_by"],
             DEFAULT_APP_SETTINGS["pdf_approved_by"],
         ]
@@ -102,11 +104,12 @@ def save_settings(
     settings["pdf_2d_dim_font_size"] = int(pdf_dim_font_size) if pdf_dim_font_size else 8
     settings["pdf_2d_shaded"] = bool(pdf_2d_shaded)
     settings["pdf_include_3d"] = bool(pdf_include_3d)
+    settings["pdf_3d_quality"] = pdf_3d_quality
     settings["pdf_created_by"] = pdf_created
     settings["pdf_approved_by"] = pdf_approved
     
     # Return store + no_update for all field outputs (only store is updated on save)
-    return [settings] + [dash.no_update] * 15
+    return [settings] + [dash.no_update] * 16
 
 @callback(
     [
@@ -123,6 +126,7 @@ def save_settings(
         Output("set-pdf-dim-font-size", "value"),
         Output("set-pdf-2d-shaded", "value"),
         Output("set-pdf-include-3d", "value"),
+        Output("set-pdf-3d-quality", "value"),
         Output("set-pdf-created-by", "value"),
         Output("set-pdf-approved-by", "value"),
     ],
@@ -132,7 +136,7 @@ def save_settings(
 )
 def load_settings_into_modal(is_open, current_data):
     if not is_open:
-        return [dash.no_update] * 15
+        return [dash.no_update] * 16
         
     s = current_data if current_data else DEFAULT_APP_SETTINGS
     return (
@@ -149,6 +153,24 @@ def load_settings_into_modal(is_open, current_data):
         s.get("pdf_2d_dim_font_size", DEFAULT_APP_SETTINGS["pdf_2d_dim_font_size"]),
         s.get("pdf_2d_shaded", DEFAULT_APP_SETTINGS["pdf_2d_shaded"]),
         s.get("pdf_include_3d", DEFAULT_APP_SETTINGS["pdf_include_3d"]),
+        s.get("pdf_3d_quality", DEFAULT_APP_SETTINGS["pdf_3d_quality"]),
         s.get("pdf_created_by", DEFAULT_APP_SETTINGS["pdf_created_by"]),
         s.get("pdf_approved_by", DEFAULT_APP_SETTINGS["pdf_approved_by"]),
+    )
+
+from dash import clientside_callback
+
+# Синхронизация слайдеров и readonly инпутов для 3D освещения
+for param in ["ambient", "diffuse", "specular", "roughness", "fresnel"]:
+    slider_id = f"set-web-3d-{param}"
+    input_id = f"{slider_id}-val"
+    
+    clientside_callback(
+        """
+        function(val) {
+            return val;
+        }
+        """,
+        Output(input_id, "value"),
+        Input(slider_id, "value")
     )
