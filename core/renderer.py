@@ -26,8 +26,8 @@ WEB_STYLE = {
 # ISO PDF style with configurable dimension presentation
 ISO_PDF_STYLE = {
     # Line widths (matplotlib points, 1 pt ≈ 0.35 mm)
-    "dim_line_width": 0.72,       # Dimension line thickness
-    "ext_line_width": 0.72,       # Extension line thickness
+    "dim_line_width": 0.5,        # Dimension line thickness
+    "ext_line_width": 0.5,        # Extension line thickness
     
     # Text settings
     "text_color": "#000000",      # Dimension text color
@@ -37,15 +37,16 @@ ISO_PDF_STYLE = {
     
     # Extension line settings
     "ext_line_gap_from_feature": 0.0,  # Gap between feature edge and extension line start
-    "ext_line_overrun": 0.5,      # How far extension line extends past dimension line
+    "ext_line_overrun": 1.0,      # How far extension line extends past dimension line
     
     # Arrow settings (data units)
     "arrow_length": 1.0,           # Arrow head length
     "arrow_width": 0.3,            # Arrow head width
     
     # Text positioning
-    "outside_text_dist": 4.0,           # Length of right tail for external dimensions
+    "outside_text_dist": 11.0,          # Length of right tail for external dimensions
     "outside_text_offset_ratio": 0.7,   # Text position as fraction of outside_text_dist
+    "pointer_shelf_length": 10.0,       # Length of horizontal shelf for pointer/radius dimensions
 }
 
 # Global state (set in render_tablet based on selected style)
@@ -59,9 +60,11 @@ EXT_LINE_GAP_FROM_FEATURE = ISO_PDF_STYLE["ext_line_gap_from_feature"]
 EXT_LINE_OVERRUN = ISO_PDF_STYLE["ext_line_overrun"]
 OUTSIDE_TEXT_DIST = ISO_PDF_STYLE["outside_text_dist"]
 OUTSIDE_TEXT_OFFSET_RATIO = ISO_PDF_STYLE["outside_text_offset_ratio"]
+POINTER_SHELF_LENGTH = ISO_PDF_STYLE["pointer_shelf_length"]
 ARROW_LENGTH = ISO_PDF_STYLE["arrow_length"]
 ARROW_WIDTH = ISO_PDF_STYLE["arrow_width"]
 ISO_PDF_ACTIVE = False
+PDF_SCALE_RATIO = 1.0
 PDF_FONT_PROPERTIES = None
 
 # Load osifont for ISO PDF drawings
@@ -230,8 +233,11 @@ def _extension_segment(p0x, p0y, p1x, p1y):
 
 
 def _dim_text_kwargs():
+    if not ISO_PDF_ACTIVE:
+        return {"fontsize": 9}
+    
     kwargs = {"fontsize": TEXT_FONT_SIZE}
-    if ISO_PDF_ACTIVE and PDF_FONT_PROPERTIES is not None:
+    if PDF_FONT_PROPERTIES is not None:
         kwargs["fontproperties"] = PDF_FONT_PROPERTIES
     return kwargs
 
@@ -279,6 +285,12 @@ def _draw_arrowhead(ax, tip_x, tip_y, out_x, out_y, length=None, width=None):
 
 def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, offset=(0, 0)):
     """Draw internal dimension (arrows inside extension lines)."""
+    
+    if ISO_PDF_ACTIVE:
+        PAPER_OFFSET_MULT = 2.5
+        dx = (dx * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
+        dy = (dy * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
+
     text = _format_dim_text(text)
     ex1, ey1 = px1 + dx, py1 + dy
     ex2, ey2 = px2 + dx, py2 + dy
@@ -348,6 +360,12 @@ def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, offset=(0, 0)):
 
 def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text):
     """Draw external dimension (arrows outside extension lines)."""
+    
+    if ISO_PDF_ACTIVE:
+        PAPER_OFFSET_MULT = 2.5
+        dx = (dx * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
+        dy = (dy * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
+
     text = _format_dim_text(text)
     ex1, ey1 = px1 + dx, py1 + dy
     ex2, ey2 = px2 + dx, py2 + dy
@@ -403,7 +421,7 @@ def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text):
     
     # Extension beyond arrow tips (tail length)
     # Right tail is longer to support text
-    line_extra_left = 2.0
+    line_extra_left = ARROW_LENGTH + EXT_LINE_OVERRUN if ISO_PDF_ACTIVE else 2.0
     line_extra_right = OUTSIDE_TEXT_DIST
     
     # Draw dimension line (extends beyond arrow tips)
@@ -433,12 +451,19 @@ def draw_pointer(ax, p_target, p_text, text):
     tx, ty = p_text
     px, py = p_target
     
+    if ISO_PDF_ACTIVE:
+        PAPER_OFFSET_MULT = 2.5
+        dx = tx - px
+        dy = ty - py
+        tx = px + (dx * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
+        ty = py + (dy * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
+
     if not ISO_PDF_ACTIVE:
         # Original web style - uses matplotlib annotate
         ax.annotate(
             text,
             xy=p_target,
-            xytext=p_text,
+            xytext=(tx, ty),
             arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
             color=C_TEXT,
             ha="center",
@@ -465,7 +490,7 @@ def draw_pointer(ax, p_target, p_text, text):
     
     # Draw text shelf and text
     side = 1.0 if tx >= px else -1.0
-    shelf_end_x = tx + side * 3.25
+    shelf_end_x = tx + side * POINTER_SHELF_LENGTH
     ax.plot([tx, shelf_end_x], [ty, ty], "k-", lw=DIM_LINE_WIDTH)
     ax.text((tx + shelf_end_x) / 2, ty + TEXT_GAP_FROM_DIM_LINE, text, color=C_TEXT, ha="center", va="bottom", **_dim_text_kwargs())
 
@@ -585,7 +610,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     global DIM_LINE_WIDTH, C_TEXT
     global EXT_LINE_WIDTH, TEXT_FONT_SIZE, TEXT_GAP_FROM_DIM_LINE
     global TEXT_BBOX_PAD, EXT_LINE_GAP_FROM_FEATURE, EXT_LINE_OVERRUN, OUTSIDE_TEXT_DIST
-    global OUTSIDE_TEXT_OFFSET_RATIO, ARROW_LENGTH, ARROW_WIDTH, ISO_PDF_ACTIVE
+    global OUTSIDE_TEXT_OFFSET_RATIO, POINTER_SHELF_LENGTH, ARROW_LENGTH, ARROW_WIDTH, ISO_PDF_ACTIVE, PDF_SCALE_RATIO
     
     style_name = str(params.get("render_2d_style", "web")).lower()
     ISO_PDF_ACTIVE = style_name == "iso_pdf"
@@ -598,18 +623,39 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         pdf_scale_ratio = float(params.get("render_2d_pdf_scale_ratio", 1.0) or 1.0)
         if pdf_scale_ratio <= 0:
             pdf_scale_ratio = 1.0
+            
+        PDF_SCALE_RATIO = pdf_scale_ratio
         # Keep text size visually fixed in PDF even when geometry is scaled in placement.
-        # User-requested boost: 7x larger labels in PDF 2D drawing.
         pdf_dim_font_size = params.get("pdf_2d_dim_font_size", 8)
-        TEXT_FONT_SIZE = (pdf_dim_font_size * 7.0) / pdf_scale_ratio
-        TEXT_GAP_FROM_DIM_LINE = style["text_gap_from_dim_line"]
+        
+        bounds = params.get("_render_2d_bounds")
+        if bounds:
+            view_w = bounds["view_xmax"] - bounds["view_xmin"]
+        else:
+            w_val = float(params["W"])
+            l_val = float(params["L"])
+            view_w = max(w_val, l_val) * 1.5 + 80.0
+            
+        TEXT_FONT_SIZE = (pdf_dim_font_size * 254.0) / (view_w * pdf_scale_ratio)
+        
+        # Scale line widths (in points) to be constant physical size on paper
+        lw_scale = 254.0 / (view_w * pdf_scale_ratio)
+        DIM_LINE_WIDTH = style["dim_line_width"] * lw_scale
+        EXT_LINE_WIDTH = style["ext_line_width"] * lw_scale
+        
+        TEXT_GAP_FROM_DIM_LINE = style["text_gap_from_dim_line"] / pdf_scale_ratio
         TEXT_BBOX_PAD = style["text_bbox_pad"]
         EXT_LINE_GAP_FROM_FEATURE = style["ext_line_gap_from_feature"]
-        EXT_LINE_OVERRUN = style["ext_line_overrun"]
-        OUTSIDE_TEXT_DIST = style["outside_text_dist"]
+        # Scale the overrun (tail past the dimension line) so it remains constant physical size
+        EXT_LINE_OVERRUN = style["ext_line_overrun"] / pdf_scale_ratio
+        # To keep the outside text tail length consistent on paper
+        OUTSIDE_TEXT_DIST = style["outside_text_dist"] / pdf_scale_ratio
         OUTSIDE_TEXT_OFFSET_RATIO = style["outside_text_offset_ratio"]
-        ARROW_LENGTH = style["arrow_length"]
-        ARROW_WIDTH = style["arrow_width"]
+        POINTER_SHELF_LENGTH = style["pointer_shelf_length"] / pdf_scale_ratio
+        # To keep arrows a constant physical size on paper (matching the 4:1 look):
+        # Target physical length = 4.0 mm, target physical width = 1.2 mm
+        ARROW_LENGTH = 4.0 / pdf_scale_ratio
+        ARROW_WIDTH = 1.2 / pdf_scale_ratio
         poly_fill_color = params.get("pdf_2d_fill_color", "#dec9bd")
     else:
         style = WEB_STYLE
@@ -647,8 +693,9 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     ax.axis("off")
 
     cx_top, cy_top = 0, 0
-    cx_side, cy_side = -(w_val / 2 + tt / 2 + 15), 0
-    cx_front, cy_front = 0, -(l_val / 2 + tt / 2 + 15)
+    gap = 15.0 if not ISO_PDF_ACTIVE else 40.0 / PDF_SCALE_RATIO
+    cx_side, cy_side = -(w_val / 2 + tt / 2 + gap), 0
+    cx_front, cy_front = 0, -(l_val / 2 + tt / 2 + gap)
     l_flat = max(0.0, l_val - w_val)
     oval_ref_flat_side = None
     oval_ref_flat_front = None
@@ -903,11 +950,39 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     ax.plot(t_prof + cx_side, l_prof + cy_side, "k-", linewidth=1.2)
     ax.plot([-hb / 2 + cx_side, -hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=1.2)
     ax.plot([hb / 2 + cx_side, hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=1.2)
-    draw_ext_outside(ax, cx_side + hb / 2, cy_side + l_side / 2, cx_side + hb / 2 + dc, cy_side + l_side / 2, 0, 4, f"{dc:g}\nCup Depth")
+    cup_depth_dy = 4.0
+    bevel_depth_dy = 2.0
+    # For all CBE forms in PDF:
+    # - keep Bevel Depth at the previously raised level,
+    # - lift Cup Depth by additional +2 mm from that level.
+    # draw_ext_outside in PDF converts dy to physical shift as dy * 2.5 mm.
+    if ISO_PDF_ACTIVE and profile == "cbe":
+        cup_depth_dy += 2.8
+        bevel_depth_dy += 2.0
+
+    draw_ext_outside(
+        ax,
+        cx_side + hb / 2,
+        cy_side + l_side / 2,
+        cx_side + hb / 2 + dc,
+        cy_side + l_side / 2,
+        0,
+        cup_depth_dy,
+        f"{dc:g}\nCup Depth",
+    )
     if profile == "cbe":
         bev_d = cfg.Bev_D
         if bev_d > 0:
-            draw_ext_outside(ax, cx_side + hb / 2, cy_side + l_side / 2, cx_side + hb / 2 + bev_d, cy_side + l_side / 2, 0, 2, f"{bev_d:g}\nBevel Depth")
+            draw_ext_outside(
+                ax,
+                cx_side + hb / 2,
+                cy_side + l_side / 2,
+                cx_side + hb / 2 + bev_d,
+                cy_side + l_side / 2,
+                0,
+                bevel_depth_dy,
+                f"{bev_d:g}\nBevel Depth",
+            )
     draw_ext_outside(ax, cx_side - hb / 2, cy_side - l_side / 2, cx_side + hb / 2, cy_side - l_side / 2, 0, -4, f"{hb:g}\nBelly Band")
     if shape == "capsule" and l_flat > 0:
         ref_flat_side = l_flat
@@ -1046,15 +1121,21 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
             )
         else:
             # ISO PDF style - arrows touch extension lines with tails
-            ax.plot([cx_front + l_land_coord, cx_front + l_land_coord], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=EXT_LINE_WIDTH)
-            ax.plot([cx_front + w_val / 2, cx_front + w_val / 2], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=EXT_LINE_WIDTH)
-            
-            y_dim = cy_front + tt / 2 + 2
+
+            # Apply same paper offset scaling to Land dimension
+            land_dy = 3.0
+            if ISO_PDF_ACTIVE:
+                land_dy = (land_dy * 2.5) / PDF_SCALE_RATIO
+
+            ax.plot([cx_front + l_land_coord, cx_front + l_land_coord], [cy_front + tt / 2, cy_front + tt / 2 + land_dy + 0.5 / PDF_SCALE_RATIO], "k-", lw=EXT_LINE_WIDTH)
+            ax.plot([cx_front + w_val / 2, cx_front + w_val / 2], [cy_front + tt / 2, cy_front + tt / 2 + land_dy + 0.5 / PDF_SCALE_RATIO], "k-", lw=EXT_LINE_WIDTH)
+
+            y_dim = cy_front + tt / 2 + land_dy
             x_left = cx_front + l_land_coord
             x_right = cx_front + w_val / 2
             
             # Tail lengths (right tail longer for text support)
-            tail_left = 2.0
+            tail_left = ARROW_LENGTH + EXT_LINE_OVERRUN if ISO_PDF_ACTIVE else 2.0
             tail_right = OUTSIDE_TEXT_DIST
             
             # Dimension line with tails
@@ -1066,7 +1147,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
             
             ax.text(
                 cx_front + w_val / 2 + OUTSIDE_TEXT_DIST * OUTSIDE_TEXT_OFFSET_RATIO,
-                cy_front + tt / 2 + 2 + TEXT_GAP_FROM_DIM_LINE,
+                y_dim + TEXT_GAP_FROM_DIM_LINE,
                 _format_dim_text(f"{land:g}"),
                 color=C_TEXT,
                 ha="center",
@@ -1078,19 +1159,30 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         alpha_rad = np.radians(bev_a)
         pt_x = cx_front + span_front
         pt_y = cy_front + hb / 2
-        ext_len = w_val / 4.0
+        
+        if ISO_PDF_ACTIVE:
+            ext_len = max(w_val / 5.0, 8.0 / PDF_SCALE_RATIO)
+        else:
+            ext_len = w_val / 4.0
+            
         # Horizontal guide to the right.
         ax.plot([pt_x, pt_x + ext_len], [pt_y, pt_y], "k-", lw=DIM_LINE_WIDTH)
         # Bevel guide down-right.
         dx = ext_len * np.cos(alpha_rad)
         dy = -ext_len * np.sin(alpha_rad)
         ax.plot([pt_x, pt_x + dx], [pt_y, pt_y + dy], "k-", lw=DIM_LINE_WIDTH)
+        
         # Angle arc.
-        arc_r = min(3.0, ext_len * 0.8)
+        if ISO_PDF_ACTIVE:
+            arc_r = 6.0 / PDF_SCALE_RATIO
+            text_offset = 3.0 / PDF_SCALE_RATIO
+        else:
+            arc_r = min(3.0, ext_len * 0.8)
+            text_offset = 1.2
+            
         t_arc = np.linspace(-alpha_rad, 0, 20)
         ax.plot(pt_x + arc_r * np.cos(t_arc), pt_y + arc_r * np.sin(t_arc), "k-", lw=DIM_LINE_WIDTH)
         mid_ang = -alpha_rad / 2.0
-        text_offset = 1.2
         ax.text(
             pt_x + (arc_r + text_offset) * np.cos(mid_ang),
             pt_y + (arc_r + text_offset) * np.sin(mid_ang),

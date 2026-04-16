@@ -439,6 +439,62 @@ The preset system automatically generates names based on the tablet's physical d
 
 ---
 
+## PDF Dimension System Change Log (From `c739482`)
+
+This section documents critical in-progress changes made after commit `c739482`
+(`feat: improve 3D settings UI with realtime input syncing, dynamic PDF quality`).
+
+### Files changed
+
+- `callbacks/graph_updater.py`
+- `core/renderer.py`
+
+### Scope summary
+
+- Extended PDF 2D scale solver in `graph_updater`:
+  - `_pick_iso_scale_from_bounds(...)` now accepts geometry size (`geom_w/geom_h`) and current scale.
+  - Added geometry/padding split to estimate printable fit:
+    `new_phys = geom * scale + padding`.
+  - Reworked stabilization loop from 2-pass to iterative (up to 5 passes) with checks for:
+    - scale convergence
+    - `view_w` convergence
+  - Persists final render scale into `_render_2d_scale_ratio`.
+
+- Reworked ISO PDF dimension styling/calibration in `renderer`:
+  - Base style constants updated:
+    - thinner line defaults
+    - larger outside tails
+    - added `pointer_shelf_length`
+  - Added globals: `POINTER_SHELF_LENGTH`, `PDF_SCALE_RATIO`.
+  - `_dim_text_kwargs()` split by mode (web vs pdf behavior).
+  - `draw_ext`, `draw_ext_outside`, `draw_pointer` now apply PDF offset normalization.
+  - Pointer shelf length switched from fixed literal to configurable global.
+
+- Added dynamic “paper-constant” scaling in `render_tablet(...)` PDF path:
+  - dimension font size uses `pdf_2d_dim_font_size`, `view_w`, and `pdf_scale_ratio`
+  - line widths dynamically normalized to page result
+  - overrun/tails/text gaps normalized by scale
+  - arrows normalized to physical-size targets
+
+- Updated view spacing logic in PDF mode:
+  - side/front view gap now uses scale-aware formula in PDF mode
+  - web mode keeps original spacing.
+
+- CBE-specific dimension edits:
+  - introduced separate `cup_depth_dy` / `bevel_depth_dy`
+  - CBE PDF branch currently applies additional vertical offsets for these dimensions.
+
+- CBE/FFBE angle dimension tuning:
+  - PDF branch uses custom `ext_len` floor and divisor
+  - PDF branch uses enlarged angle arc radius and text offset.
+
+### Notes
+
+- These changes are intentionally tracked as a dedicated engineering checkpoint because PDF
+  print readability and dimension placement were tuned iteratively over a long cycle.
+
+---
+
 ## License
 
 License is not defined yet in this repository.

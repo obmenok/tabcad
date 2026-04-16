@@ -22,7 +22,7 @@ def _pdf_drawing_zone_size_mm(params):
     return 130.0, 130.0
 
 
-def _pick_iso_scale_from_bounds(bounds, zone_w_mm, zone_h_mm):
+def _pick_iso_scale_from_bounds(bounds, zone_w_mm, zone_h_mm, geom_w=0, geom_h=0, current_scale=1.0):
     if not isinstance(bounds, dict):
         return 1.0
     try:
@@ -30,13 +30,28 @@ def _pick_iso_scale_from_bounds(bounds, zone_w_mm, zone_h_mm):
         obj_h = float(bounds["content_ymax"]) - float(bounds["content_ymin"])
     except Exception:
         return 1.0
+        
     obj_w = max(1e-6, obj_w)
     obj_h = max(1e-6, obj_h)
-    fits = [
-        s
-        for s in ISO_SCALE_FACTORS
-        if obj_w * s <= zone_w_mm and obj_h * s <= zone_h_mm
-    ]
+    
+    # Calculate physical size with the current scale
+    current_phys_w = obj_w * current_scale
+    current_phys_h = obj_h * current_scale
+    
+    # Extract the constant padding (gaps, text sizes, arrows) in physical mm
+    # (geom_w is the pure geometry width in data units)
+    padding_w = max(0.0, current_phys_w - geom_w * current_scale)
+    padding_h = max(0.0, current_phys_h - geom_h * current_scale)
+    
+    fits = []
+    for s in ISO_SCALE_FACTORS:
+        # A new scale s only scales the pure geometry.
+        # The padding remains constant in physical mm on the printed page.
+        new_phys_w = geom_w * s + padding_w
+        new_phys_h = geom_h * s + padding_h
+        if new_phys_w <= zone_w_mm and new_phys_h <= zone_h_mm:
+            fits.append(s)
+            
     return max(fits) if fits else 1.0
 
 
@@ -163,22 +178,49 @@ def export_pdf_callback(
         params_2d["render_2d_use_annotation_bounds"] = True
         zone_w_mm, zone_h_mm = _pdf_drawing_zone_size_mm(params)
         params_2d["render_2d_format"] = "svg" if pdf_supports_svg_drawings() else "png"
-        # Two-pass stabilization:
+        
+        # Compute pure geometry sizes for accurate scale calculation
+        w_val = float(params["W"])
+        l_val = float(params["L"])
+        if shape == "round":
+            l_val = w_val
+        tt_val = float(params["Tt"])
+        geom_w = w_val + tt_val
+        geom_h = l_val + tt_val
+        
+        # Multi-pass stabilization:
         # 1) detect ISO scale by true annotated bounds
         # 2) render with inverse text compensation for fixed visual font size in PDF
+        # We loop until both the scale and the bounding box width (view_w) stabilize.
         iso_scale_ratio = 1.0
-        for _ in range(2):
+        prev_view_w = None
+        for _ in range(5):
             params_2d["render_2d_pdf_scale_ratio"] = iso_scale_ratio
             drawing_2d_b64 = render_tablet(mesh_data, params_2d, dpi=300)
+            
+            bounds = params_2d.get("_render_2d_bounds")
+            view_w = (bounds["view_xmax"] - bounds["view_xmin"]) if bounds else 0
+            
             detected = _pick_iso_scale_from_bounds(
-                params_2d.get("_render_2d_bounds"),
+                bounds,
                 zone_w_mm,
                 zone_h_mm,
+                geom_w=geom_w,
+                geom_h=geom_h,
+                current_scale=iso_scale_ratio
             )
-            if abs(detected - iso_scale_ratio) < 1e-9:
+            
+            scale_stable = abs(detected - iso_scale_ratio) < 1e-9
+            view_stable = prev_view_w is not None and abs(view_w - prev_view_w) < 1e-3
+            
+            if scale_stable and view_stable:
                 break
+                
             iso_scale_ratio = detected
-        params_2d["_render_2d_scale_ratio"] = iso_scale_ratio
+            prev_view_w = view_w
+            
+        # Crucial: use the EXACT scale that was used to generate the final drawing_2d_b64
+        params_2d["_render_2d_scale_ratio"] = params_2d["render_2d_pdf_scale_ratio"]
 
         # Capture 3D view for PDF (Isometric only) - only if enabled in settings
         import base64
