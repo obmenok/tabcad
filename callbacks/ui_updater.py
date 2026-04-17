@@ -548,11 +548,22 @@ def clamp_main_axes_non_negative(w, l, is_loading):
     if trigger == "input-w" and w is not None:
         if w < 0.01:
             out_w = 0.01
-        # Блокировку W < tt УДАЛЯЕМ, чтобы диаметр мог уменьшаться свободно
-            
-    if trigger == "input-l" and l is not None and l < 0.01:
-        out_l = 0.01
+            w = 0.01
+        elif w > 25.0:
+            out_w = 25.0
+            w = 25.0
+        if l is not None and w > l:
+            out_l = w
 
+    if trigger == "input-l" and l is not None:
+        if l < 0.01:
+            out_l = 0.01
+            l = 0.01
+        elif l > 25.0:
+            out_l = 25.0
+            l = 25.0
+        if w is not None and l < w:
+            out_l = w
     return out_w, out_l
 
 

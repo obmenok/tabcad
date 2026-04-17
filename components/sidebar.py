@@ -290,8 +290,8 @@ def create_sidebar():
             className="mb-2 mt-2",
             style={"display": "flex", "justifyContent": "space-between", "alignItems": "center"},
         ),
-        make_input('input-w', 'Minor Axis, mm', BASE_DEFAULTS["W"]), 
-        make_input('input-l', 'Major Axis, mm', BASE_DEFAULTS["L"], visible=False),
+        make_input('input-w', 'Minor Axis, mm', BASE_DEFAULTS["W"], max_value=25.0),
+        make_input('input-l', 'Major Axis, mm', BASE_DEFAULTS["L"], visible=False, max_value=25.0),
         make_input('input-re', 'End Radius, mm', SHAPE_SPECIFIC["oval"]["re"], visible=False),
         make_input('input-rs', 'Side Radius, mm', SHAPE_SPECIFIC["oval"]["rs"], min_value=0.0, visible=False),
 

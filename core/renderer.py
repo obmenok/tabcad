@@ -49,6 +49,9 @@ ISO_PDF_STYLE = {
     "pointer_shelf_length": 10.0,       # Length of horizontal shelf for pointer/radius dimensions
 }
 
+GEOM_THICK_LINE = 1.2
+GEOM_MEDIUM_LINE = 0.8
+GEOM_THIN_LINE = 0.6
 # Global state (set in render_tablet based on selected style)
 DIM_LINE_WIDTH = WEB_STYLE["dim_line_width"]
 C_TEXT = WEB_STYLE["text_color"]
@@ -610,7 +613,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     global DIM_LINE_WIDTH, C_TEXT
     global EXT_LINE_WIDTH, TEXT_FONT_SIZE, TEXT_GAP_FROM_DIM_LINE
     global TEXT_BBOX_PAD, EXT_LINE_GAP_FROM_FEATURE, EXT_LINE_OVERRUN, OUTSIDE_TEXT_DIST
-    global OUTSIDE_TEXT_OFFSET_RATIO, POINTER_SHELF_LENGTH, ARROW_LENGTH, ARROW_WIDTH, ISO_PDF_ACTIVE, PDF_SCALE_RATIO
+    global OUTSIDE_TEXT_OFFSET_RATIO, POINTER_SHELF_LENGTH, ARROW_LENGTH, ARROW_WIDTH, ISO_PDF_ACTIVE, PDF_SCALE_RATIO, GEOM_THICK_LINE, GEOM_MEDIUM_LINE, GEOM_THIN_LINE
     
     style_name = str(params.get("render_2d_style", "web")).lower()
     ISO_PDF_ACTIVE = style_name == "iso_pdf"
@@ -618,6 +621,9 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     if ISO_PDF_ACTIVE:
         style = ISO_PDF_STYLE
         DIM_LINE_WIDTH = style["dim_line_width"]
+        GEOM_THICK_LINE = 1.2
+        GEOM_MEDIUM_LINE = 0.8
+        GEOM_THIN_LINE = 0.6
         EXT_LINE_WIDTH = style["ext_line_width"]
         C_TEXT = style["text_color"]
         pdf_scale_ratio = float(params.get("render_2d_pdf_scale_ratio", 1.0) or 1.0)
@@ -642,6 +648,9 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         lw_scale = 254.0 / (view_w * pdf_scale_ratio)
         DIM_LINE_WIDTH = style["dim_line_width"] * lw_scale
         EXT_LINE_WIDTH = style["ext_line_width"] * lw_scale
+        GEOM_THICK_LINE = 1.2 * lw_scale
+        GEOM_MEDIUM_LINE = 0.8 * lw_scale
+        GEOM_THIN_LINE = 0.6 * lw_scale
         
         TEXT_GAP_FROM_DIM_LINE = style["text_gap_from_dim_line"] / pdf_scale_ratio
         TEXT_BBOX_PAD = style["text_bbox_pad"]
@@ -660,6 +669,9 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     else:
         style = WEB_STYLE
         DIM_LINE_WIDTH = style["dim_line_width"]
+        GEOM_THICK_LINE = 1.2
+        GEOM_MEDIUM_LINE = 0.8
+        GEOM_THIN_LINE = 0.6
         C_TEXT = params.get("web_2d_dim_color", style["text_color"])
         poly_fill_color = params.get("web_2d_fill_color", "#dec9bd")
 
@@ -704,11 +716,11 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         x_out, y_out = get_circle_contour(w_val / 2)
         if render_2d_shaded:
             _draw_shaded_polygon(ax, x_out + cx_top, y_out + cy_top, base_rgb=base_fill_rgb, alpha=0.95)
-        ax.plot(x_out + cx_top, y_out + cy_top, "k-", linewidth=1.2)
+        ax.plot(x_out + cx_top, y_out + cy_top, "k-", linewidth=GEOM_THICK_LINE)
         r_c = max(0.01, w_val / 2 - land)
         if land > 0:
             x_in, y_in = get_circle_contour(r_c)
-            ax.plot(x_in + cx_top, y_in + cy_top, "k-", linewidth=0.6)
+            ax.plot(x_in + cx_top, y_in + cy_top, "k-", linewidth=GEOM_THIN_LINE)
         if profile == "ffre":
             r_edge = cfg.R_edge
             dx_curve = np.sqrt(max(0.0, r_edge**2 - (r_edge - dc) ** 2))
@@ -717,7 +729,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                 x_flat, y_flat = get_circle_contour(flat_rad)
                 if render_2d_shaded:
                     _draw_solid_polygon(ax, x_flat + cx_top, y_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
-                ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=0.6)
+                ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=GEOM_THIN_LINE)
         elif profile == "ffbe":
             r_blend = max(0.0, min(cfg.Blend_R, dc))
             alpha_rad = np.radians(cfg.Bev_A)
@@ -731,16 +743,16 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                         x_flat, y_flat = get_circle_contour(flat_rad)
                         if render_2d_shaded:
                             _draw_solid_polygon(ax, x_flat + cx_top, y_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
-                        ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=0.6)
+                        ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=GEOM_THIN_LINE)
         draw_ext(ax, cx_top - w_val / 2, cy_top + w_val / 2, cx_top - w_val / 2, cy_top - w_val / 2, -4.5, 0, f"{w_val:g}\nDiameter")
     elif shape == "capsule" and not is_modified:
         x_out, y_out = get_capsule_contour(l_val, w_val)
         if render_2d_shaded:
             _draw_shaded_polygon(ax, y_out + cx_top, x_out + cy_top, base_rgb=base_fill_rgb, alpha=0.95)
-        ax.plot(y_out + cx_top, x_out + cy_top, "k-", linewidth=1.2)
+        ax.plot(y_out + cx_top, x_out + cy_top, "k-", linewidth=GEOM_THICK_LINE)
         if land > 0:
             x_in, y_in = get_capsule_contour(max(0.1, l_val - 2 * land), max(0.1, w_val - 2 * land))
-            ax.plot(y_in + cx_top, x_in + cy_top, "k-", linewidth=0.6)
+            ax.plot(y_in + cx_top, x_in + cy_top, "k-", linewidth=GEOM_THIN_LINE)
         if profile == "ffre":
             r_c = max(0.01, w_val / 2 - land)
             r_edge = max(0.0, cfg.R_edge)
@@ -752,7 +764,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                 x_flat, y_flat = get_capsule_contour(flat_l, flat_w)
                 if render_2d_shaded:
                     _draw_solid_polygon(ax, y_flat + cx_top, x_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
-                ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=0.6)
+                ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=GEOM_THIN_LINE)
         elif profile == "ffbe":
             r_c = max(0.01, w_val / 2 - land)
             r_blend = max(0.0, min(cfg.Blend_R, dc))
@@ -769,17 +781,17 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                         x_flat, y_flat = get_capsule_contour(flat_l, flat_w)
                         if render_2d_shaded:
                             _draw_solid_polygon(ax, y_flat + cx_top, x_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
-                        ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=0.6)
+                        ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=GEOM_THIN_LINE)
         draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, f"{w_val:g}\nMinor Axis")
         draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, f"{l_val:g}\nMajor Axis")
     else:
         x_out, y_out = get_oval_contour(l_val, w_val, re, rs)
         if render_2d_shaded:
             _draw_shaded_polygon(ax, y_out + cx_top, x_out + cy_top, base_rgb=base_fill_rgb, alpha=0.95)
-        ax.plot(y_out + cx_top, x_out + cy_top, "k-", linewidth=1.2)
+        ax.plot(y_out + cx_top, x_out + cy_top, "k-", linewidth=GEOM_THICK_LINE)
         if land > 0 and re > land and rs > land:
             x_in, y_in = get_oval_contour(l_val - 2 * land, w_val - 2 * land, re - land, rs - land)
-            ax.plot(y_in + cx_top, x_in + cy_top, "k-", linewidth=0.6)
+            ax.plot(y_in + cx_top, x_in + cy_top, "k-", linewidth=GEOM_THIN_LINE)
         l_c_oval = max(0.001, l_val / 2 - land)
         w_c_oval = max(0.001, w_val / 2 - land)
         if profile == "ffre":
@@ -797,7 +809,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                     if render_2d_shaded:
                         _draw_solid_polygon(ax, y_flat_cont + cx_top, x_flat_cont + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
                     # Source uses solid contour for this line.
-                    ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=0.6)
+                    ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=GEOM_THIN_LINE)
                     oval_ref_flat_side = 2 * l_flat_half
                     oval_ref_flat_front = 2 * w_flat_half
         elif profile == "ffbe":
@@ -820,7 +832,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                             if render_2d_shaded:
                                 _draw_solid_polygon(ax, y_flat_cont + cx_top, x_flat_cont + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
                             # Source uses solid contour for this line.
-                            ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=0.6)
+                            ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=GEOM_THIN_LINE)
                             oval_ref_flat_side = 2 * l_flat_half
                             oval_ref_flat_front = 2 * w_flat_half
         draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, f"{w_val:g}\nMinor Axis")
@@ -858,11 +870,11 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         z_diff_masked = np.where(mask_cup, z - z_groove, np.nan)
         z_groove_masked = np.where(mask_cup, z_groove, np.nan)
         if shape == "round":
-            ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, z_diff_masked, levels=[0], colors="k", linewidths=0.8)
-            ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, z_groove_masked, levels=[0], colors="k", linewidths=0.6)
+            ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, z_diff_masked, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
+            ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, z_groove_masked, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
         else:
-            ax.contour(mesh_data["Y"] + cx_top, mesh_data["X"] + cy_top, z_diff_masked, levels=[0], colors="k", linewidths=0.8)
-            ax.contour(mesh_data["Y"] + cx_top, mesh_data["X"] + cy_top, z_groove_masked, levels=[0], colors="k", linewidths=0.6)
+            ax.contour(mesh_data["Y"] + cx_top, mesh_data["X"] + cy_top, z_diff_masked, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
+            ax.contour(mesh_data["Y"] + cx_top, mesh_data["X"] + cy_top, z_groove_masked, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
 
         x_ti = b_ri * np.sin(np.radians(b_angle / 2.0))
         if x_ti > 0.005:
@@ -874,10 +886,10 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                 vis_mask = np.where(mask_cup, vis >= 0, False)
 
                 ti_field_y = np.where(vis_mask, np.abs(mesh_data["Y"]) - x_ti, np.nan)
-                ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, ti_field_y, levels=[0], colors="k", linewidths=0.6)
+                ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, ti_field_y, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
                 if b_cruciform:
                     ti_field_x = np.where(vis_mask, np.abs(mesh_data["X"]) - x_ti, np.nan)
-                    ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, ti_field_x, levels=[0], colors="k", linewidths=0.6)
+                    ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, ti_field_x, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
             else:
                 idx_x = np.argmin(np.abs(x_grid - x_ti))
                 cond = (z - z_groove)[:, idx_x]
@@ -896,8 +908,8 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                         c0, c1 = cond[i_max], cond[i_max + 1]
                         if c0 != c1:
                             y_end = y_grid[i_max] - c0 * (y_grid[i_max + 1] - y_grid[i_max]) / (c1 - c0)
-                    ax.plot([y_start + cx_top, y_end + cx_top], [x_ti + cy_top, x_ti + cy_top], "k-", lw=0.6)
-                    ax.plot([y_start + cx_top, y_end + cx_top], [-x_ti + cy_top, -x_ti + cy_top], "k-", lw=0.6)
+                    ax.plot([y_start + cx_top, y_end + cx_top], [x_ti + cy_top, x_ti + cy_top], "k-", lw=GEOM_THIN_LINE)
+                    ax.plot([y_start + cx_top, y_end + cx_top], [-x_ti + cy_top, -x_ti + cy_top], "k-", lw=GEOM_THIN_LINE)
 
     capsule_r_flat = None
 
@@ -947,9 +959,9 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
             alpha=0.95,
             rotate_90=True,
         )
-    ax.plot(t_prof + cx_side, l_prof + cy_side, "k-", linewidth=1.2)
-    ax.plot([-hb / 2 + cx_side, -hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=1.2)
-    ax.plot([hb / 2 + cx_side, hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=1.2)
+    ax.plot(t_prof + cx_side, l_prof + cy_side, "k-", linewidth=GEOM_THICK_LINE)
+    ax.plot([-hb / 2 + cx_side, -hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=GEOM_THICK_LINE)
+    ax.plot([hb / 2 + cx_side, hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=GEOM_THICK_LINE)
     cup_depth_dy = 4.0
     bevel_depth_dy = 2.0
     # For all CBE forms in PDF:
@@ -1071,9 +1083,9 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     )
     if render_2d_shaded:
         _draw_shaded_polygon(ax, w_prof + cx_front, t_front + cy_front, base_rgb=base_fill_rgb, alpha=0.95)
-    ax.plot(w_prof + cx_front, t_front + cy_front, "k-", linewidth=1.2)
-    ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [hb / 2 + cy_front, hb / 2 + cy_front], "k-", linewidth=1.2)
-    ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [-hb / 2 + cy_front, -hb / 2 + cy_front], "k-", linewidth=1.2)
+    ax.plot(w_prof + cx_front, t_front + cy_front, "k-", linewidth=GEOM_THICK_LINE)
+    ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [hb / 2 + cy_front, hb / 2 + cy_front], "k-", linewidth=GEOM_THICK_LINE)
+    ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [-hb / 2 + cy_front, -hb / 2 + cy_front], "k-", linewidth=GEOM_THICK_LINE)
     draw_ext(ax, cx_front - w_val / 2, cy_front - tt / 2, cx_front - w_val / 2, cy_front + tt / 2, -4.5, 0, f"{tt:g}\nThickness")
 
     if b_type != "none" and b_depth > 0:
@@ -1086,9 +1098,9 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         else:
             z_bottom_line = z_up_min - b_depth
         valid = (z_bottom_line > 0) & (z_bottom_line < z_up_min)
-        ax.plot(y_min_cup[valid] + cx_front, z_bottom_line[valid] + hb / 2 + cy_front, "k--", lw=0.8)
+        ax.plot(y_min_cup[valid] + cx_front, z_bottom_line[valid] + hb / 2 + cy_front, "k--", lw=GEOM_THIN_LINE)
         if b_double_sided:
-            ax.plot(y_min_cup[valid] + cx_front, -(z_bottom_line[valid] + hb / 2) + cy_front, "k--", lw=0.8)
+            ax.plot(y_min_cup[valid] + cx_front, -(z_bottom_line[valid] + hb / 2) + cy_front, "k--", lw=GEOM_THIN_LINE)
 
     if land > 0:
         l_land_coord = span_front
