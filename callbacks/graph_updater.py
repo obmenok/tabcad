@@ -1,4 +1,5 @@
 import dash
+import traceback
 from dash import Input, Output, State, callback, html, dcc
 import dash_bootstrap_components as dbc
 from core.engine import generate_mesh
@@ -222,30 +223,35 @@ def export_pdf_callback(
         # Crucial: use the EXACT scale that was used to generate the final drawing_2d_b64
         params_2d["_render_2d_scale_ratio"] = params_2d["render_2d_pdf_scale_ratio"]
 
-        # Capture 3D view for PDF (Isometric only) - only if enabled in settings
+        # Capture 3D view for PDF (Isometric only) - only if enabled in settings.
+        # If static image export backend is unavailable in the deployment env (e.g. missing kaleido),
+        # do not fail the whole PDF export: continue with 2D-only PDF.
         import base64
         views_3d = []
         if params.get("pdf_include_3d", True):
-            for preset in ["Isometric"]:
-                p_3d = dict(params)
-                p_3d["view_preset"] = preset.lower()
-                p_3d["render_mode"] = "shaded"
-                p_3d["show_bbox"] = False
-                fig_3d = render_tablet_3d(mesh_data, p_3d)
+            try:
+                for preset in ["Isometric"]:
+                    p_3d = dict(params)
+                    p_3d["view_preset"] = preset.lower()
+                    p_3d["render_mode"] = "shaded"
+                    p_3d["show_bbox"] = False
+                    fig_3d = render_tablet_3d(mesh_data, p_3d)
 
-                # Absolute clean layout for export
-                fig_3d.update_layout(
-                    paper_bgcolor="white",
-                    plot_bgcolor="white",
-                    scene=dict(
-                        xaxis=dict(visible=False),
-                        yaxis=dict(visible=False),
-                        zaxis=dict(visible=False)
+                    # Absolute clean layout for export
+                    fig_3d.update_layout(
+                        paper_bgcolor="white",
+                        plot_bgcolor="white",
+                        scene=dict(
+                            xaxis=dict(visible=False),
+                            yaxis=dict(visible=False),
+                            zaxis=dict(visible=False)
+                        )
                     )
-                )
-                img_bytes = fig_3d.to_image(format="png", width=500, height=500)
-                b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
-                views_3d.append((b64, preset))
+                    img_bytes = fig_3d.to_image(format="png", width=500, height=500)
+                    b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
+                    views_3d.append((b64, preset))
+            except Exception as e:
+                print(f"Warning in export_pdf_callback: failed to render 3D for PDF, fallback to 2D-only PDF. {e}")
 
         # Generate PDF in a temporary file
         import tempfile
@@ -274,8 +280,9 @@ def export_pdf_callback(
         # automatic cleanup for files sent via send_file, but storing them in the OS temp directory 
         # means the OS will clean them up periodically, keeping our project root clean.
         return data
-    except (ValueError, ZeroDivisionError, OverflowError) as e:
+    except Exception as e:
         print(f"Error in export_pdf_callback: {e}")
+        print(traceback.format_exc())
         return dash.no_update
 
 
