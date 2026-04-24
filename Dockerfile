@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Установка системных зависимостей для matplotlib/Pillow
+# Install system deps for matplotlib/Pillow
 RUN apt-get update && apt-get install -y \
     build-essential \
     libfreetype6-dev \
@@ -18,5 +18,5 @@ COPY . .
 
 EXPOSE 8050
 
-# Для VPS 4 GB RAM используем 2 воркера
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8050", "--timeout", "120", "app:app"]
+# 2 workers for 4 GB VPS, with access logs enabled for callback debugging
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8050", "--timeout", "120", "--access-logfile", "-", "app:server"]

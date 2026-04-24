@@ -6,6 +6,7 @@ from components.viewer import create_viewer
 # Инициализация приложения (LUMEN - чистая светлая тема, похожая на оригинал)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUMEN], suppress_callback_exceptions=True)
 app.title = "TabletCAD Pro"
+server = app.server
 
 # Собираем Layout из компонентов
 app.layout = dbc.Container(

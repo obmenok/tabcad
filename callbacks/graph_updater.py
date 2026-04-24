@@ -128,6 +128,7 @@ def export_pdf_callback(
     tip_force_steel,
     app_settings,
 ):
+    print(f"export_pdf_callback invoked: n_clicks={n_clicks}")
     if not n_clicks:
         return dash.no_update
 
