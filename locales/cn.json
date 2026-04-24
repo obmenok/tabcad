@@ -1,0 +1,104 @@
+{
+  "app_title": "TabletCAD Pro",
+  "shape": {
+    "title": "药片形状",
+    "round": "圆形",
+    "capsule": "胶囊形",
+    "oval": "椭圆形"
+  },
+  "cup": {
+    "title": "片形轮廓",
+    "modified": "修改形状",
+    "con": "凹形",
+    "com": "复合片形",
+    "cbe": "凹面斜边",
+    "ffre": "平面圆弧",
+    "ffbe": "平面斜边",
+    "mod": "修改椭圆"
+  },
+  "dim": {
+    "title": "尺寸",
+    "constraints": "约束条件",
+    "w": "短轴线, mm",
+    "w_round": "直径, mm",
+    "l": "长轴线, mm",
+    "re": "端面半径, mm",
+    "rs": "侧面半径, mm",
+    "dc": "片形深度, mm",
+    "rc_min": "片形圆弧半径, mm",
+    "rc_maj": "长轴线圆弧半径, mm",
+    "r_maj_maj": "大/大 半径, mm",
+    "r_maj_min": "大/小 半径, mm",
+    "r_min_maj": "小/大 半径, mm",
+    "r_min_min": "小/小 半径, mm",
+    "bev_d": "斜边深度, mm",
+    "bev_a": "斜边角度, °",
+    "r_edge": "边缘半径, mm",
+    "blend_r": "圆角半径, mm",
+    "land": "片形界面, mm",
+    "hb": "环壁面, mm",
+    "tt": "片厚, mm",
+    "density": "药片密度, mg/mm³",
+    "weight": "药片重量, mg"
+  },
+  "scoring": {
+    "title": "刻痕选项",
+    "none": "无",
+    "std": "标准",
+    "cut": "贯穿",
+    "decr": "递减",
+    "cross": "十字刻痕",
+    "double": "双面",
+    "edit": "编辑",
+    "width": "宽度, mm",
+    "depth": "深度, mm",
+    "angle": "角度, °",
+    "ri": "内半径, mm"
+  },
+  "actions": {
+    "generate": "生成图纸",
+    "export_pdf": "导出 PDF"
+  },
+  "calc": {
+    "title": "计算",
+    "die_hole_sa": "模孔表面积",
+    "cup_sa": "片形表面积",
+    "cup_vol": "片形体积",
+    "tablet_sa": "药片表面积",
+    "tablet_vol": "药片体积",
+    "tablet_weight": "药片重量",
+    "tablet_density": "药片密度",
+    "tablet_sa_v": "S/V 比值",
+    "perimeter": "周长"
+  },
+  "modal": {
+    "title": "约束检查器",
+    "close": "关闭"
+  },
+  "presets": {
+    "title": "保存的预设",
+    "select": "选择预设...",
+    "save": "保存",
+    "save_as": "另存为",
+    "delete": "删除",
+    "modal_title": "预设另存为",
+    "placeholder": "输入预设名称...",
+    "cancel": "取消"
+  },
+  "units": {
+    "mm2": "mm²",
+    "mm3": "mm³",
+    "mg": "mg",
+    "mg_mm3": "mg/mm³",
+    "inv_mm": "1/mm",
+    "mm": "mm"
+  },
+  "physical": {
+    "title": "物理参数"
+  },
+  "tip_force": {
+    "title": "压片力",
+    "steel": "钢号",
+    "max": "最大压片力, kN"
+  }
+}

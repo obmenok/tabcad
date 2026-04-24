@@ -1,0 +1,490 @@
+@font-face {
+  font-family: "ApolloViewerFonts";
+  src: url("ApolloViewerFonts.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.apollo-icon {
+  font-family: "ApolloViewerFonts", sans-serif;
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.apollo-icon::before {
+  display: inline-block;
+}
+
+.av-i-view::before { content: "\e967"; }
+.av-i-front::before { content: "\e970"; }
+.av-i-back::before { content: "\e96e"; }
+.av-i-left::before { content: "\e972"; }
+.av-i-right::before { content: "\e973"; }
+.av-i-top::before { content: "\e974"; }
+.av-i-bottom::before { content: "\e96f"; }
+.av-i-isometric::before { content: "\e971"; }
+.av-i-edge::before { content: "\e950"; }
+.av-i-bbox::before { content: "\e963"; }
+.av-i-fullscreen::before { content: "\e94e"; }
+.av-i-screenshot::before { content: "\e913"; }
+.av-i-shaded::before { content: "\e95f"; }
+.av-i-settings::before { content: "\e97a"; }
+
+#btn-lang-en, #btn-lang-ru, #btn-lang-cn {
+  transition: none !important;
+}
+
+.plotly-toolbar-wrap {
+  overflow: visible !important;
+  white-space: nowrap;
+}
+
+.plotly-toolbar-group .btn,
+.plotly-toolbar-group .dropdown-toggle {
+  height: 32px;
+  min-width: 36px;
+  padding: 4px 10px;
+  box-sizing: border-box;
+  border: 1px solid #9aa0a6;
+  color: #495057;
+  background-color: #ffffff;
+  background-image: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  line-height: 1.2 !important;
+  border-radius: 0;
+  transition: none !important;
+  position: relative;
+}
+
+.plotly-toolbar-group .btn + .btn {
+  margin-left: -1px;
+}
+
+.plotly-toolbar-group .btn:hover,
+.plotly-toolbar-group .btn:focus,
+.plotly-toolbar-group .btn:active {
+  z-index: 1;
+}
+
+.plotly-toolbar-group .btn:hover,
+.plotly-toolbar-group .dropdown-toggle:hover {
+  background: #ffffff;
+  border-color: #9aa0a6;
+  color: #495057;
+}
+
+.plotly-toolbar-group .plotly-toggle-btn:hover {
+  background: #ffffff;
+  border-color: #9aa0a6;
+  color: #495057;
+}
+
+.plotly-toolbar-group .btn:focus,
+.plotly-toolbar-group .dropdown-toggle:focus {
+  box-shadow: none;
+  border-color: #6c757d;
+}
+
+.plotly-toolbar-group .btn:active,
+.plotly-toolbar-group .dropdown-toggle:active {
+  transform: none !important;
+}
+
+.plotly-toolbar-group > .btn:first-child,
+.plotly-toolbar-group > .dropdown:first-child .dropdown-toggle {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.plotly-toolbar-group .dropdown-toggle {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.plotly-toolbar-group > .btn:last-child,
+.plotly-toolbar-group > .dropdown:last-child .dropdown-toggle {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.plotly-toolbar-group .btn.active,
+.plotly-toolbar-group .btn.is-active {
+  background: #e9ecef;
+  border-color: #6c757d;
+  color: #212529 !important;
+}
+
+.plotly-toolbar-group .btn.active .apollo-icon,
+.plotly-toolbar-group .btn.is-active .apollo-icon {
+  color: #212529;
+}
+
+/* Presets button group: allow wrapping to prevent overflow */
+.preset-btn-group {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+}
+
+.preset-btn-group .btn {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.plotly-toolbar-group .btn {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Unified segmented button group behavior (match presets) */
+.segmented-btn-group {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 32px; /* Lock height to prevent any layout shifts during animations */
+  align-items: stretch;
+}
+
+.segmented-btn-group .btn {
+  flex: 1 1 0;
+  white-space: nowrap;
+  height: 32px; /* Ensure button height matches container */
+}
+
+/* Ensure hovered buttons stay on top for proper border rendering without jumping */
+.plotly-toolbar-group .btn:hover {
+  z-index: 1 !important;
+}
+
+/* Стили для маленького Dropdown, чтобы он совпадал по высоте с кнопками (32px) */
+.small-dropdown .Select-control {
+  height: 32px !important;
+  min-height: 32px !important;
+  font-size: 14px !important;
+  border: 1px solid #9aa0a6 !important;
+  border-radius: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.small-dropdown {
+  font-size: 14px !important;
+}
+
+.small-dropdown .Select-value-label,
+.small-dropdown .Select-placeholder,
+.small-dropdown .Select-input,
+.small-dropdown .Select-value {
+  font-size: 14px !important;
+}
+
+.small-dropdown .Select-control:hover {
+  box-shadow: inset 0 0 0 1px #9aa0a6 !important;
+}
+
+.small-dropdown.is-focused:not(.is-open) > .Select-control {
+  border-color: #6c757d !important;
+  box-shadow: inset 0 0 0 1px #6c757d !important;
+}
+
+.small-dropdown .Select-value {
+  line-height: 30px !important;
+  margin-top: 0 !important;
+  top: 0 !important;
+}
+
+.small-dropdown .Select-input {
+  height: 30px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.small-dropdown .Select-placeholder {
+  line-height: 30px !important;
+}
+
+.small-dropdown .Select-clear-zone {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.small-dropdown .Select-arrow-zone {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.small-dropdown .Select-menu-outer {
+  font-size: 14px !important;
+}
+
+#preset-dropdown .Select-control {
+  font-size: 14px !important;
+}
+
+#preset-dropdown .Select-input,
+#preset-dropdown .Select-value,
+#preset-dropdown .Select-placeholder {
+  font-size: 14px !important;
+}
+
+#preset-dropdown .Select-menu-outer {
+  font-size: 14px !important;
+  z-index: 12000 !important;
+}
+
+
+.plotly-toolbar-group .dropdown-menu .apollo-icon {
+  font-size: 14px;
+}
+
+.plotly-toolbar-group .dropdown-menu {
+  z-index: 9999 !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+}
+
+.modal {
+  z-index: 7000 !important;
+}
+
+.modal-backdrop {
+  z-index: 6990 !important;
+}
+
+.plotly-toolbar-group .dropdown-item {
+  font-weight: 400 !important;
+  text-transform: none !important;
+  color: #495057 !important;
+  opacity: 1 !important;
+}
+
+.plotly-toolbar-group .dropdown-item .apollo-icon {
+  color: #495057 !important;
+  opacity: 1 !important;
+}
+
+/* Input label + value font size */
+.tablet-input-label,
+.tablet-input-control {
+  font-size: 14px;
+}
+
+/* Calculations grid: sync wrap of all columns */
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 10px;
+  row-gap: 2px;
+}
+
+.calc-row {
+  display: grid;
+  grid-template-columns: var(--label-width, 100px) 1fr;
+  column-gap: 6px;
+  row-gap: 2px;
+  align-items: center;
+}
+
+.calc-label {
+  flex: none;
+}
+
+.calc-value {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.calc-num {
+  display: inline-block;
+  text-align: right;
+  min-width: 9ch;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sync wrapping based on the calculations container width */
+@media (max-width: 1600px) {
+  .calc-grid-ru .calc-row {
+    grid-template-columns: 1fr;
+    row-gap: 2px;
+  }
+
+  .calc-grid-ru .calc-num {
+    text-align: left !important;
+    min-width: 0 !important;
+  }
+
+  .calc-grid-ru .calc-value {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 1360px) {
+  .calc-row {
+    grid-template-columns: 1fr;
+    row-gap: 2px;
+  }
+
+  .calc-num {
+    text-align: left !important;
+    min-width: 0 !important;
+  }
+
+  .calc-value {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 900px) {
+  .calc-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .calc-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+#plotly-view-menu .dropdown-toggle {
+  min-width: 92px !important;
+  padding-left: 12px !important;
+  padding-right: 10px !important;
+  text-align: left !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+
+#plotly-view-menu .dropdown-toggle::after {
+  margin-left: 1px !important;
+}
+
+#plotly-view-menu .dropdown-menu {
+  min-width: 114px;
+}
+
+#plotly-view-menu .dropdown-item {
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+
+.av-view-label {
+  justify-content: flex-start;
+  margin-right: 5px;
+}
+
+.av-view-icon,
+.av-menu-icon {
+  width: 14px;
+  min-width: 14px;
+  margin-right: 8px;
+  justify-content: center;
+}
+
+.outline-soft-btn.btn.btn-outline-secondary {
+  height: 30px;
+  min-width: 62px;
+  padding: 0 12px !important;
+  line-height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  position: relative !important;
+  top: 0 !important;
+  margin: 0 !important;
+  border: 1px solid #9aa0a6 !important;
+  color: #495057 !important;
+  background-color: #ffffff !important;
+  box-shadow: none !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  transform: none !important;
+  transition: none !important;
+  box-shadow: none !important;
+}
+
+/* Preset modal: remove header/body/footer dividers */
+.preset-modal .modal-header,
+.preset-modal .modal-body,
+.preset-modal .modal-footer {
+  border: none !important;
+}
+
+.preset-modal .modal-header {
+  border: none !important;
+}
+
+.preset-modal .modal-footer {
+  padding-right: 16px;
+}
+
+.preset-modal .modal-body {
+  padding-right: 16px;
+}
+
+.preset-modal .modal-footer .outline-soft-btn {
+  font-size: 14px;
+}
+
+.preset-modal .modal-header .btn-close {
+  font-size: 12px;
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.outline-soft-btn.btn.btn-outline-secondary:hover,
+.outline-soft-btn.btn.btn-outline-secondary:active {
+  background-color: #e9ecef !important;
+}
+
+.outline-soft-btn.btn.btn-outline-secondary:hover,
+.outline-soft-btn.btn.btn-outline-secondary:focus,
+.outline-soft-btn.btn.btn-outline-secondary:active,
+.outline-soft-btn.btn.btn-outline-secondary:focus-visible {
+  height: 30px !important;
+  min-width: 62px !important;
+  padding: 0 12px !important;
+  line-height: 28px !important;
+  margin: 0 !important;
+  top: 0 !important;
+  border-color: #9aa0a6 !important;
+  color: #495057 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#btn-open-settings.outline-soft-btn {
+  height: 26px !important;
+  min-width: 32px !important;
+  padding: 0 8px !important;
+  line-height: 24px !important;
+}
+
+#btn-open-settings.outline-soft-btn:hover,
+#btn-open-settings.outline-soft-btn:active,
+#btn-open-settings.outline-soft-btn:focus {
+  height: 26px !important;
+  min-width: 32px !important;
+  padding: 0 8px !important;
+  line-height: 24px !important;
+}
+
+
+/* Compact sliders for settings modal */
+.preset-modal .rc-slider {
+  padding: 5px 0 !important;
+}

@@ -1,8 +1,10 @@
 import numpy as np
 
 
-def safe(value, default):
-    return default if value is None else value
+def _require_params(params, keys):
+    missing = [k for k in keys if k not in params or params[k] is None]
+    if missing:
+        raise ValueError(f"Отсутствует параметр(ы): {', '.join(missing)}")
 
 
 def calc_oval_rs(l_val, w_val, re):
@@ -11,20 +13,21 @@ def calc_oval_rs(l_val, w_val, re):
 
 
 def shape_params(params):
-    shape = params.get("shape", "capsule")
-    w_val = max(0.1, safe(params.get("W"), 9.2))
-    l_val = max(0.1, safe(params.get("L"), 18.3))
+    _require_params(params, ["shape", "W", "L", "Land", "Re", "Rs", "is_modified"])
+    shape = params["shape"]
+    w_val = max(0.1, params["W"])
+    l_val = max(0.1, params["L"])
     if shape == "round":
         l_val = w_val
     if l_val < w_val:
         l_val = w_val
 
-    land = max(0.0, safe(params.get("Land"), 0.08))
-    re = safe(params.get("Re"), w_val / 2 - 0.01)
+    land = max(0.0, params["Land"])
+    re = params["Re"]
     re = min(max(0.01, re), w_val / 2 - 0.01)
-    rs = safe(params.get("Rs"), calc_oval_rs(l_val, w_val, re))
+    rs = params["Rs"]
     rs = max(l_val / 2 + 0.01, rs)
-    return shape, bool(params.get("is_modified", False)), w_val, l_val, land, re, rs
+    return shape, bool(params["is_modified"]), w_val, l_val, land, re, rs
 
 
 def minor_span(params):

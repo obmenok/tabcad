@@ -103,14 +103,26 @@ def get_compound_profile(x_arr, r1, r2, dc, span):
     return np.maximum(0, z_prof)
 
 
+def _require_params(params, keys):
+    missing = [k for k in keys if k not in params or params[k] is None]
+    if missing:
+        raise ValueError(f"Отсутствует параметр(ы): {', '.join(missing)}")
+
+
 def eval_profile_1d(rho, params, span, dc):
-    profile = params.get("profile", "concave")
+    _require_params(params, ["profile"])
+    profile = params["profile"]
     if profile in ("compound", "modified_oval"):
-        return get_compound_profile(rho, params.get("R_maj_maj", 88.9), params.get("R_maj_min", 6.35), dc, span)
+        _require_params(params, ["R_maj_maj", "R_maj_min"])
+        return get_compound_profile(rho, params["R_maj_maj"], params["R_maj_min"], dc, span)
     if profile == "cbe":
-        return get_cbe_profile(rho, span, dc, params.get("Bev_D", 0.51), params.get("Bev_A", 40.0))
+        _require_params(params, ["Bev_D", "Bev_A"])
+        return get_cbe_profile(rho, span, dc, params["Bev_D"], params["Bev_A"])
     if profile == "ffre":
-        return get_ffre_profile(rho, span, dc, params.get("R_edge", 6.35))
+        _require_params(params, ["R_edge"])
+        return get_ffre_profile(rho, span, dc, params["R_edge"])
     if profile == "ffbe":
-        return get_ffbe_profile(rho, span, dc, params.get("Blend_R", 0.38), params.get("Bev_A", 30.0))
-    return get_concave_profile(rho, params.get("Rc_min", 8.225), dc)
+        _require_params(params, ["Blend_R", "Bev_A"])
+        return get_ffbe_profile(rho, span, dc, params["Blend_R"], params["Bev_A"])
+    _require_params(params, ["Rc_min"])
+    return get_concave_profile(rho, params["Rc_min"], dc)

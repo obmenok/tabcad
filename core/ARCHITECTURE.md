@@ -4,6 +4,7 @@ Domain-first structure:
 - `core/domain/shapes.py`: shape normalization and geometry helpers.
 - `core/domain/mesh.py`: mesh generation, bisect math, metrics.
 - `core/engine.py`: compatibility facade used by callbacks/renderer.
+- `core/preset_naming.py`: shared naming helper for preset codes and PDF drawing numbers.
 - `core/reference_bridge.py`: temporary bridge to exact Natoli scripts.
 
 Goal:

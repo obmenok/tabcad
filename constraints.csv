@@ -1,0 +1,231 @@
+Context,Shape,Profile,Modified,Field,Default Value,UI State,Min,Max,Affected Fields,Influenced By,Notes,Source
+round concave,round,concave,no,Diameter (W),8.0,Editable,0.01,25.0,"Cup Depth (Dc) max, Cup Radius (Rc Min), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+round concave,round,concave,no,Cup Depth (Dc),0.92,Editable,0.01,(W/2 - Land),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Diameter (W), Land, Cup Radius (Rc Min)",,callbacks/ui_updater.py
+round concave,round,concave,no,Cup Radius (Rc Min),8.8,Editable,(W/2 - Land),,Cup Depth (Dc),"Cup Depth (Dc), Diameter (W), Land",,callbacks/ui_updater.py
+round concave,round,concave,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+round concave,round,concave,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+round concave,round,concave,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Diameter (W), Tablet Weight",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+round concave,round,concave,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+round concave,round,concave,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+round compound,round,compound,no,Diameter (W),8.0,Editable,0.01,25.0,"Cup Depth (Dc) max, Cup Radius (Rc Min), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+round compound,round,compound,no,Cup Depth (Dc),0.92,Editable,0.01,compound bounds,"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Diameter (W), Land, Major Major Radius, Major Minor Radius",,callbacks/ui_updater.py
+round compound,round,compound,no,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Diameter (W), Land",,callbacks/ui_updater.py
+round compound,round,compound,no,Major Major Radius,88.9,Editable,0.01,,Cup Depth (Dc) bounds,,,callbacks/ui_updater.py
+round compound,round,compound,no,Major Minor Radius,6.35,Editable,0.01,,Cup Depth (Dc) bounds,,,callbacks/ui_updater.py
+round compound,round,compound,no,Minor Major Radius,12.7,Editable,0.01,,,,,callbacks/ui_updater.py
+round compound,round,compound,no,Minor Minor Radius,3.81,Editable,0.01,,,,,callbacks/ui_updater.py
+round compound,round,compound,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+round compound,round,compound,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+round compound,round,compound,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Diameter (W), Tablet Weight",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+round compound,round,compound,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+round compound,round,compound,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+round cbe,round,cbe,no,Diameter (W),8.0,Editable,0.01,25.0,"Cup Depth (Dc) max, Cup Radius (Rc Min), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+round cbe,round,cbe,no,Cup Depth (Dc),0.92,Editable,Bevel Depth + 0.01,tangent limit,"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Diameter (W), Land, Cup Radius (Rc Min), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+round cbe,round,cbe,no,Cup Radius (Rc Min),8.8,Editable,tangent limit,tangent limit,Cup Depth (Dc),"Cup Depth (Dc), Diameter (W), Land, Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+round cbe,round,cbe,no,Bevel Depth,0.51,Editable,0.01,<= Dc,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+round cbe,round,cbe,no,Bevel Angle,40.0,Editable,1.0,60.0,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+round cbe,round,cbe,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+round cbe,round,cbe,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+round cbe,round,cbe,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Diameter (W), Tablet Weight",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+round cbe,round,cbe,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+round cbe,round,cbe,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+round ffre,round,ffre,no,Diameter (W),8.0,Editable,0.01,25.0,"Cup Depth (Dc) max, Cup Radius (Rc Min), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+round ffre,round,ffre,no,Cup Depth (Dc),0.92,Editable,0.01,derived (profile formula),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Diameter (W), Land",Max from Radius Edge via FFRE formula,callbacks/ui_updater.py
+round ffre,round,ffre,no,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Diameter (W), Land",,callbacks/ui_updater.py
+round ffre,round,ffre,no,Radius Edge,6.35,Editable,0.01,,,,,callbacks/ui_updater.py
+round ffre,round,ffre,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+round ffre,round,ffre,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+round ffre,round,ffre,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Diameter (W), Tablet Weight",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+round ffre,round,ffre,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+round ffre,round,ffre,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+round ffbe,round,ffbe,no,Diameter (W),8.0,Editable,0.01,25.0,"Cup Depth (Dc) max, Cup Radius (Rc Min), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+round ffbe,round,ffbe,no,Cup Depth (Dc),0.92,Editable,0.01,derived (profile formula),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Diameter (W), Land",Max from Blend Radius + Bevel Angle via Ref Flat >= 0.1,callbacks/ui_updater.py
+round ffbe,round,ffbe,no,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Diameter (W), Land",,callbacks/ui_updater.py
+round ffbe,round,ffbe,no,Bevel Angle,30.0,Editable,1.0,60.0,,,,callbacks/ui_updater.py
+round ffbe,round,ffbe,no,Blend Radius,0.38,Editable,0.01,<= Dc,,,,callbacks/ui_updater.py
+round ffbe,round,ffbe,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+round ffbe,round,ffbe,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+round ffbe,round,ffbe,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Diameter (W), Tablet Weight",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+round ffbe,round,ffbe,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+round ffbe,round,ffbe,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+capsule concave,capsule,concave,no,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Cup Depth (Dc) max (Concave/CBE), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+capsule concave,capsule,concave,no,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,End Radius (Re) / Side Radius (Rs) bounds,,,callbacks/ui_updater.py
+capsule concave,capsule,concave,no,End Radius (Re),4.0,Locked,W/2,W/2,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+capsule concave,capsule,concave,no,Side Radius (Rs),0.0,Locked,0.0,0.0,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+capsule concave,capsule,concave,no,Cup Depth (Dc),0.92,Editable,0.01,(W/2 - Land),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land, Cup Radius (Rc Min)",,callbacks/ui_updater.py
+capsule concave,capsule,concave,no,Cup Radius (Rc Min),8.8,Editable,(W/2 - Land),,Cup Depth (Dc),"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+capsule concave,capsule,concave,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule concave,capsule,concave,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+capsule concave,capsule,concave,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+capsule concave,capsule,concave,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+capsule concave,capsule,concave,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Cup Depth (Dc) max (Concave/CBE), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,End Radius (Re) / Side Radius (Rs) bounds,,,callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,End Radius (Re),4.0,Editable,0.1,W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,Side Radius (Rs),0.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,Cup Depth (Dc),0.92,Editable,0.01,(W/2 - Land),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land, Cup Radius (Rc Min)",,callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,Cup Radius (Rc Min),8.8,Editable,(W/2 - Land),,Cup Depth (Dc),"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+capsule concave modified,capsule,concave,yes,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Cup Depth (Dc) max (Concave/CBE), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,End Radius (Re) / Side Radius (Rs) bounds,,,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,End Radius (Re),4.0,Locked,W/2,W/2,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Side Radius (Rs),0.0,Locked,0.0,0.0,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Cup Depth (Dc),0.92,Editable,Bevel Depth + 0.01,tangent limit,"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land, Cup Radius (Rc Min), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Cup Radius (Rc Min),8.8,Editable,tangent limit,tangent limit,Cup Depth (Dc),"Cup Depth (Dc), Minor Axis (W), Land, Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Bevel Depth,0.51,Editable,0.01,<= Dc,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Bevel Angle,40.0,Editable,1.0,60.0,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+capsule cbe,capsule,cbe,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Cup Depth (Dc) max (Concave/CBE), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,End Radius (Re) / Side Radius (Rs) bounds,,,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,End Radius (Re),4.0,Editable,0.1,W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Side Radius (Rs),0.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Cup Depth (Dc),0.92,Editable,Bevel Depth + 0.01,tangent limit,"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land, Cup Radius (Rc Min), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Cup Radius (Rc Min),8.8,Editable,tangent limit,tangent limit,Cup Depth (Dc),"Cup Depth (Dc), Minor Axis (W), Land, Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Bevel Depth,0.51,Editable,0.01,<= Dc,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Bevel Angle,40.0,Editable,1.0,60.0,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+capsule cbe modified,capsule,cbe,yes,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,End Radius (Re) / Side Radius (Rs) bounds,,,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,End Radius (Re),4.0,Locked,W/2,W/2,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L), Radius Edge",,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Side Radius (Rs),0.0,Locked,0.0,0.0,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L), Radius Edge",,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Cup Depth (Dc),0.92,Editable,0.01,derived (profile formula),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land",Max from Radius Edge via FFRE formula,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Radius Edge,6.35,Editable,0.01,,,,,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+capsule ffre,capsule,ffre,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,End Radius (Re) / Side Radius (Rs) bounds,,,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,End Radius (Re),4.0,Editable,0.01,W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L), Radius Edge",,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Side Radius (Rs),0.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L), Radius Edge",,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Cup Depth (Dc),0.92,Editable,0.01,derived (profile formula),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land",Max from Radius Edge via FFRE formula,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Radius Edge,6.35,Editable,0.01,,,,,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+capsule ffre modified,capsule,ffre,yes,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,End Radius (Re) / Side Radius (Rs) bounds,,,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,End Radius (Re),4.0,Locked,W/2,W/2,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L), Blend Radius, Bevel Angle",,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Side Radius (Rs),0.0,Locked,0.0,0.0,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L), Blend Radius, Bevel Angle",,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Cup Depth (Dc),0.92,Editable,0.01,derived (profile formula),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land",Max from Blend Radius + Bevel Angle via Ref Flat >= 0.1,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Bevel Angle,30.0,Editable,1.0,60.0,,,,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Blend Radius,0.38,Editable,0.01,<= Dc,,,,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+capsule ffbe,capsule,ffbe,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,End Radius (Re) / Side Radius (Rs) bounds,,,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,End Radius (Re),4.0,Editable,0.01,W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L), Blend Radius, Bevel Angle",,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Side Radius (Rs),0.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L), Blend Radius, Bevel Angle",,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Cup Depth (Dc),0.92,Editable,0.01,derived (profile formula),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb)","Minor Axis (W), Land",Max from Blend Radius + Bevel Angle via Ref Flat >= 0.1,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Bevel Angle,30.0,Editable,1.0,60.0,,,,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Blend Radius,0.38,Editable,0.01,<= Dc,,,,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min)",,,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+capsule ffbe modified,capsule,ffbe,yes,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+oval concave,oval,concave,no,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Cup Radius (Rc Maj), Cup Depth (Dc) max, Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+oval concave,oval,concave,no,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval concave,oval,concave,no,End Radius (Re),3.0,Editable,0.01,W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+oval concave,oval,concave,no,Side Radius (Rs),16.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+oval concave,oval,concave,no,Cup Depth (Dc),0.92,Editable,0.01,(W/2 - Land),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb), Cup Radius (Rc Maj)","Minor Axis (W), Land",,callbacks/ui_updater.py
+oval concave,oval,concave,no,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+oval concave,oval,concave,no,Cup Radius (Rc Maj),39.8,Locked,derived,,,"Cup Depth (Dc), Major Axis (L), Land",,callbacks/ui_updater.py
+oval concave,oval,concave,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min), Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval concave,oval,concave,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+oval concave,oval,concave,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+oval concave,oval,concave,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+oval concave,oval,concave,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Cup Radius (Rc Maj), Cup Depth (Dc) max, Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,End Radius (Re),3.0,Editable,0.01,W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Side Radius (Rs),16.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Cup Depth (Dc),0.92,Editable,0.01,(W/2 - Land),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb), Cup Radius (Rc Maj)","Minor Axis (W), Land",,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Cup Radius (Rc Maj),39.8,Locked,derived,,,"Cup Depth (Dc), Major Axis (L), Land",,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Major Major Radius,88.9,Editable,0.01,,,,,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Major Minor Radius,6.35,Editable,0.01,,,,,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min), Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+oval modified_oval,oval,modified_oval,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+oval compound,oval,compound,no,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Cup Radius (Rc Maj), Cup Depth (Dc) max, Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+oval compound,oval,compound,no,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval compound,oval,compound,no,End Radius (Re),3.0,Editable,0.01,W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+oval compound,oval,compound,no,Side Radius (Rs),16.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+oval compound,oval,compound,no,Cup Depth (Dc),0.92,Editable,0.01,(W/2 - Land),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb), Cup Radius (Rc Maj)","Minor Axis (W), Land",,callbacks/ui_updater.py
+oval compound,oval,compound,no,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+oval compound,oval,compound,no,Cup Radius (Rc Maj),39.8,Locked,derived,,,"Cup Depth (Dc), Major Axis (L), Land",,callbacks/ui_updater.py
+oval compound,oval,compound,no,Major Major Radius,88.9,Editable,0.01,,,,,callbacks/ui_updater.py
+oval compound,oval,compound,no,Major Minor Radius,6.35,Editable,0.01,,,,,callbacks/ui_updater.py
+oval compound,oval,compound,no,Minor Major Radius,12.7,Editable,0.01,,,,,callbacks/ui_updater.py
+oval compound,oval,compound,no,Minor Minor Radius,3.81,Editable,0.01,,,,,callbacks/ui_updater.py
+oval compound,oval,compound,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min), Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval compound,oval,compound,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+oval compound,oval,compound,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+oval compound,oval,compound,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+oval compound,oval,compound,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Cup Radius (Rc Maj), Cup Depth (Dc) max, Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,End Radius (Re),3.0,Editable,0.01,W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Side Radius (Rs),16.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L)",,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Cup Depth (Dc),0.92,Editable,Bevel Depth + 0.01,(W/2 - Land),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb), Cup Radius (Rc Maj)","Minor Axis (W), Land, Cup Radius (Rc Maj), Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Cup Radius (Rc Min),8.8,Locked,tangent limit,tangent limit,,"Cup Depth (Dc), Minor Axis (W), Land, Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Cup Radius (Rc Maj),39.8,Editable,tangent limit,tangent limit,Cup Depth (Dc),"Cup Depth (Dc), Major Axis (L), Land, Bevel Depth, Bevel Angle",,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Bevel Depth,0.51,Editable,0.01,<= Dc,"Cup Depth (Dc) max, Cup Radius (Rc Min), Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Bevel Angle,40.0,Editable,1.0,60.0,"Cup Depth (Dc) max, Cup Radius (Rc Min), Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min), Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+oval cbe,oval,cbe,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Cup Radius (Rc Maj), Cup Depth (Dc) max, Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,End Radius (Re),3.0,Editable,formula (land + inset + 0.01),W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L), Land, Cup Depth (Dc), Radius Edge",,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Side Radius (Rs),16.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L), Land, Cup Depth (Dc), Radius Edge",,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Cup Depth (Dc),0.92,Editable,0.01,derived (profile formula),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb), Cup Radius (Rc Maj), End Radius (Re) min","Minor Axis (W), Land",Max from Radius Edge via FFRE formula,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Cup Radius (Rc Maj),39.8,Locked,derived,,,"Cup Depth (Dc), Major Axis (L), Land",,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Radius Edge,6.35,Editable,0.01,,End Radius (Re) min,,,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min), Cup Radius (Rc Maj), End Radius (Re) min",,,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+oval ffre,oval,ffre,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Minor Axis (W),8.0,Editable,0.01,<= L (max 25.0),"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Min), Cup Radius (Rc Maj), Cup Depth (Dc) max, Tablet Thickness (Tt) limit, Belly Band (Hb) (via Tt)",,,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Major Axis (L),16.0,Editable,>= W (min 0.01),25.0,"End Radius (Re) / Side Radius (Rs) bounds, Cup Radius (Rc Maj)",,,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,End Radius (Re),3.0,Editable,formula (land + inset + 0.01),W/2 - 0.01,Side Radius (Rs),"Side Radius (Rs), Minor Axis (W), Major Axis (L), Land, Cup Depth (Dc), Blend Radius, Bevel Angle",,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Side Radius (Rs),16.0,Editable,formula,formula,End Radius (Re),"End Radius (Re), Minor Axis (W), Major Axis (L), Land, Cup Depth (Dc), Blend Radius, Bevel Angle",,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Cup Depth (Dc),0.92,Editable,0.01,derived (profile formula),"Cup Radius (Rc Min), Tablet Thickness (Tt), Belly Band (Hb), Cup Radius (Rc Maj), End Radius (Re) min","Minor Axis (W), Land",Max from Blend Radius + Bevel Angle via Ref Flat >= 0.1,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Cup Radius (Rc Min),8.8,Locked,derived,,,"Cup Depth (Dc), Minor Axis (W), Land",,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Cup Radius (Rc Maj),39.8,Locked,derived,,,"Cup Depth (Dc), Major Axis (L), Land",,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Bevel Angle,30.0,Editable,1.0,60.0,End Radius (Re) min,,,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Blend Radius,0.38,Editable,0.01,<= Dc,End Radius (Re) min,,,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Land,0.08,Editable,0.01,,"Cup Depth (Dc) max, Cup Radius (Rc Min), Cup Radius (Rc Maj), End Radius (Re) min",,,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Belly Band (Hb),2.55,Editable,0.01,,Tablet Thickness (Tt),"Tablet Thickness (Tt), Cup Depth (Dc), Diameter (W)",,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Tablet Thickness (Tt),4.39,Editable,2*Dc + 0.01,W,Belly Band (Hb),"Belly Band (Hb), Cup Depth (Dc), Tablet Weight, Diameter (W)",Min enforced via Hb >= 0.01; Rule: Tt <= W,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Tablet Density,1.19,Editable,0.01,,Tablet Weight,,,callbacks/ui_updater.py
+oval ffbe,oval,ffbe,no,Tablet Weight,derived,Editable,derived,,Tablet Thickness (Tt),"Tablet Density, Geometry (volume)",Min driven by Hb >= 0.01 (via volume calc),callbacks/ui_updater.py

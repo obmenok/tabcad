@@ -1,0 +1,104 @@
+{
+  "app_title": "TabletCAD Pro",
+  "shape": {
+    "title": "Tablet Shape",
+    "round": "Round",
+    "capsule": "Capsule",
+    "oval": "Oval"
+  },
+  "cup": {
+    "title": "Cup Configuration",
+    "modified": "Modified Shape",
+    "con": "Concave",
+    "com": "Compound Cup",
+    "cbe": "Concave Bevel Edge",
+    "ffre": "Flat Face Radius Edge",
+    "ffbe": "Flat Face Bevel Edge",
+    "mod": "Modified Oval"
+  },
+  "dim": {
+    "title": "Dimensions",
+    "constraints": "Constraints",
+    "w": "Minor Axis, mm",
+    "w_round": "Diameter, mm",
+    "l": "Major Axis, mm",
+    "re": "End Radius, mm",
+    "rs": "Side Radius, mm",
+    "dc": "Cup Depth, mm",
+    "rc_min": "Cup Radius, mm",
+    "rc_maj": "Cup Radius Major, mm",
+    "r_maj_maj": "Major Major Radius, mm",
+    "r_maj_min": "Major Minor Radius, mm",
+    "r_min_maj": "Minor Major Radius, mm",
+    "r_min_min": "Minor Minor Radius, mm",
+    "bev_d": "Bevel Depth, mm",
+    "bev_a": "Bevel Angle, °",
+    "r_edge": "Radius Edge, mm",
+    "blend_r": "Blend Radius, mm",
+    "land": "Land, mm",
+    "hb": "Belly Band, mm",
+    "tt": "Tablet Thickness, mm",
+    "density": "Tablet Density, mg/mm³",
+    "weight": "Tablet Weight, mg"
+  },
+  "scoring": {
+    "title": "Scoring Options",
+    "none": "None",
+    "std": "Standard",
+    "cut": "Cut Through",
+    "decr": "Decreasing",
+    "cross": "Cross-scored",
+    "double": "Double-sided",
+    "edit": "Edit",
+    "width": "Width, mm",
+    "depth": "Depth, mm",
+    "angle": "Angle, °",
+    "ri": "Radius Inner, mm"
+  },
+  "actions": {
+    "generate": "Generate Drawing",
+    "export_pdf": "PDF Export"
+  },
+  "calc": {
+    "title": "Calculations",
+    "die_hole_sa": "Die Hole SA",
+    "cup_sa": "Cup SA",
+    "cup_vol": "Cup Volume",
+    "tablet_sa": "Tablet SA",
+    "tablet_vol": "Tablet Volume",
+    "tablet_weight": "Tablet Weight",
+    "tablet_density": "Tablet Density",
+    "tablet_sa_v": "Tablet SA/V",
+    "perimeter": "Perimeter"
+  },
+  "modal": {
+    "title": "Constraints Inspector",
+    "close": "Close"
+  },
+  "presets": {
+    "title": "Saved Presets",
+    "select": "Select preset...",
+    "save": "Save",
+    "save_as": "Save As",
+    "delete": "Delete",
+    "modal_title": "Save Preset As",
+    "placeholder": "Enter preset name...",
+    "cancel": "Cancel"
+  },
+  "units": {
+    "mm2": "mm²",
+    "mm3": "mm³",
+    "mg": "mg",
+    "mg_mm3": "mg/mm³",
+    "inv_mm": "1/mm",
+    "mm": "mm"
+  },
+  "physical": {
+    "title": "Physical Parameters"
+  },
+  "tip_force": {
+    "title": "Tip force",
+    "steel": "Steel type",
+    "max": "Max tip force, kN"
+  }
+}
