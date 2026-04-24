@@ -16,7 +16,7 @@ from core.pdf_generator import (
 )
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("gunicorn.error")
 try:
     # Avoid remote MathJax resolution inside headless Docker during kaleido startup.
     # This often removes long hangs on first static export call.
