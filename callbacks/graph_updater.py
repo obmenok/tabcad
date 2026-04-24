@@ -1,8 +1,6 @@
 import dash
 import traceback
-import time
 import logging
-import os
 from dash import Input, Output, State, callback, html, dcc
 import dash_bootstrap_components as dbc
 import plotly.io as pio
@@ -18,7 +16,6 @@ from core.pdf_generator import (
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
 
 logger = logging.getLogger("gunicorn.error")
-PDF_DEBUG_RAISE = os.getenv("TABCAD_PDF_DEBUG_RAISE", "0") == "1"
 try:
     # Avoid remote MathJax resolution inside headless Docker during kaleido startup.
     # This often removes long hangs on first static export call.
@@ -141,7 +138,6 @@ def export_pdf_callback(
     tip_force_steel,
     app_settings,
 ):
-    logger.warning("export_pdf_callback invoked: n_clicks=%s", n_clicks)
     if not n_clicks:
         return dash.no_update
 
@@ -244,10 +240,6 @@ def export_pdf_callback(
         views_3d = []
         if params.get("pdf_include_3d", True):
             try:
-                logger.warning(
-                    "PDF 3D export requested: quality=%s",
-                    params.get("pdf_3d_quality", "medium"),
-                )
                 for preset in ["Isometric"]:
                     p_3d = dict(params)
                     p_3d["view_preset"] = preset.lower()
@@ -265,16 +257,12 @@ def export_pdf_callback(
                             zaxis=dict(visible=False)
                         )
                     )
-                    logger.warning("PDF 3D to_image start")
-                    t0 = time.perf_counter()
                     img_bytes = fig_3d.to_image(
                         format="png",
                         width=500,
                         height=500,
                         engine="kaleido",
                     )
-                    dt = time.perf_counter() - t0
-                    logger.warning("PDF 3D to_image done in %.2fs", dt)
                     b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
                     views_3d.append((b64, preset))
             except Exception as e:
@@ -313,8 +301,6 @@ def export_pdf_callback(
     except Exception as e:
         logger.error("Error in export_pdf_callback: %s", e)
         logger.error(traceback.format_exc())
-        if PDF_DEBUG_RAISE:
-            raise
         return dash.no_update
 
 
