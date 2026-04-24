@@ -1,8 +1,10 @@
 import dash
 import traceback
 import time
+import logging
 from dash import Input, Output, State, callback, html, dcc
 import dash_bootstrap_components as dbc
+import plotly.io as pio
 from core.engine import generate_mesh
 from core.renderer import render_tablet
 from core.renderer_3d import render_tablet_3d
@@ -13,6 +15,14 @@ from core.pdf_generator import (
     ISO_SCALE_FACTORS,
 )
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
+
+logger = logging.getLogger(__name__)
+try:
+    # Avoid remote MathJax resolution inside headless Docker during kaleido startup.
+    # This often removes long hangs on first static export call.
+    pio.kaleido.scope.mathjax = None
+except Exception:
+    pass
 
 
 def _pdf_drawing_zone_size_mm(params):
@@ -129,7 +139,7 @@ def export_pdf_callback(
     tip_force_steel,
     app_settings,
 ):
-    print(f"export_pdf_callback invoked: n_clicks={n_clicks}", flush=True)
+    logger.warning("export_pdf_callback invoked: n_clicks=%s", n_clicks)
     if not n_clicks:
         return dash.no_update
 
@@ -232,9 +242,9 @@ def export_pdf_callback(
         views_3d = []
         if params.get("pdf_include_3d", True):
             try:
-                print(
-                    f"PDF 3D export requested: quality={params.get('pdf_3d_quality', 'medium')}",
-                    flush=True,
+                logger.warning(
+                    "PDF 3D export requested: quality=%s",
+                    params.get("pdf_3d_quality", "medium"),
                 )
                 for preset in ["Isometric"]:
                     p_3d = dict(params)
@@ -253,17 +263,22 @@ def export_pdf_callback(
                             zaxis=dict(visible=False)
                         )
                     )
-                    print("PDF 3D to_image start", flush=True)
+                    logger.warning("PDF 3D to_image start")
                     t0 = time.perf_counter()
-                    img_bytes = fig_3d.to_image(format="png", width=500, height=500)
+                    img_bytes = fig_3d.to_image(
+                        format="png",
+                        width=500,
+                        height=500,
+                        engine="kaleido",
+                    )
                     dt = time.perf_counter() - t0
-                    print(f"PDF 3D to_image done in {dt:.2f}s", flush=True)
+                    logger.warning("PDF 3D to_image done in %.2fs", dt)
                     b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
                     views_3d.append((b64, preset))
             except Exception as e:
-                print(
-                    f"Warning in export_pdf_callback: failed to render 3D for PDF, fallback to 2D-only PDF. {e}",
-                    flush=True,
+                logger.warning(
+                    "Warning in export_pdf_callback: failed to render 3D for PDF, fallback to 2D-only PDF. %s",
+                    e,
                 )
 
         # Generate PDF in a temporary file
@@ -294,8 +309,8 @@ def export_pdf_callback(
         # means the OS will clean them up periodically, keeping our project root clean.
         return data
     except Exception as e:
-        print(f"Error in export_pdf_callback: {e}", flush=True)
-        print(traceback.format_exc(), flush=True)
+        logger.error("Error in export_pdf_callback: %s", e)
+        logger.error(traceback.format_exc())
         return dash.no_update
 
 
