@@ -2,6 +2,7 @@ import dash
 import traceback
 import time
 import logging
+import os
 from dash import Input, Output, State, callback, html, dcc
 import dash_bootstrap_components as dbc
 import plotly.io as pio
@@ -17,6 +18,7 @@ from core.pdf_generator import (
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
 
 logger = logging.getLogger("gunicorn.error")
+PDF_DEBUG_RAISE = os.getenv("TABCAD_PDF_DEBUG_RAISE", "0") == "1"
 try:
     # Avoid remote MathJax resolution inside headless Docker during kaleido startup.
     # This often removes long hangs on first static export call.
@@ -311,6 +313,8 @@ def export_pdf_callback(
     except Exception as e:
         logger.error("Error in export_pdf_callback: %s", e)
         logger.error(traceback.format_exc())
+        if PDF_DEBUG_RAISE:
+            raise
         return dash.no_update
 
 
