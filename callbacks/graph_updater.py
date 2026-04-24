@@ -1,5 +1,6 @@
 import dash
 import traceback
+import time
 from dash import Input, Output, State, callback, html, dcc
 import dash_bootstrap_components as dbc
 from core.engine import generate_mesh
@@ -128,7 +129,7 @@ def export_pdf_callback(
     tip_force_steel,
     app_settings,
 ):
-    print(f"export_pdf_callback invoked: n_clicks={n_clicks}")
+    print(f"export_pdf_callback invoked: n_clicks={n_clicks}", flush=True)
     if not n_clicks:
         return dash.no_update
 
@@ -231,6 +232,10 @@ def export_pdf_callback(
         views_3d = []
         if params.get("pdf_include_3d", True):
             try:
+                print(
+                    f"PDF 3D export requested: quality={params.get('pdf_3d_quality', 'medium')}",
+                    flush=True,
+                )
                 for preset in ["Isometric"]:
                     p_3d = dict(params)
                     p_3d["view_preset"] = preset.lower()
@@ -248,11 +253,18 @@ def export_pdf_callback(
                             zaxis=dict(visible=False)
                         )
                     )
+                    print("PDF 3D to_image start", flush=True)
+                    t0 = time.perf_counter()
                     img_bytes = fig_3d.to_image(format="png", width=500, height=500)
+                    dt = time.perf_counter() - t0
+                    print(f"PDF 3D to_image done in {dt:.2f}s", flush=True)
                     b64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
                     views_3d.append((b64, preset))
             except Exception as e:
-                print(f"Warning in export_pdf_callback: failed to render 3D for PDF, fallback to 2D-only PDF. {e}")
+                print(
+                    f"Warning in export_pdf_callback: failed to render 3D for PDF, fallback to 2D-only PDF. {e}",
+                    flush=True,
+                )
 
         # Generate PDF in a temporary file
         import tempfile
@@ -282,8 +294,8 @@ def export_pdf_callback(
         # means the OS will clean them up periodically, keeping our project root clean.
         return data
     except Exception as e:
-        print(f"Error in export_pdf_callback: {e}")
-        print(traceback.format_exc())
+        print(f"Error in export_pdf_callback: {e}", flush=True)
+        print(traceback.format_exc(), flush=True)
         return dash.no_update
 
 
