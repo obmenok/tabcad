@@ -1,7 +1,10 @@
 import dash
+import base64
 import traceback
 import logging
-from dash import Input, Output, State, callback, html, dcc
+import time
+from urllib.parse import unquote
+from dash import Input, Output, State, callback, html, dcc, ctx
 import dash_bootstrap_components as dbc
 import plotly.io as pio
 from core.engine import generate_mesh
@@ -485,38 +488,36 @@ def _build_calc_html(metrics, density, lang="en"):
         Input("plotly-view-preset", "data"),
         Input("plotly-show-edges", "data"),
         Input("plotly-show-bbox", "data"),
+        Input("shape-dropdown", "value"),
+        Input("profile-dropdown", "value"),
+        Input("modified-switch", "value"),
+        Input("input-w", "value"),
+        Input("input-l", "value"),
+        Input("input-re", "value"),
+        Input("input-rs", "value"),
+        Input("input-dc", "value"),
+        Input("input-rc-min", "value"),
+        Input("input-rc-maj", "value"),
+        Input("input-land", "value"),
+        Input("input-hb", "value"),
+        Input("input-tt", "value"),
+        Input("input-bev-d", "value"),
+        Input("input-bev-a", "value"),
+        Input("input-r-edge", "value"),
+        Input("input-blend-r", "value"),
+        Input("input-r-maj-maj", "value"),
+        Input("input-r-maj-min", "value"),
+        Input("input-r-min-maj", "value"),
+        Input("input-r-min-min", "value"),
+        Input("bisect-type", "value"),
+        Input("input-b-width", "value"),
+        Input("input-b-depth", "value"),
+        Input("input-b-angle", "value"),
+        Input("input-b-ri", "value"),
+        Input("bisect-cruciform", "value"),
+        Input("bisect-double-sided", "value"),
     ],
-    [
-        State("shape-dropdown", "value"),
-        State("profile-dropdown", "value"),
-        State("modified-switch", "value"),
-        State("input-w", "value"),
-        State("input-l", "value"),
-        State("input-re", "value"),
-        State("input-rs", "value"),
-        State("input-dc", "value"),
-        State("input-rc-min", "value"),
-        State("input-rc-maj", "value"),
-        State("input-land", "value"),
-        State("input-hb", "value"),
-        State("input-tt", "value"),
-        State("input-bev-d", "value"),
-        State("input-bev-a", "value"),
-        State("input-r-edge", "value"),
-        State("input-blend-r", "value"),
-        State("input-r-maj-maj", "value"),
-        State("input-r-maj-min", "value"),
-        State("input-r-min-maj", "value"),
-        State("input-r-min-min", "value"),
-        State("bisect-type", "value"),
-        State("input-b-width", "value"),
-        State("input-b-depth", "value"),
-        State("input-b-angle", "value"),
-        State("input-b-ri", "value"),
-        State("bisect-cruciform", "value"),
-        State("bisect-double-sided", "value"),
-        State("app-settings-store", "data"),
-    ],
+    State("app-settings-store", "data"),
     prevent_initial_call=True,
 )
 def generate_graphics(
@@ -558,6 +559,17 @@ def generate_graphics(
     if w is None or dc is None or profile is None:
         return dash.no_update, dash.no_update, dash.no_update
 
+    t_total_start = time.perf_counter()
+    trigger = ctx.triggered_id
+    print(
+        (
+            "generate_graphics start: "
+            f"trigger={trigger}, n_clicks={n_clicks}, shape={shape}, profile={profile}, "
+            f"modified={bool(is_mod)}"
+        ),
+        flush=True,
+    )
+
     params = _build_params(
         shape,
         profile,
@@ -596,22 +608,192 @@ def generate_graphics(
         params.update(app_settings)
 
     try:
+        t_mesh_start = time.perf_counter()
         mesh_data = generate_mesh(params)
+        print(
+            f"generate_graphics mesh: {(time.perf_counter() - t_mesh_start):.3f}s",
+            flush=True,
+        )
+
+        t_svg_start = time.perf_counter()
         img_src = render_tablet(mesh_data, params)
-        params_png = dict(params)
-        params_png["render_2d_format"] = "png"
-        png_src = render_tablet(mesh_data, params_png)
+        print(
+            f"generate_graphics render_2d_svg: {(time.perf_counter() - t_svg_start):.3f}s",
+            flush=True,
+        )
+
+        t_3d_start = time.perf_counter()
         fig = render_tablet_3d(mesh_data, params)
+        print(
+            f"generate_graphics render_3d: {(time.perf_counter() - t_3d_start):.3f}s",
+            flush=True,
+        )
+
         fig_3d = dcc.Graph(
             figure=fig,
             style={"height": "100%", "width": "100%"},
             config={"displaylogo": False, "displayModeBar": False, "responsive": True},
             id="tablet-3d-graph",
         )
-        return img_src, png_src, fig_3d
+        print(
+            f"generate_graphics total: {(time.perf_counter() - t_total_start):.3f}s",
+            flush=True,
+        )
+        return img_src, None, fig_3d
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in generate_graphics: {e}")
         return dash.no_update, dash.no_update, dash.no_update
+
+
+@callback(
+    Output("download-2d", "data"),
+    Input("drawing-download-png-btn", "n_clicks"),
+    Input("drawing-download-svg-btn", "n_clicks"),
+    State("tablet-drawing", "src"),
+    State("drawing-2d-shaded", "data"),
+    State("shape-dropdown", "value"),
+    State("profile-dropdown", "value"),
+    State("modified-switch", "value"),
+    State("input-w", "value"),
+    State("input-l", "value"),
+    State("input-re", "value"),
+    State("input-rs", "value"),
+    State("input-dc", "value"),
+    State("input-rc-min", "value"),
+    State("input-rc-maj", "value"),
+    State("input-land", "value"),
+    State("input-hb", "value"),
+    State("input-tt", "value"),
+    State("input-bev-d", "value"),
+    State("input-bev-a", "value"),
+    State("input-r-edge", "value"),
+    State("input-blend-r", "value"),
+    State("input-r-maj-maj", "value"),
+    State("input-r-maj-min", "value"),
+    State("input-r-min-maj", "value"),
+    State("input-r-min-min", "value"),
+    State("bisect-type", "value"),
+    State("input-b-width", "value"),
+    State("input-b-depth", "value"),
+    State("input-b-angle", "value"),
+    State("input-b-ri", "value"),
+    State("bisect-cruciform", "value"),
+    State("bisect-double-sided", "value"),
+    State("app-settings-store", "data"),
+    prevent_initial_call=True,
+)
+def download_2d_snapshot(
+    png_clicks,
+    svg_clicks,
+    svg_src,
+    drawing_2d_shaded,
+    shape,
+    profile,
+    is_mod,
+    w,
+    l,
+    re,
+    rs,
+    dc,
+    rc_min,
+    rc_maj,
+    land,
+    hb,
+    tt,
+    bev_d,
+    bev_a,
+    r_edge,
+    blend_r,
+    r_maj_maj,
+    r_maj_min,
+    r_min_maj,
+    r_min_min,
+    b_type,
+    b_width,
+    b_depth,
+    b_angle,
+    b_ri,
+    b_cruciform,
+    b_double_sided,
+    app_settings,
+):
+    trig = ctx.triggered_id
+
+    if trig == "drawing-download-svg-btn":
+        if not svg_src or not str(svg_src).startswith("data:"):
+            return dash.no_update
+        try:
+            header, payload = str(svg_src).split(",", 1)
+        except ValueError:
+            return dash.no_update
+        is_base64 = ";base64" in header
+        mime = header[5:].split(";")[0]
+        if mime != "image/svg+xml":
+            return dash.no_update
+        content = (
+            base64.b64decode(payload).decode("utf-8")
+            if is_base64
+            else unquote(payload)
+        )
+        return dict(content=content, filename="tabletcad-2d.svg", type=mime)
+
+    if trig != "drawing-download-png-btn" or not png_clicks:
+        return dash.no_update
+
+    if w is None or dc is None or profile is None:
+        return dash.no_update
+
+    t_start = time.perf_counter()
+    print("download_2d_png start", flush=True)
+    try:
+        params = _build_params(
+            shape,
+            profile,
+            is_mod,
+            w,
+            l,
+            re,
+            rs,
+            dc,
+            rc_min,
+            rc_maj,
+            land,
+            hb,
+            tt,
+            bev_d,
+            bev_a,
+            r_edge,
+            blend_r,
+            r_maj_maj,
+            r_maj_min,
+            r_min_maj,
+            r_min_min,
+            b_type,
+            b_width,
+            b_depth,
+            b_angle,
+            b_ri,
+            b_cruciform,
+            b_double_sided,
+            drawing_2d_shaded=drawing_2d_shaded,
+            render_2d_format="png",
+        )
+        if app_settings:
+            params.update(app_settings)
+        mesh_data = generate_mesh(params)
+        png_src = render_tablet(mesh_data, params)
+        if not png_src or not str(png_src).startswith("data:image/png;base64,"):
+            return dash.no_update
+        payload = str(png_src).split(",", 1)[1]
+        binary = base64.b64decode(payload)
+        print(
+            f"download_2d_png done: {(time.perf_counter() - t_start):.3f}s",
+            flush=True,
+        )
+        return dcc.send_bytes(lambda buffer: buffer.write(binary), "tabletcad-2d.png")
+    except (ValueError, ZeroDivisionError, OverflowError) as e:
+        print(f"Error in download_2d_snapshot: {e}", flush=True)
+        return dash.no_update
 
 
 
