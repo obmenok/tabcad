@@ -9,7 +9,7 @@ clientside_callback(
         if (!n) {
             return window.dash_clientside.no_update;
         }
-        const panel = document.querySelector("#plotly-viewport-panel");
+        const panel = document.querySelector("#viewer-viewport-panel");
         if (!panel) {
             return "fullscreen:panel_not_found";
         }
@@ -25,6 +25,69 @@ clientside_callback(
     Input("plotly-fullscreen-btn", "n_clicks"),
     prevent_initial_call=True,
 )
+
+
+@callback(
+    [
+        Output("viewer-mode-store", "data"),
+        Output("viewer-mode-2d-btn", "class_name"),
+        Output("viewer-mode-3d-btn", "class_name"),
+    ],
+    [
+        Input("viewer-mode-2d-btn", "n_clicks"),
+        Input("viewer-mode-3d-btn", "n_clicks"),
+    ],
+    State("viewer-mode-store", "data"),
+    prevent_initial_call=True,
+)
+def set_viewer_mode(_, __, current_mode):
+    trig = ctx.triggered_id
+    if trig == "viewer-mode-3d-btn":
+        mode = "3d"
+    elif trig == "viewer-mode-2d-btn":
+        mode = "2d"
+    else:
+        mode = current_mode or "2d"
+
+    class_2d = "plotly-toolbar-btn active" if mode == "2d" else "plotly-toolbar-btn"
+    class_3d = "plotly-toolbar-btn active" if mode == "3d" else "plotly-toolbar-btn"
+    return mode, class_2d, class_3d
+
+
+@callback(
+    [
+        Output("viewer-2d-layer", "style"),
+        Output("viewer-3d-layer", "style"),
+        Output("viewer-toolbar-2d", "style"),
+        Output("viewer-toolbar-3d", "style"),
+    ],
+    Input("viewer-mode-store", "data"),
+    prevent_initial_call=False,
+)
+def toggle_viewer_mode_layout(mode):
+    base_layer = {"height": "100%", "width": "100%"}
+    toolbar_base = {
+        "position": "absolute",
+        "top": "8px",
+        "right": "8px",
+        "zIndex": 5000,
+        "background": "rgba(255,255,255,0.92)",
+        "borderRadius": "6px",
+        "padding": "6px",
+        "overflow": "visible",
+    }
+    if mode == "3d":
+        layer_2d = {**base_layer, "display": "none"}
+        layer_3d = {**base_layer, "display": "block"}
+        toolbar_2d = {**toolbar_base, "display": "none"}
+        toolbar_3d = {**toolbar_base, "display": "flex"}
+        return layer_2d, layer_3d, toolbar_2d, toolbar_3d
+
+    layer_2d = {**base_layer, "display": "block"}
+    layer_3d = {**base_layer, "display": "none"}
+    toolbar_2d = {**toolbar_base, "display": "flex"}
+    toolbar_3d = {**toolbar_base, "display": "none"}
+    return layer_2d, layer_3d, toolbar_2d, toolbar_3d
 
 
 @callback(
@@ -150,7 +213,7 @@ clientside_callback(
         if (!n) {
             return window.dash_clientside.no_update;
         }
-        const panel = document.querySelector("#drawing-viewport-panel");
+        const panel = document.querySelector("#viewer-viewport-panel");
         if (!panel) {
             return "drawing-fullscreen:panel_not_found";
         }
@@ -166,4 +229,3 @@ clientside_callback(
     Input("drawing-fullscreen-btn", "n_clicks"),
     prevent_initial_call=True,
 )
-

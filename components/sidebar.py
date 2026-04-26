@@ -9,7 +9,7 @@ def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None
     style = {"display": "block"} if visible else {"display": "none"}
     return html.Div(
         dbc.InputGroup([
-            dbc.InputGroupText(label, id=f"label-{id}", className="tablet-input-label", style={'width': '60%'}),
+            dbc.InputGroupText(label, id=f"label-{id}", className="tablet-input-label", style={'width': '70%'}),
             dbc.Input(
                 id=id,
                 type='number',
@@ -38,7 +38,7 @@ def create_sidebar():
 
         dbc.Row(
             [
-                dbc.Col(html.H4("TabletCAD Pro", className="text-primary mb-0"), width="auto"),
+                dbc.Col(html.H4("TabCAD", className="text-primary mb-0 fw-bold"), width="auto"),
                 dbc.Col(
                     dbc.ButtonGroup(
                         [
@@ -272,8 +272,79 @@ def create_sidebar():
             value='concave',
             clearable=False,
             searchable=False,
-            style={'display': 'none'},
+            className="small-dropdown cup-config-dropdown mb-2",
         ),
+
+        html.Label("Scoring Options", id="label-scoring-title", className="fw-bold mb-1", style={"marginTop": "4px"}),
+        dbc.ButtonGroup(
+            [
+                dbc.Button("None", id="bisect-btn-none", color="light", class_name="plotly-toolbar-btn", title="None"),
+                dbc.Button("Std", id="bisect-btn-standard", color="light", class_name="plotly-toolbar-btn", title="Standard"),
+                dbc.Button("Cut", id="bisect-btn-cut", color="light", class_name="plotly-toolbar-btn", title="Cut Through"),
+                dbc.Button("Decr", id="bisect-btn-dec", color="light", class_name="plotly-toolbar-btn", title="Decreasing"),
+            ],
+            size="sm",
+            className="plotly-toolbar-group segmented-btn-group bisect-type-group mb-2",
+        ),
+        dcc.Dropdown(
+            id='bisect-type',
+            options=[
+                {'label': 'None', 'value': 'none'},
+                {'label': 'Standard', 'value': 'standard'},
+                {'label': 'Cut Through', 'value': 'cut_through'},
+                {'label': 'Decreasing', 'value': 'decreasing'}
+            ],
+            value='standard',
+            clearable=False,
+            searchable=False,
+            className="small-dropdown scoring-type-dropdown mb-2",
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            dbc.Checklist(
+                                options=[{"label": "Cross-scored", "value": "on"}],
+                                value=[],
+                                id="bisect-cruciform",
+                                switch=True,
+                                className="mb-0",
+                            ),
+                            id="div-bisect-cruciform",
+                            style={"display": "none"},
+                        ),
+                        html.Div(
+                            dbc.Checklist(
+                                options=[{"label": "Double-sided", "value": "on"}],
+                                value=[],
+                                id="bisect-double-sided",
+                                switch=True,
+                                className="mb-0",
+                            ),
+                            id="div-bisect-double-sided",
+                            style={"display": "none"},
+                        ),
+                    ],
+                    style={"display": "flex", "alignItems": "center"},
+                ),
+                dbc.Button(
+                    "Edit",
+                    id="bisect-edit-btn",
+                    outline=True,
+                    color="secondary",
+                    size="sm",
+                    className="outline-soft-btn",
+                ),
+            ],
+            id="div-bisect-controls-row",
+            className="mb-2",
+            style={"display": "flex", "alignItems": "center", "justifyContent": "space-between"},
+        ),
+        make_input('input-b-width', 'Width, mm', BISECT_DEFAULTS["standard"]["width"], visible=False),
+        make_input('input-b-depth', 'Depth, mm', BISECT_DEFAULTS["standard"]["depth"], visible=False),
+        make_input('input-b-angle', 'Angle, °', BISECT_DEFAULTS["standard"]["angle"], step=1.0, visible=False),
+        make_input('input-b-ri', 'Radius Inner, mm', BISECT_DEFAULTS["standard"]["ri"], visible=False),
 
         html.Div(
             [
@@ -364,73 +435,6 @@ def create_sidebar():
             className="g-1 mb-2",
         ),
 
-        html.Label("Scoring Options", id="label-scoring-title", className="fw-bold mb-1", style={"marginTop": "4px"}),
-        dbc.ButtonGroup(
-            [
-                dbc.Button("None", id="bisect-btn-none", color="light", class_name="plotly-toolbar-btn", title="None"),
-                dbc.Button("Std", id="bisect-btn-standard", color="light", class_name="plotly-toolbar-btn", title="Standard"),
-                dbc.Button("Cut", id="bisect-btn-cut", color="light", class_name="plotly-toolbar-btn", title="Cut Through"),
-                dbc.Button("Decr", id="bisect-btn-dec", color="light", class_name="plotly-toolbar-btn", title="Decreasing"),
-            ],
-            size="sm",
-            className="plotly-toolbar-group segmented-btn-group bisect-type-group mb-2",
-        ),
-        dcc.Dropdown(
-            id='bisect-type',
-            options=[
-                {'label': 'None', 'value': 'none'}, 
-                {'label': 'Standard', 'value': 'standard'},
-                {'label': 'Cut Through', 'value': 'cut_through'},
-                {'label': 'Decreasing', 'value': 'decreasing'}
-            ],
-            value='standard', clearable=False, style={'display': 'none'}
-        ),
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Div(
-                            dbc.Checklist(
-                                options=[{"label": "Cross-scored", "value": "on"}],
-                                value=[],
-                                id="bisect-cruciform",
-                                switch=True,
-                                className="mb-0",
-                            ),
-                            id="div-bisect-cruciform",
-                            style={"display": "none"},
-                        ),
-                        html.Div(
-                            dbc.Checklist(
-                                options=[{"label": "Double-sided", "value": "on"}],
-                                value=[],
-                                id="bisect-double-sided",
-                                switch=True,
-                                className="mb-0",
-                            ),
-                            id="div-bisect-double-sided",
-                            style={"display": "none"},
-                        ),
-                    ],
-                    style={"display": "flex", "alignItems": "center"},
-                ),
-                dbc.Button(
-                    "Edit",
-                    id="bisect-edit-btn",
-                    outline=True,
-                    color="secondary",
-                    size="sm",
-                    className="outline-soft-btn",
-                ),
-            ],
-            id="div-bisect-controls-row",
-            className="mb-2",
-            style={"display": "flex", "alignItems": "center", "justifyContent": "space-between"},
-        ),
-        make_input('input-b-width', 'Width, mm', BISECT_DEFAULTS["standard"]["width"], visible=False),
-        make_input('input-b-depth', 'Depth, mm', BISECT_DEFAULTS["standard"]["depth"], visible=False),
-        make_input('input-b-angle', 'Angle, °', BISECT_DEFAULTS["standard"]["angle"], step=1.0, visible=False),
-        make_input('input-b-ri', 'Radius Inner, mm', BISECT_DEFAULTS["standard"]["ri"], visible=False),
 
         html.Hr(),
         dbc.Button("Generate Drawing", id="btn-generate", color="primary", className="w-100 mb-2"),
