@@ -32,5 +32,6 @@ COPY . .
 
 EXPOSE 8050
 
-# 2 workers for 4 GB VPS, with full app log capture in container stdout/stderr
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8050", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "--capture-output", "--log-level", "info", "app:server"]
+# 2 workers for 4 GB VPS.
+# Access log is intentionally disabled to keep container logs focused on app diagnostics.
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8050", "--timeout", "120", "--error-logfile", "-", "--capture-output", "--log-level", "info", "app:server"]

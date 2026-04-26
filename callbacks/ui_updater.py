@@ -1067,17 +1067,17 @@ def sync_weight_density_with_volume(
         if trig == "input-weight" and weight is not None and die_hole_sa > 1e-9:
             target_weight = max(0.0, float(weight))
             # Ignore self-trigger when weight was just auto-updated from geometry/density.
-            if abs(target_weight - expected_weight) <= max(1e-4, expected_weight * 1e-4):
-                return dash.no_update, round(expected_weight, 4)
+            if abs(target_weight - expected_weight) <= max(5e-3, expected_weight * 1e-4):
+                return dash.no_update, round(expected_weight, 2)
 
             target_vol = target_weight / density_val
             hb_new = max(0.01, (target_vol - fixed_vol) / die_hole_sa)
             tt_new = hb_new + 2.0 * dc_val
             actual_vol = die_hole_sa * hb_new + fixed_vol
             actual_weight = density_val * actual_vol
-            return round(tt_new, 4), round(actual_weight, 4)
+            return round(tt_new, 4), round(actual_weight, 2)
 
-        return dash.no_update, round(expected_weight, 4)
+        return dash.no_update, round(expected_weight, 2)
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in sync_weight_density_with_volume: {e}")
         return dash.no_update, dash.no_update
