@@ -64,7 +64,7 @@ def create_sidebar():
                     className="ps-1",
                 ),
             ],
-            className="mb-3 align-items-center d-flex",
+            className="mb-3 align-items-center g-0",
         ),
         
         create_settings_modal(),
@@ -382,62 +382,10 @@ def create_sidebar():
         make_input('input-land', 'Land, mm', BASE_DEFAULTS["land"]),
         make_input('input-hb', 'Belly Band, mm', BASE_DEFAULTS["hb"]),
         make_input('input-tt', 'Tablet Thickness, mm', BASE_DEFAULTS["tt"]), 
-        html.Label("Physical Parameters", id="label-physical-title", className="fw-bold mb-1", style={"marginTop": "4px"}),
-        make_input('input-density', 'Tablet Density, mg/mm³', BASE_DEFAULTS["density"], step=0.01, min_value=0.01, debounce=True),
-        make_input('input-weight', 'Tablet Weight, mg', None, step=0.01, min_value=0.0, debounce=True),
-        html.Label("Tip force", id="label-tip-force-title", className="fw-bold mb-1", style={"marginTop": "4px"}),
-        dbc.Row(
-            [
-                dbc.Col(
-                    html.Label(
-                        "Steel type",
-                        id="label-tip-force-steel",
-                        className="tablet-input-label mb-0",
-                    ),
-                    width=6,
-                ),
-                dbc.Col(
-                    html.Label(
-                        "Max tip force",
-                        id="label-tip-force-value",
-                        className="tablet-input-label mb-0",
-                    ),
-                    width=6,
-                ),
-            ],
-            className="g-1 mb-1",
-        ),
-        dbc.Row(
-            [
-                dbc.Col(
-                    dbc.Select(
-                        id="input-tip-force-steel",
-                        options=[
-                            {"label": "S7", "value": "S7"},
-                            {"label": "D2", "value": "D2"},
-                        ],
-                        value=BASE_DEFAULTS["tip_force_steel"],
-                        size="sm",
-                    ),
-                    width=6,
-                ),
-                dbc.Col(
-                    dbc.Input(
-                        id="tip-force-value",
-                        type="text",
-                        value="N/A",
-                        readonly=True,
-                        size="sm",
-                    ),
-                    width=6,
-                ),
-            ],
-            className="g-1 mb-2",
-        ),
 
 
         html.Hr(),
         dbc.Button("Generate Drawing", id="btn-generate", color="primary", className="w-100 mb-2"),
         dbc.Button("PDF Export", id="export-pdf-btn", color="success", className="w-100 mb-3"),
         dcc.Download(id="download-pdf")
-    ], id="sidebar-container", style={"opacity": "0", "transition": "opacity 0.1s"})
+    ], id="sidebar-container", style={"opacity": "0", "transition": "opacity 0.1s", "overflowX": "hidden"})
