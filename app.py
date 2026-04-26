@@ -1,9 +1,8 @@
 import dash
 import dash_bootstrap_components as dbc
 from components.sidebar import create_sidebar
-from components.viewer import create_viewer
+from components.viewer import create_model_panel, create_info_panel
 
-LAYOUT_MIN_WIDTH_PX = 1500
 
 # Инициализация приложения (LUMEN - чистая светлая тема, похожая на оригинал)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUMEN], suppress_callback_exceptions=True)
@@ -15,16 +14,34 @@ app.layout = dbc.Container(
     [
         dbc.Row(
             [
-                dbc.Col(create_sidebar(), width=3, className="bg-light border-end", style={"height": "100vh", "overflow-y": "auto", "padding": "20px"}),
-                dbc.Col(create_viewer(), width=9, style={"height": "100vh", "padding": "20px"})
+                dbc.Col(
+                    create_sidebar(),
+                    xs=12,
+                    xl=3,
+                    className="app-col-left bg-light border-end",
+                    style={"height": "100vh", "overflowY": "auto", "overflowX": "hidden", "padding": "20px 10px"},
+                ),
+                dbc.Col(
+                    create_model_panel(),
+                    xs=12,
+                    xl=6,
+                    className="app-col-center bg-white",
+                    style={"height": "100vh", "padding": "20px 10px", "minHeight": 0},
+                ),
+                dbc.Col(
+                    create_info_panel(),
+                    xs=12,
+                    xl=3,
+                    className="app-col-right bg-white",
+                    style={"height": "100vh", "overflowY": "auto", "padding": "20px 10px"},
+                ),
             ],
             className="g-0",
-            style={"flexWrap": "nowrap", "minWidth": f"{LAYOUT_MIN_WIDTH_PX}px"},
         )
     ],
     fluid=True,
     className="g-0",
-    style={"overflowX": "auto"},
+    style={"overflowX": "hidden"},
 )
 
 # Импортируем коллбеки, чтобы они зарегистрировались в app
@@ -38,6 +55,3 @@ from callbacks import settings_callbacks
 
 if __name__ == '__main__':
     app.run(debug=True, port=8051)
-
-
-

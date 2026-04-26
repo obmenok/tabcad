@@ -294,6 +294,10 @@
   row-gap: 2px;
 }
 
+.calc-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .calc-row {
   display: grid;
   grid-template-columns: var(--label-width, 100px) 1fr;
@@ -513,4 +517,20 @@
 /* Compact sliders for settings modal */
 .preset-modal .rc-slider {
   padding: 5px 0 !important;
+}
+
+@media (min-width: 1200px) {
+  .app-col-left {
+    min-width: 360px;
+  }
+
+  .app-col-right {
+    min-width: 360px;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .app-col-left {
+    border-right: 0 !important;
+  }
 }

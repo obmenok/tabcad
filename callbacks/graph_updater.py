@@ -389,13 +389,10 @@ def _build_calc_html(metrics, density, lang="en"):
     tablet_sa = float(m.get("Tablet_SA", 0.0) or 0.0)
     tablet_vol = float(m.get("Tablet_Vol", 0.0) or 0.0)
     tablet_sa_v = (tablet_sa / tablet_vol) if tablet_vol > 1e-12 else 0.0
-    density_val = 1.19 if density is None else float(density)
-    weight_val = density_val * tablet_vol
 
     def fmt4(value):
         return f"{float(value):.4f}".replace(".", ",")
 
-    label_style = {"display": "inline-block", "minWidth": "98px"}
     num_style = {
         "display": "inline-block",
         "minWidth": "9ch",
@@ -432,6 +429,16 @@ def _build_calc_html(metrics, density, lang="en"):
             style={"--label-width": label_min_width, "marginBottom": "4px"},
         )
 
+    calc_rows = [
+        metric_row(t("calc.die_hole_sa", lang), m.get("Die_Hole_SA", 0), t("units.mm2", lang), label_min_width="107px"),
+        metric_row(t("calc.cup_sa", lang), m.get("Cup_SA", 0), t("units.mm2", lang), label_min_width="107px"),
+        metric_row(t("calc.cup_vol", lang), m.get("Cup_Volume", 0), t("units.mm3", lang), label_min_width="107px"),
+        metric_row(t("calc.tablet_sa", lang), tablet_sa, t("units.mm2", lang), label_min_width="107px"),
+        metric_row(t("calc.tablet_vol", lang), tablet_vol, t("units.mm3", lang), label_min_width="107px"),
+        metric_row(t("calc.tablet_sa_v", lang), tablet_sa_v, t("units.inv_mm", lang), label_min_width="107px"),
+        metric_row(t("calc.perimeter", lang), m.get("Perimeter", 0), t("units.mm", lang), label_min_width="107px"),
+    ]
+
     return html.Div(
         [
             html.Div(
@@ -440,36 +447,8 @@ def _build_calc_html(metrics, density, lang="en"):
                 style={"fontSize": "1rem"},
             ),
             html.Div(
-                [
-                    html.Div(
-                        [
-                            metric_row(t("calc.die_hole_sa", lang), m.get("Die_Hole_SA", 0), t("units.mm2", lang), label_min_width="95px"),
-                            metric_row(t("calc.cup_sa", lang), m.get("Cup_SA", 0), t("units.mm2", lang), label_min_width="95px"),
-                            metric_row(t("calc.cup_vol", lang), m.get("Cup_Volume", 0), t("units.mm3", lang), label_min_width="95px"),
-                        ],
-                        className="calc-col",
-                        style={"minWidth": 0},
-                    ),
-                    html.Div(
-                        [
-                            metric_row(t("calc.tablet_sa", lang), tablet_sa, t("units.mm2", lang), label_min_width="107px"),
-                            metric_row(t("calc.tablet_vol", lang), tablet_vol, t("units.mm3", lang), label_min_width="107px"),
-                            metric_row(t("calc.tablet_weight", lang), weight_val, t("units.mg", lang), label_min_width="107px"),
-                        ],
-                        className="calc-col",
-                        style={"minWidth": 0},
-                    ),
-                    html.Div(
-                        [
-                            metric_row(t("calc.tablet_density", lang), density_val, t("units.mg_mm3", lang), label_min_width="99px"),
-                            metric_row(t("calc.tablet_sa_v", lang), tablet_sa_v, t("units.inv_mm", lang), label_min_width="99px"),
-                            metric_row(t("calc.perimeter", lang), m.get("Perimeter", 0), t("units.mm", lang), label_min_width="99px"),
-                        ],
-                        className="calc-col",
-                        style={"minWidth": 0},
-                    ),
-                ],
-                className=f"calc-grid calc-grid-{lang}",
+                calc_rows,
+                className="d-flex flex-column",
             ),
         ],
         style={"fontSize": "14px"},
