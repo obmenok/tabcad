@@ -12,6 +12,13 @@ def _panel_block(children, min_height=None):
     return html.Div(children, className="py-2 px-3 bg-light border rounded h-100", style=style)
 
 
+EMPTY_PRESET_OPTION = {
+    "label": "No presets saved",
+    "value": "__no_presets__",
+    "disabled": True,
+}
+
+
 def create_info_panel():
     preset_modal = dbc.Modal(
         [
@@ -71,7 +78,7 @@ def create_info_panel():
                     html.Div(
                         dcc.Dropdown(
                             id="preset-dropdown",
-                            options=[],
+                            options=[EMPTY_PRESET_OPTION],
                             value=None,
                             placeholder="Select preset...",
                             clearable=False,
