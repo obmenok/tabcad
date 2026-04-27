@@ -324,6 +324,17 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Keep calculations rows single-line in the right panel */
+#calc-output .calc-row {
+  grid-template-columns: var(--label-width, 100px) 1fr !important;
+  align-items: center;
+}
+
+#calc-output .calc-label,
+#calc-output .calc-value {
+  white-space: nowrap;
+}
+
 /* Sync wrapping based on the calculations container width */
 @media (max-width: 1600px) {
   .calc-grid-ru .calc-row {
@@ -519,18 +530,39 @@
   padding: 5px 0 !important;
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 992px) {
+  .app-main-row {
+    flex-wrap: nowrap !important;
+  }
+
+  /* Stop shrinking side columns once RU long labels no longer fit. */
   .app-col-left {
     min-width: 360px;
   }
 
   .app-col-right {
-    min-width: 360px;
+    min-width: 290px;
+  }
+
+  /*
+    Let center column absorb further compression.
+    This keeps 3-column layout stable on tablet landscape and desktop.
+  */
+  .app-col-center {
+    min-width: 0;
+    flex: 1 1 auto !important;
+    width: auto !important;
   }
 }
 
-@media (max-width: 1199.98px) {
+@media (max-width: 991.98px) {
   .app-col-left {
     border-right: 0 !important;
+  }
+
+  .app-col-left,
+  .app-col-center,
+  .app-col-right {
+    height: auto !important;
   }
 }
