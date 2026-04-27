@@ -73,6 +73,7 @@ def create_info_panel():
                             id="preset-dropdown",
                             options=[],
                             value=None,
+                            placeholder="Select preset...",
                             clearable=False,
                             searchable=False,
                             className="small-dropdown mb-2",

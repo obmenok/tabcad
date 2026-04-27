@@ -90,9 +90,7 @@ def handle_preset_actions(save_btn, modal_save_btn, delete_btn, current_preset, 
     
     def get_options():
         names = db.get_all_preset_names()
-        opts = [{'label': "Select preset...", 'value': '', 'disabled': True}]
-        opts.extend([{'label': n, 'value': n} for n in names])
-        return opts
+        return [{'label': n, 'value': n} for n in names]
 
     if not trig:
         return dash.no_update, get_options()
