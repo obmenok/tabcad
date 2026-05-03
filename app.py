@@ -16,6 +16,7 @@ app.layout = dbc.Container(
             [
                 dbc.Col(
                     create_sidebar(),
+                    id="sidebar-container",
                     xs=12,
                     lg=3,
                     className="app-col-left bg-light border-end",
