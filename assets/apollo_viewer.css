@@ -248,11 +248,11 @@
   z-index: 12000 !important;
 }
 
-#sidebar-container #profile-dropdown.cup-config-dropdown {
+.cup-config-dropdown {
   display: none !important;
 }
 
-#sidebar-container #bisect-type.scoring-type-dropdown {
+.scoring-type-dropdown {
   display: none !important;
 }
 
@@ -387,19 +387,19 @@
 }
 
 @media (max-width: 1600px) {
-  #sidebar-container .cup-config-group {
+  .cup-config-group {
     display: none !important;
   }
 
-  #sidebar-container #profile-dropdown.cup-config-dropdown {
+  .cup-config-dropdown {
     display: block !important;
   }
 
-  #sidebar-container .bisect-type-group {
+  .bisect-type-group {
     display: none !important;
   }
 
-  #sidebar-container #bisect-type.scoring-type-dropdown {
+  .scoring-type-dropdown {
     display: block !important;
   }
 }
