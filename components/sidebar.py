@@ -175,7 +175,8 @@ def create_sidebar():
         ),
 
 
-        html.Label("Tablet Shape", id="label-shape-title", className="fw-bold mt-2 mb-1"),
+        html.Label("Tablet Geometry", id="label-geometry-title", className="fw-bold d-block mt-2 mb-1"),
+        html.Label("Shape", id="label-shape-title", className="d-block mb-1"),
         dbc.ButtonGroup(
             [
                 dbc.Button("Round", id="shape-round-btn", color="light", class_name="plotly-toolbar-btn active"),
@@ -197,7 +198,7 @@ def create_sidebar():
 
         html.Div(
             [
-                html.Label("Cup Configuration", id="label-cup-title", className="fw-bold m-0 mb-1"),
+                html.Label("Cup Profile", id="label-cup-title", className="m-0"),
                 html.Div(
                     dbc.Checklist(
                         options=[{"label": "Modified Shape", "value": True}],
@@ -209,7 +210,7 @@ def create_sidebar():
                     id="div-modified-switch",
                 ),
             ],
-            className="mb-1 mt-2",
+            className="mb-1",
             style={"display": "flex", "alignItems": "center", "justifyContent": "space-between"},
         ),
         dbc.ButtonGroup(
@@ -275,7 +276,7 @@ def create_sidebar():
             className="small-dropdown cup-config-dropdown mb-2",
         ),
 
-        html.Label("Scoring Options", id="label-scoring-title", className="fw-bold mb-1", style={"marginTop": "4px"}),
+        html.Label("Scoring Line", id="label-scoring-title", className="mb-1", style={"marginTop": "4px"}),
         dbc.ButtonGroup(
             [
                 dbc.Button("None", id="bisect-btn-none", color="light", class_name="plotly-toolbar-btn", title="None"),
@@ -335,16 +336,23 @@ def create_sidebar():
                     color="secondary",
                     size="sm",
                     className="outline-soft-btn",
+                    style={"height": "30px", "lineHeight": "28px", "padding": "0 12px"},
                 ),
             ],
             id="div-bisect-controls-row",
             className="mb-2",
             style={"display": "flex", "alignItems": "center", "justifyContent": "space-between"},
         ),
-        make_input('input-b-width', 'Width, mm', BISECT_DEFAULTS["standard"]["width"], visible=False),
-        make_input('input-b-depth', 'Depth, mm', BISECT_DEFAULTS["standard"]["depth"], visible=False),
-        make_input('input-b-angle', 'Angle, °', BISECT_DEFAULTS["standard"]["angle"], step=1.0, visible=False),
-        make_input('input-b-ri', 'Radius Inner, mm', BISECT_DEFAULTS["standard"]["ri"], visible=False),
+        html.Div(
+            [
+                make_input('input-b-width', 'Width, mm', BISECT_DEFAULTS["standard"]["width"], visible=False),
+                make_input('input-b-depth', 'Depth, mm', BISECT_DEFAULTS["standard"]["depth"], visible=False),
+                make_input('input-b-angle', 'Angle, °', BISECT_DEFAULTS["standard"]["angle"], step=1.0, visible=False),
+                make_input('input-b-ri', 'Radius Inner, mm', BISECT_DEFAULTS["standard"]["ri"], visible=False),
+            ],
+            id="scoring-table-block",
+            className="dimensions-table-block",
+        ),
 
         html.Div(
             [
@@ -356,32 +364,36 @@ def create_sidebar():
                     color="secondary",
                     size="sm",
                     className="outline-soft-btn",
+                    style={"height": "30px", "lineHeight": "28px", "padding": "0 12px"},
                 ),
             ],
-            className="mb-2 mt-2",
+            className="mb-2",
             style={"display": "flex", "justifyContent": "space-between", "alignItems": "center"},
         ),
-        make_input('input-w', 'Minor Axis, mm', BASE_DEFAULTS["W"], max_value=25.0),
-        make_input('input-l', 'Major Axis, mm', BASE_DEFAULTS["L"], visible=False, max_value=25.0),
-        make_input('input-re', 'End Radius, mm', SHAPE_SPECIFIC["oval"]["re"], visible=False),
-        make_input('input-rs', 'Side Radius, mm', SHAPE_SPECIFIC["oval"]["rs"], min_value=0.0, visible=False),
-
-        make_input('input-dc', 'Cup Depth, mm', BASE_DEFAULTS["dc"]),
-        make_input('input-rc-min', 'Cup Radius, mm', PROFILE_DEFAULTS["concave"]["rc_min"], disabled=True),
-        make_input('input-rc-maj', 'Cup Radius Major, mm', PROFILE_DEFAULTS["concave"]["rc_maj"], disabled=True, visible=False),
-
-        make_input('input-r-maj-maj', 'Major Major Radius, mm', PROFILE_DEFAULTS["compound"]["r_maj_maj"], visible=False),
-        make_input('input-r-maj-min', 'Major Minor Radius, mm', PROFILE_DEFAULTS["compound"]["r_maj_min"], visible=False),
-        make_input('input-r-min-maj', 'Minor Major Radius, mm', PROFILE_DEFAULTS["compound"]["r_min_maj"], visible=False),
-        make_input('input-r-min-min', 'Minor Minor Radius, mm', PROFILE_DEFAULTS["compound"]["r_min_min"], visible=False),
-        make_input('input-bev-d', 'Bevel Depth, mm', PROFILE_DEFAULTS["cbe"]["bev_d"], visible=False),
-        make_input('input-bev-a', 'Bevel Angle, °', PROFILE_DEFAULTS["cbe"]["bev_a"], step=1.0, max_value=60.0, visible=False),
-        make_input('input-r-edge', 'Radius Edge, mm', PROFILE_DEFAULTS["ffre"]["r_edge"], visible=False),
-        make_input('input-blend-r', 'Blend Radius, mm', PROFILE_DEFAULTS["ffbe"]["blend_r"], visible=False),
-
-        make_input('input-land', 'Land, mm', BASE_DEFAULTS["land"]),
-        make_input('input-hb', 'Belly Band, mm', BASE_DEFAULTS["hb"]),
-        make_input('input-tt', 'Tablet Thickness, mm', BASE_DEFAULTS["tt"]), 
+        html.Div(
+            [
+                make_input('input-w', 'Minor Axis, mm', BASE_DEFAULTS["W"], max_value=25.0),
+                make_input('input-l', 'Major Axis, mm', BASE_DEFAULTS["L"], visible=False, max_value=25.0),
+                make_input('input-re', 'End Radius, mm', SHAPE_SPECIFIC["oval"]["re"], visible=False),
+                make_input('input-rs', 'Side Radius, mm', SHAPE_SPECIFIC["oval"]["rs"], min_value=0.0, visible=False),
+                make_input('input-dc', 'Cup Depth, mm', BASE_DEFAULTS["dc"]),
+                make_input('input-rc-min', 'Cup Radius, mm', PROFILE_DEFAULTS["concave"]["rc_min"], disabled=True),
+                make_input('input-rc-maj', 'Cup Radius Major, mm', PROFILE_DEFAULTS["concave"]["rc_maj"], disabled=True, visible=False),
+                make_input('input-r-maj-maj', 'Major Major Radius, mm', PROFILE_DEFAULTS["compound"]["r_maj_maj"], visible=False),
+                make_input('input-r-maj-min', 'Major Minor Radius, mm', PROFILE_DEFAULTS["compound"]["r_maj_min"], visible=False),
+                make_input('input-r-min-maj', 'Minor Major Radius, mm', PROFILE_DEFAULTS["compound"]["r_min_maj"], visible=False),
+                make_input('input-r-min-min', 'Minor Minor Radius, mm', PROFILE_DEFAULTS["compound"]["r_min_min"], visible=False),
+                make_input('input-bev-d', 'Bevel Depth, mm', PROFILE_DEFAULTS["cbe"]["bev_d"], visible=False),
+                make_input('input-bev-a', 'Bevel Angle, °', PROFILE_DEFAULTS["cbe"]["bev_a"], step=1.0, max_value=60.0, visible=False),
+                make_input('input-r-edge', 'Radius Edge, mm', PROFILE_DEFAULTS["ffre"]["r_edge"], visible=False),
+                make_input('input-blend-r', 'Blend Radius, mm', PROFILE_DEFAULTS["ffbe"]["blend_r"], visible=False),
+                make_input('input-land', 'Land, mm', BASE_DEFAULTS["land"]),
+                make_input('input-hb', 'Belly Band, mm', BASE_DEFAULTS["hb"]),
+                make_input('input-tt', 'Tablet Thickness, mm', BASE_DEFAULTS["tt"]),
+            ],
+            id="dimensions-table-block",
+            className="dimensions-table-block",
+        ),
 
 
         html.Hr(),
