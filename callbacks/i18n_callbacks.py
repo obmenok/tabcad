@@ -46,6 +46,7 @@ dash.clientside_callback(
     [
         Output("modal-title", "children"),
         Output("constraints-close-btn", "children"),
+        Output("label-geometry-title", "children"),
         Output("label-shape-title", "children"),
         Output("shape-round-btn", "children"),
         Output("shape-capsule-btn", "children"),
@@ -112,14 +113,35 @@ dash.clientside_callback(
     Input("lang-store", "data")
 )
 def update_texts(lang):
+    geometry_title = {
+        "en": "Tablet Geometry",
+        "ru": "Геометрия таблетки",
+        "cn": "片剂几何"
+    }.get(lang, "Tablet Geometry")
+
+    shape_title = {
+        "en": "Shape",
+        "ru": "Форма",
+        "cn": "形状"
+    }.get(lang, "Shape")
+
+    cup_title = "Cup Profile" if lang == "en" else t("cup.title", lang)
+
+    scoring_title = {
+        "en": "Scoring Line",
+        "ru": "Риска",
+        "cn": "刻痕"
+    }.get(lang, "Scoring Line")
+
     return (
         t("modal.title", lang),
         t("modal.close", lang),
-        t("shape.title", lang),
+        geometry_title,
+        shape_title,
         t("shape.round", lang),
         t("shape.capsule", lang),
         t("shape.oval", lang),
-        t("cup.title", lang),
+        cup_title,
         t("cup.con", lang),
         t("cup.com", lang),
         t("cup.cbe", lang),
@@ -149,7 +171,7 @@ def update_texts(lang):
         t("tip_force.title", lang),
         t("tip_force.steel", lang),
         t("tip_force.max", lang),
-        t("scoring.title", lang),
+        scoring_title,
         t("scoring.none", lang), t("scoring.none", lang),
         t("scoring.std", lang), t("scoring.std", lang),
         t("scoring.cut", lang), t("scoring.cut", lang),
