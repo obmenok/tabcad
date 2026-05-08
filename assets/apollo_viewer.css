@@ -234,6 +234,22 @@
   font-size: 14px !important;
 }
 
+.dash-dropdown-wrapper:has(> .small-dropdown) .dash-options-list-option-text {
+  font-size: 14px !important;
+  line-height: 21px !important;
+}
+
+.cup-config-dropdown.dash-dropdown,
+.scoring-type-dropdown.dash-dropdown {
+  height: 30px !important;
+  min-height: 30px !important;
+}
+
+.cup-config-dropdown.dash-dropdown .dash-dropdown-trigger,
+.scoring-type-dropdown.dash-dropdown .dash-dropdown-trigger {
+  min-height: 28px !important;
+}
+
 #preset-dropdown .Select-control {
   font-size: 14px !important;
 }
@@ -374,6 +390,29 @@
   text-align: left;
   padding: 3px 10px 3px 8px !important;
   line-height: 1.2 !important;
+}
+
+.dimensions-table-block .tablet-select-control {
+  padding: 0 !important;
+}
+
+.dimensions-table-block .tablet-select-control .Select-control {
+  height: 30px !important;
+  min-height: 30px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.dimensions-table-block .tablet-select-control .Select-value {
+  line-height: 28px !important;
+  padding-left: 8px !important;
+}
+
+.dimensions-table-block .tablet-select-control .Select-arrow-zone {
+  width: 24px !important;
+  min-width: 24px !important;
 }
 
 .dimensions-table-block .tablet-input-control:focus,
@@ -702,6 +741,10 @@
 #label-cup-title,
 #label-scoring-title {
   font-size: 14px !important;
+}
+
+.tablet-shape-group {
+  margin-bottom: 12px !important;
 }
 
 #btn-open-settings.outline-soft-btn {

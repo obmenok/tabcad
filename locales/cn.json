@@ -91,14 +91,19 @@
     "mg": "mg",
     "mg_mm3": "mg/mm³",
     "inv_mm": "1/mm",
-    "mm": "mm"
+    "mm": "mm",
+    "kn": "kN"
   },
   "physical": {
     "title": "物理参数"
   },
+  "press_tooling": {
+    "title": "压片模具",
+    "punch_steel_type": "冲头钢号"
+  },
   "tip_force": {
     "title": "压片力",
     "steel": "钢号",
-    "max": "最大压片力, kN"
+    "max": "最大压片力"
   }
 }

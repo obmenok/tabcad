@@ -28,6 +28,26 @@ def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None
         style=style
     )
 
+
+def make_select_input(id, label, options, default_val, visible=True):
+    style = {"display": "block"} if visible else {"display": "none"}
+    return html.Div(
+        dbc.InputGroup([
+            dbc.InputGroupText(label, id=f"label-{id}", className="tablet-input-label", style={"width": "70%"}),
+            dcc.Dropdown(
+                id=id,
+                options=options,
+                value=default_val,
+                clearable=False,
+                searchable=False,
+                className="small-dropdown tablet-input-control tablet-select-control",
+            ),
+        ], className="mb-2 input-group-sm", size="sm"),
+        id=f"div-{id}",
+        style=style,
+    )
+
+
 def create_sidebar():
     return html.Div([
         dcc.Store(id="lang-store", storage_type="local", data="en"),
@@ -395,9 +415,64 @@ def create_sidebar():
             className="dimensions-table-block",
         ),
 
+        html.Label(
+            "Physical Parameters",
+            id="label-physical-title",
+            className="fw-bold d-block mt-2 mb-2",
+        ),
+        html.Div(
+            [
+                make_input(
+                    "input-density",
+                    "Tablet Density, mg/mm3",
+                    BASE_DEFAULTS["density"],
+                    step=0.01,
+                    min_value=0.01,
+                    debounce=True,
+                ),
+                make_input(
+                    "input-weight",
+                    "Tablet Weight, mg",
+                    None,
+                    step=0.01,
+                    min_value=0.0,
+                    debounce=True,
+                ),
+            ],
+            id="physical-table-block",
+            className="dimensions-table-block",
+        ),
+
+        html.Label(
+            "Press Tooling",
+            id="label-press-tooling-title",
+            className="fw-bold d-block mt-2 mb-2",
+        ),
+        html.Div(
+            [
+                make_select_input(
+                    "input-tip-force-steel",
+                    "Punch steel type",
+                    [
+                        {"label": "S7", "value": "S7"},
+                        {"label": "D2", "value": "D2"},
+                    ],
+                    BASE_DEFAULTS["tip_force_steel"],
+                ),
+            ],
+            id="press-tooling-table-block",
+            className="dimensions-table-block",
+        ),
+
 
         html.Hr(),
-        dbc.Button("Generate Drawing", id="btn-generate", color="primary", className="w-100 mb-2"),
+        dbc.Button(
+            "Generate Drawing",
+            id="btn-generate",
+            color="primary",
+            className="w-100 mb-2",
+            style={"display": "none"},
+        ),
         dbc.Button("PDF Export", id="export-pdf-btn", color="success", className="w-100 mb-3"),
         dcc.Download(id="download-pdf")
     ], id="sidebar-container", style={"opacity": "0", "transition": "opacity 0.1s", "overflowX": "hidden"})

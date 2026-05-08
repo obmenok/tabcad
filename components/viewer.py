@@ -1,9 +1,6 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
-from components.sidebar import make_input
-from core.defaults import BASE_DEFAULTS
-
 
 def _panel_block(children, min_height=None):
     style = {"overflow": "visible", "position": "relative"}
@@ -96,80 +93,6 @@ def create_info_panel():
                         ],
                         size="sm",
                         className="plotly-toolbar-group preset-btn-group segmented-btn-group",
-                    ),
-                ],
-                className="mb-3",
-            ),
-            html.Div(
-                [
-                    html.Label(
-                        "Physical Parameters",
-                        id="label-physical-title",
-                        className="fw-bold mb-1",
-                    ),
-                    make_input(
-                        "input-density",
-                        "Tablet Density, mg/mm3",
-                        BASE_DEFAULTS["density"],
-                        step=0.01,
-                        min_value=0.01,
-                        debounce=True,
-                    ),
-                    make_input(
-                        "input-weight",
-                        "Tablet Weight, mg",
-                        None,
-                        step=0.01,
-                        min_value=0.0,
-                        debounce=True,
-                    ),
-                ],
-                className="mb-3",
-            ),
-            html.Div(
-                [
-                    html.Label("Tip force", id="label-tip-force-title", className="fw-bold mb-1"),
-                    dbc.InputGroup(
-                        [
-                            dbc.InputGroupText(
-                                "Steel type",
-                                id="label-tip-force-steel",
-                                className="tablet-input-label",
-                                style={"width": "70%"},
-                            ),
-                            dbc.Select(
-                                id="input-tip-force-steel",
-                                options=[
-                                    {"label": "S7", "value": "S7"},
-                                    {"label": "D2", "value": "D2"},
-                                ],
-                                value=BASE_DEFAULTS["tip_force_steel"],
-                                size="sm",
-                                className="tablet-input-control",
-                            ),
-                        ],
-                        className="mb-2 input-group-sm",
-                        size="sm",
-                    ),
-                    dbc.InputGroup(
-                        [
-                            dbc.InputGroupText(
-                                "Max tip force",
-                                id="label-tip-force-value",
-                                className="tablet-input-label",
-                                style={"width": "70%"},
-                            ),
-                            dbc.Input(
-                                id="tip-force-value",
-                                type="text",
-                                value="N/A",
-                                readonly=True,
-                                size="sm",
-                                className="tablet-input-control",
-                            ),
-                        ],
-                        className="mb-2 input-group-sm",
-                        size="sm",
                     ),
                 ],
                 className="mb-3",
