@@ -91,14 +91,19 @@
     "mg": "mg",
     "mg_mm3": "mg/mm³",
     "inv_mm": "1/mm",
-    "mm": "mm"
+    "mm": "mm",
+    "kn": "kN"
   },
   "physical": {
     "title": "Physical Parameters"
   },
+  "press_tooling": {
+    "title": "Press Tooling",
+    "punch_steel_type": "Punch steel type"
+  },
   "tip_force": {
     "title": "Tip force",
     "steel": "Steel type",
-    "max": "Max tip force, kN"
+    "max": "Max Tip Force"
   }
 }

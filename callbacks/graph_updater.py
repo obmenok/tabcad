@@ -11,6 +11,7 @@ from core.engine import generate_mesh
 from core.renderer import render_tablet
 from core.renderer_3d import render_tablet_3d
 from core.stl_exporter import generate_tablet_stl
+from core.tip_force import calculate_tip_force
 from core.pdf_generator import (
     TabletPDFGenerator,
     pdf_supports_svg_drawings,
@@ -383,7 +384,7 @@ def _build_params(
     }
 
 
-def _build_calc_html(metrics, density, lang="en"):
+def _build_calc_html(metrics, density, tip_force_value=None, lang="en"):
     from core.i18n import t
     m = metrics
     tablet_sa = float(m.get("Tablet_SA", 0.0) or 0.0)
@@ -429,6 +430,34 @@ def _build_calc_html(metrics, density, lang="en"):
             style={"--label-width": label_min_width, "marginBottom": "4px"},
         )
 
+    def metric_text_row(label, value, unit=None, label_min_width="107px"):
+        if lang == "ru":
+            label_min_width = "130px"
+        elif lang == "cn":
+            label_min_width = "90px"
+
+        value_children = [html.Span(str(value), className="calc-num", style=num_style)]
+        if unit:
+            value_children.extend(
+                [
+                    html.Span("\u00a0", style={"whiteSpace": "pre"}),
+                    html.Span(unit, style=unit_style),
+                ]
+            )
+
+        return html.Div(
+            [
+                html.Span([f"{label}:", "\u00a0"], className="calc-label"),
+                html.Span(
+                    value_children,
+                    className="calc-value",
+                    style={"whiteSpace": "nowrap"},
+                ),
+            ],
+            className="calc-row",
+            style={"--label-width": label_min_width, "marginBottom": "4px"},
+        )
+
     calc_rows = [
         metric_row(t("calc.die_hole_sa", lang), m.get("Die_Hole_SA", 0), t("units.mm2", lang), label_min_width="107px"),
         metric_row(t("calc.cup_sa", lang), m.get("Cup_SA", 0), t("units.mm2", lang), label_min_width="107px"),
@@ -438,6 +467,12 @@ def _build_calc_html(metrics, density, lang="en"):
         metric_row(t("calc.tablet_sa_v", lang), tablet_sa_v, t("units.inv_mm", lang), label_min_width="107px"),
         metric_row(t("calc.perimeter", lang), m.get("Perimeter", 0), t("units.mm", lang), label_min_width="107px"),
     ]
+    if tip_force_value is not None:
+        tip_force_label = t("tip_force.max", lang).replace(", kN", "").replace(", кН", "")
+        if lang == "en":
+            tip_force_label = "Max Tip Force"
+        tip_force_unit = ("кН" if lang == "ru" else "kN") if tip_force_value != "N/A" else None
+        calc_rows.append(metric_text_row(tip_force_label, tip_force_value, tip_force_unit))
 
     return html.Div(
         [
@@ -808,6 +843,7 @@ def download_2d_snapshot(
         Input("bisect-cruciform", "value"),
         Input("bisect-double-sided", "value"),
         Input("input-density", "value"),
+        Input("input-tip-force-steel", "value"),
         Input("lang-store", "data"),
     ],
     prevent_initial_call=False,
@@ -842,6 +878,7 @@ def update_calc_panel_live(
     b_cruciform,
     b_double_sided,
     density,
+    tip_force_steel,
     lang,
 ):
     if w is None or dc is None or profile is None:
@@ -876,12 +913,20 @@ def update_calc_panel_live(
         b_ri,
         b_cruciform,
         b_double_sided,
+        density=density,
     )
 
     try:
         lang = lang or "en"
+        params["tip_force_steel"] = tip_force_steel if tip_force_steel else BASE_DEFAULTS["tip_force_steel"]
+        tip_force = calculate_tip_force(params)
+        tip_force_value = (
+            tip_force["selected_force"]
+            if tip_force["supported"] and tip_force["selected_force"] is not None
+            else "N/A"
+        )
         mesh_data = generate_mesh(params)
-        return _build_calc_html(mesh_data["metrics"], density, lang)
+        return _build_calc_html(mesh_data["metrics"], density, tip_force_value, lang)
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in update_calc_output: {e}")
         return html.Div(
