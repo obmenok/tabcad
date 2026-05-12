@@ -311,6 +311,7 @@
 
 /* Dimensions block: table-like visual style */
 .dimensions-table-block {
+  --value-cell-padding-x: 8px;
   border: 1px solid #cfd8d2;
   border-radius: 7px;
   overflow: hidden;
@@ -388,7 +389,7 @@
   font-family: inherit !important;
   font-variant-numeric: normal;
   text-align: left;
-  padding: 3px 10px 3px 8px !important;
+  padding: 3px var(--value-cell-padding-x) !important;
   line-height: 1.2 !important;
 }
 
@@ -405,9 +406,23 @@
   box-shadow: none !important;
 }
 
-.dimensions-table-block .tablet-select-control .Select-value {
+.dimensions-table-block .tablet-select-control .Select-value,
+.dimensions-table-block .tablet-select-control .Select-placeholder,
+.dimensions-table-block .tablet-select-control .Select-input {
   line-height: 28px !important;
-  padding-left: 8px !important;
+  padding-left: var(--value-cell-padding-x) !important;
+  padding-right: 24px !important;
+}
+
+.dimensions-table-block .tablet-select-control .Select-value-label {
+  padding-left: 0 !important;
+}
+
+.dimensions-table-block .tablet-select-control .Select-control:hover,
+.dimensions-table-block .tablet-select-control.is-focused > .Select-control,
+.dimensions-table-block .tablet-select-control.is-focused:not(.is-open) > .Select-control {
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 .dimensions-table-block .tablet-select-control .Select-arrow-zone {
@@ -804,4 +819,101 @@
   .app-col-right {
     height: auto !important;
   }
+}
+
+.calculations-table-block .calc-table-value {
+  display: flex;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.dimensions-table-block.calculations-table-block .input-group:hover .tablet-input-control.calc-table-value,
+.dimensions-table-block.calculations-table-block .input-group:focus-within .tablet-input-control.calc-table-value {
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.settings-mock-section-title {
+  color: #6c757d;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  user-select: none;
+}
+
+.settings-mock-section-title::marker {
+  color: #6c757d;
+}
+
+.settings-mock-section {
+  margin-bottom: 0.5rem !important;
+}
+
+.settings-mock-table .input-group,
+.settings-mock-table .tablet-input-label,
+.settings-mock-table .settings-mock-control-cell {
+  height: 30px !important;
+  min-height: 30px !important;
+}
+
+.dimensions-table-block .settings-mock-control-cell {
+  align-items: center;
+  display: flex;
+  padding: 0 !important;
+}
+
+.dimensions-table-block .settings-mock-control-cell > * {
+  width: 100% !important;
+}
+
+.dimensions-table-block .settings-mock-control-cell .form-control,
+.dimensions-table-block .settings-mock-control-cell .form-select {
+  background-color: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: #000000 !important;
+  font-size: 14px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 3px var(--value-cell-padding-x) !important;
+  width: 100% !important;
+}
+
+.dimensions-table-block .settings-mock-control-cell .settings-mock-select {
+  background-position: right 10px center !important;
+  background-size: 12px 9px !important;
+  padding-right: 24px !important;
+}
+
+.dimensions-table-block .settings-mock-control-cell .form-control[type="color"] {
+  cursor: pointer;
+  height: 24px !important;
+  min-height: 24px !important;
+  margin: 3px 4px !important;
+  padding: 2px !important;
+  width: calc(100% - 8px) !important;
+}
+
+.dimensions-table-block .settings-mock-control-cell .form-control[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.dimensions-table-block .settings-mock-control-cell .form-control[type="color"]::-webkit-color-swatch {
+  border: 1px solid #8f9a94;
+  border-radius: 0;
+}
+
+.dimensions-table-block .settings-mock-control-cell .form-check {
+  align-items: center;
+  display: flex;
+  height: 30px;
+  margin: 0;
+  padding-left: 8px !important;
+}
+
+.dimensions-table-block .settings-mock-control-cell .form-check-input {
+  margin-left: 0 !important;
+  margin-top: 0 !important;
 }

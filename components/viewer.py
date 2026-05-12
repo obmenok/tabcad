@@ -1,5 +1,6 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
+from core.defaults import DEFAULT_APP_SETTINGS
 
 
 def _panel_block(children, min_height=None):
@@ -7,6 +8,227 @@ def _panel_block(children, min_height=None):
     if min_height:
         style["minHeight"] = min_height
     return html.Div(children, className="py-2 px-3 bg-light border rounded h-100", style=style)
+
+
+def _settings_mock_row(label, control):
+    return dbc.InputGroup(
+        [
+            dbc.InputGroupText(
+                label,
+                className="tablet-input-label",
+                style={"width": "70%"},
+            ),
+            html.Div(
+                control,
+                className="tablet-input-control settings-mock-control-cell",
+            ),
+        ],
+        className="mb-2 input-group-sm",
+        size="sm",
+    )
+
+
+def _settings_mock_select_row(label, options, value):
+    return _settings_mock_row(
+        label,
+        dbc.Select(
+            options=options,
+            value=value,
+            size="sm",
+            className="settings-mock-input settings-mock-select",
+        ),
+    )
+
+
+def _settings_mock_section(title, rows):
+    return html.Details(
+        [
+            html.Summary(title, className="settings-mock-section-title"),
+            html.Div(rows, className="dimensions-table-block settings-mock-table"),
+        ],
+        className="settings-mock-section mb-3",
+        open=True,
+    )
+
+
+def _settings_preview_panel():
+    return html.Div(
+        [
+            html.Div(
+                "Settings",
+                className="fw-bold text-secondary mb-2",
+                style={"fontSize": "1rem"},
+            ),
+            _settings_mock_section(
+                "Web 2D",
+                [
+                    _settings_mock_row(
+                        "Fill Color",
+                        dbc.Input(
+                            type="color",
+                            value=DEFAULT_APP_SETTINGS["web_2d_fill_color"],
+                            size="sm",
+                            className="settings-mock-color",
+                        ),
+                    ),
+                    _settings_mock_row(
+                        "Dimension Color",
+                        dbc.Input(
+                            type="color",
+                            value=DEFAULT_APP_SETTINGS["web_2d_dim_color"],
+                            size="sm",
+                            className="settings-mock-color",
+                        ),
+                    ),
+                ],
+            ),
+            _settings_mock_section(
+                "Web 3D",
+                [
+                    _settings_mock_row(
+                        "Model Base Color",
+                        dbc.Input(
+                            type="color",
+                            value=DEFAULT_APP_SETTINGS["web_3d_model_color"],
+                            size="sm",
+                            className="settings-mock-color",
+                        ),
+                    ),
+                    _settings_mock_row(
+                        "Ambient",
+                        dbc.Input(
+                            type="number",
+                            value=DEFAULT_APP_SETTINGS["web_3d_lighting_ambient"],
+                            step=0.1,
+                            size="sm",
+                            className="settings-mock-input",
+                        ),
+                    ),
+                    _settings_mock_row(
+                        "Diffuse",
+                        dbc.Input(
+                            type="number",
+                            value=DEFAULT_APP_SETTINGS["web_3d_lighting_diffuse"],
+                            step=0.1,
+                            size="sm",
+                            className="settings-mock-input",
+                        ),
+                    ),
+                    _settings_mock_row(
+                        "Specular",
+                        dbc.Input(
+                            type="number",
+                            value=DEFAULT_APP_SETTINGS["web_3d_lighting_specular"],
+                            step=0.1,
+                            size="sm",
+                            className="settings-mock-input",
+                        ),
+                    ),
+                    _settings_mock_row(
+                        "Roughness",
+                        dbc.Input(
+                            type="number",
+                            value=DEFAULT_APP_SETTINGS["web_3d_lighting_roughness"],
+                            step=0.1,
+                            size="sm",
+                            className="settings-mock-input",
+                        ),
+                    ),
+                    _settings_mock_row(
+                        "Fresnel",
+                        dbc.Input(
+                            type="number",
+                            value=DEFAULT_APP_SETTINGS["web_3d_lighting_fresnel"],
+                            step=0.1,
+                            size="sm",
+                            className="settings-mock-input",
+                        ),
+                    ),
+                ],
+            ),
+            _settings_mock_section(
+                "PDF Export",
+                [
+                    _settings_mock_select_row(
+                        "Orientation",
+                        [
+                            {"label": "Portrait", "value": "portrait"},
+                            {"label": "Landscape", "value": "landscape"},
+                        ],
+                        DEFAULT_APP_SETTINGS["pdf_orientation"],
+                    ),
+                    _settings_mock_row(
+                        "2D Fill Color",
+                        dbc.Input(
+                            type="color",
+                            value=DEFAULT_APP_SETTINGS["pdf_2d_fill_color"],
+                            size="sm",
+                            className="settings-mock-color",
+                        ),
+                    ),
+                    _settings_mock_select_row(
+                        "Dimension Font Size",
+                        [
+                            {"label": "8 pt", "value": 8},
+                            {"label": "9 pt", "value": 9},
+                            {"label": "10 pt", "value": 10},
+                            {"label": "11 pt", "value": 11},
+                            {"label": "12 pt", "value": 12},
+                        ],
+                        DEFAULT_APP_SETTINGS["pdf_2d_dim_font_size"],
+                    ),
+                    _settings_mock_row(
+                        "Enable 2D Shading",
+                        dbc.Checkbox(
+                            value=DEFAULT_APP_SETTINGS["pdf_2d_shaded"],
+                            className="settings-mock-check",
+                        ),
+                    ),
+                    _settings_mock_row(
+                        "Include 3D View",
+                        dbc.Checkbox(
+                            value=DEFAULT_APP_SETTINGS["pdf_include_3d"],
+                            className="settings-mock-check",
+                        ),
+                    ),
+                    _settings_mock_select_row(
+                        "3D Model Quality",
+                        [
+                            {"label": "Low", "value": "low"},
+                            {"label": "Medium", "value": "medium"},
+                            {"label": "High", "value": "high"},
+                        ],
+                        DEFAULT_APP_SETTINGS["pdf_3d_quality"],
+                    ),
+                    _settings_mock_row(
+                        "Created by",
+                        dbc.Input(
+                            type="text",
+                            value=DEFAULT_APP_SETTINGS["pdf_created_by"],
+                            size="sm",
+                            className="settings-mock-input",
+                        ),
+                    ),
+                    _settings_mock_row(
+                        "Approved by",
+                        dbc.Input(
+                            type="text",
+                            value=DEFAULT_APP_SETTINGS["pdf_approved_by"],
+                            size="sm",
+                            className="settings-mock-input",
+                        ),
+                    ),
+                ],
+            ),
+            dbc.Button(
+                "Reset to Default",
+                outline=True,
+                color="secondary",
+                className="outline-soft-btn preset-modal-btn w-100",
+            ),
+        ],
+        className="settings-preview-block",
+    )
 
 
 EMPTY_PRESET_OPTION = {
@@ -104,10 +326,12 @@ def create_info_panel():
                         className="h-100",
                         style={"minHeight": "125px"},
                     )
-                ]
+                ],
+                className="mb-3",
             ),
+            _settings_preview_panel(),
         ],
-        className="py-2 px-3 bg-light border rounded h-100",
+        className="py-2 px-3",
     )
 
     return html.Div(

@@ -394,85 +394,58 @@ def _build_calc_html(metrics, density, tip_force_value=None, lang="en"):
     def fmt4(value):
         return f"{float(value):.4f}".replace(".", ",")
 
-    num_style = {
-        "display": "inline-block",
-        "minWidth": "9ch",
-        "textAlign": "right",
-        "fontVariantNumeric": "tabular-nums",
-    }
-    unit_style = {"display": "inline-block"}
+    def label_with_unit(label, unit):
+        return f"{label}, {unit}" if unit else label
 
-    def metric_row(label, value, unit, label_min_width="95px"):
-        # Explicit width mapping for each language and column
-        if lang == "ru":
-            if label_min_width == "95px": label_min_width = "129px"
-            elif label_min_width == "107px": label_min_width = "130px"
-            elif label_min_width == "99px": label_min_width = "131px"
-        elif lang == "cn":
-            if label_min_width == "95px": label_min_width = "85px"
-            elif label_min_width == "107px": label_min_width = "90px"
-            elif label_min_width == "99px": label_min_width = "65px"
-            
-        return html.Div(
+    def calc_table_row(label, value, unit=None, is_text=False):
+        display_value = str(value) if is_text else fmt4(value)
+        return dbc.InputGroup(
             [
-                html.Span([f"{label}:", "\u00a0"], className="calc-label"),
-                html.Span(
-                    [
-                        html.Span(fmt4(value), className="calc-num", style=num_style),
-                        html.Span("\u00a0", style={"whiteSpace": "pre"}),
-                        html.Span(unit, style=unit_style),
-                    ],
-                    className="calc-value",
-                    style={"whiteSpace": "nowrap"},
+                dbc.InputGroupText(
+                    label_with_unit(label, unit),
+                    className="tablet-input-label calc-table-label",
+                    style={"width": "70%"},
+                ),
+                html.Div(
+                    display_value,
+                    className="tablet-input-control calc-table-value",
                 ),
             ],
-            className="calc-row",
-            style={"--label-width": label_min_width, "marginBottom": "4px"},
-        )
-
-    def metric_text_row(label, value, unit=None, label_min_width="107px"):
-        if lang == "ru":
-            label_min_width = "130px"
-        elif lang == "cn":
-            label_min_width = "90px"
-
-        value_children = [html.Span(str(value), className="calc-num", style=num_style)]
-        if unit:
-            value_children.extend(
-                [
-                    html.Span("\u00a0", style={"whiteSpace": "pre"}),
-                    html.Span(unit, style=unit_style),
-                ]
-            )
-
-        return html.Div(
-            [
-                html.Span([f"{label}:", "\u00a0"], className="calc-label"),
-                html.Span(
-                    value_children,
-                    className="calc-value",
-                    style={"whiteSpace": "nowrap"},
-                ),
-            ],
-            className="calc-row",
-            style={"--label-width": label_min_width, "marginBottom": "4px"},
+            className="mb-2 input-group-sm",
+            size="sm",
         )
 
     calc_rows = [
-        metric_row(t("calc.die_hole_sa", lang), m.get("Die_Hole_SA", 0), t("units.mm2", lang), label_min_width="107px"),
-        metric_row(t("calc.cup_sa", lang), m.get("Cup_SA", 0), t("units.mm2", lang), label_min_width="107px"),
-        metric_row(t("calc.cup_vol", lang), m.get("Cup_Volume", 0), t("units.mm3", lang), label_min_width="107px"),
-        metric_row(t("calc.tablet_sa", lang), tablet_sa, t("units.mm2", lang), label_min_width="107px"),
-        metric_row(t("calc.tablet_vol", lang), tablet_vol, t("units.mm3", lang), label_min_width="107px"),
-        metric_row(t("calc.tablet_sa_v", lang), tablet_sa_v, t("units.inv_mm", lang), label_min_width="107px"),
-        metric_row(t("calc.perimeter", lang), m.get("Perimeter", 0), t("units.mm", lang), label_min_width="107px"),
+        calc_table_row(
+            t("calc.die_hole_sa", lang),
+            m.get("Die_Hole_SA", 0),
+            t("units.mm2", lang),
+        ),
+        calc_table_row(t("calc.cup_sa", lang), m.get("Cup_SA", 0), t("units.mm2", lang)),
+        calc_table_row(
+            t("calc.cup_vol", lang),
+            m.get("Cup_Volume", 0),
+            t("units.mm3", lang),
+        ),
+        calc_table_row(t("calc.tablet_sa", lang), tablet_sa, t("units.mm2", lang)),
+        calc_table_row(t("calc.tablet_vol", lang), tablet_vol, t("units.mm3", lang)),
+        calc_table_row(t("calc.tablet_sa_v", lang), tablet_sa_v, t("units.inv_mm", lang)),
+        calc_table_row(t("calc.perimeter", lang), m.get("Perimeter", 0), t("units.mm", lang)),
     ]
+
     if tip_force_value is not None:
-        tip_force_label = t("tip_force.max", lang).replace(", kN", "").replace(", кН", "")
+        tip_force_label = t("tip_force.max", lang).split(",", 1)[0]
         if lang == "en":
             tip_force_label = "Max Tip Force"
-        tip_force_unit = ("кН" if lang == "ru" else "kN") if tip_force_value != "N/A" else None
-        calc_rows.append(metric_text_row(tip_force_label, tip_force_value, tip_force_unit))
+        tip_force_unit = t("units.kn", lang)
+        calc_rows.append(
+            calc_table_row(
+                tip_force_label,
+                tip_force_value,
+                tip_force_unit,
+                is_text=True,
+            )
+        )
 
     return html.Div(
         [
@@ -483,7 +456,7 @@ def _build_calc_html(metrics, density, tip_force_value=None, lang="en"):
             ),
             html.Div(
                 calc_rows,
-                className="d-flex flex-column",
+                className="dimensions-table-block calculations-table-block",
             ),
         ],
         style={"fontSize": "14px"},
