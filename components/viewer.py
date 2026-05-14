@@ -331,7 +331,7 @@ def create_info_panel():
             ),
             _settings_preview_panel(),
         ],
-        className="py-2 px-3",
+        className="py-2 px-0",
     )
 
     return html.Div(
