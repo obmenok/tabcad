@@ -943,7 +943,8 @@ def _build_mass_params(
 @callback(
     [
         Output("input-tt", "value", allow_duplicate=True),
-        Output("input-weight", "value"),
+        Output("input-weight", "value", allow_duplicate=True),
+        Output("input-density", "value", allow_duplicate=True),
     ],
     [
         Input("shape-dropdown", "value"),
@@ -975,46 +976,17 @@ def _build_mass_params(
         Input("bisect-double-sided", "value"),
         Input("input-density", "value"),
         Input("input-weight", "value"),
+        Input("calc-constant", "data"),
     ],
     [State("is-loading-preset", "data")],
     prevent_initial_call="initial_duplicate",
 )
 def sync_weight_density_with_volume(
-    shape,
-    profile,
-    is_mod,
-    w,
-    l,
-    re,
-    rs,
-    dc,
-    rc_min,
-    rc_maj,
-    land,
-    tt,
-    bev_d,
-    bev_a,
-    r_edge,
-    blend_r,
-    r_maj_maj,
-    r_maj_min,
-    r_min_maj,
-    r_min_min,
-    b_type,
-    b_width,
-    b_depth,
-    b_angle,
-    b_ri,
-    b_cruciform,
-    b_double_sided,
-    density,
-    weight,
-    is_loading,
+    shape, profile, is_mod, w, l, re, rs, dc, rc_min, rc_maj, land, tt, bev_d, bev_a, r_edge, blend_r, r_maj_maj, r_maj_min, r_min_maj, r_min_min, b_type, b_width, b_depth, b_angle, b_ri, b_cruciform, b_double_sided, density, weight, calc_constant, is_loading,
 ):
     if is_loading:
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
         
-    # ПРАВИЛО: Если значения стерты, используем дефолты для расчетов
     w_val = BASE_DEFAULTS["W"] if w is None else max(0.1, w)
     dc_val = BASE_DEFAULTS["dc"] if dc is None else max(0.0, dc)
 
@@ -1025,62 +997,56 @@ def sync_weight_density_with_volume(
         hb_val = max(0.01, tt_val - 2.0 * dc_val_safe)
 
         params = _build_mass_params(
-            shape,
-            profile,
-            is_mod,
-            w_val,
-            l or BASE_DEFAULTS["L"],
-            re or SHAPE_SPECIFIC["oval"]["re"],
-            rs or SHAPE_SPECIFIC["oval"]["rs"],
-            dc_val_safe,
-            rc_min or PROFILE_DEFAULTS["concave"]["rc_min"],
-            rc_maj or PROFILE_DEFAULTS["concave"]["rc_maj"],
-            land or BASE_DEFAULTS["land"],
-            hb_val,
-            bev_d or PROFILE_DEFAULTS["cbe"]["bev_d"],
-            bev_a if bev_a is not None else PROFILE_DEFAULTS["cbe"]["bev_a"],
-            r_edge or PROFILE_DEFAULTS["ffre"]["r_edge"],
-            blend_r if blend_r is not None else PROFILE_DEFAULTS["ffbe"]["blend_r"],
-            r_maj_maj or PROFILE_DEFAULTS["compound"]["r_maj_maj"],
-            r_maj_min or PROFILE_DEFAULTS["compound"]["r_maj_min"],
-            r_min_maj or PROFILE_DEFAULTS["compound"]["r_min_maj"],
-            r_min_min or PROFILE_DEFAULTS["compound"]["r_min_min"],
-            b_type,
-            b_width,
-            b_depth,
-            b_angle,
-            b_ri,
-            b_cruciform,
-            b_double_sided,
+            shape, profile, is_mod, w_val, l or BASE_DEFAULTS["L"], re or SHAPE_SPECIFIC["oval"]["re"], rs or SHAPE_SPECIFIC["oval"]["rs"], dc_val_safe, rc_min or PROFILE_DEFAULTS["concave"]["rc_min"], rc_maj or PROFILE_DEFAULTS["concave"]["rc_maj"], land or BASE_DEFAULTS["land"], hb_val, bev_d or PROFILE_DEFAULTS["cbe"]["bev_d"], bev_a if bev_a is not None else PROFILE_DEFAULTS["cbe"]["bev_a"], r_edge or PROFILE_DEFAULTS["ffre"]["r_edge"], blend_r if blend_r is not None else PROFILE_DEFAULTS["ffbe"]["blend_r"], r_maj_maj or PROFILE_DEFAULTS["compound"]["r_maj_maj"], r_maj_min or PROFILE_DEFAULTS["compound"]["r_maj_min"], r_min_maj or PROFILE_DEFAULTS["compound"]["r_min_maj"], r_min_min or PROFILE_DEFAULTS["compound"]["r_min_min"], b_type, b_width, b_depth, b_angle, b_ri, b_cruciform, b_double_sided,
         )
         mesh = generate_mesh(params)
         m = mesh["metrics"]
-        # mm3 * g/cm3 == mg (numerically)
         vol_now = float(m.get("Tablet_Vol", 0.0))
         die_hole_sa = float(m.get("Die_Hole_SA", 0.0))
-        # Constant volume part that does not depend on belly band (both cups + lands + groove effects).
         fixed_vol = max(0.0, vol_now - die_hole_sa * hb_val)
         expected_weight = density_val * vol_now
 
         trig = ctx.triggered_id
-        if trig == "input-weight" and weight is not None and die_hole_sa > 1e-9:
-            target_weight = max(0.0, float(weight))
-            # Ignore self-trigger when weight was just auto-updated from geometry/density.
-            if abs(target_weight - expected_weight) <= max(5e-3, expected_weight * 1e-4):
-                return dash.no_update, round(expected_weight, 2)
+        
+        if calc_constant == "weight":
+            if trig == "input-tt":
+                if vol_now > 1e-9 and weight is not None:
+                    new_density = float(weight) / vol_now
+                    return dash.no_update, dash.no_update, round(new_density, 4)
+            else:
+                if weight is not None and density_val > 1e-9:
+                    target_vol = float(weight) / density_val
+                    hb_new = max(0.01, (target_vol - fixed_vol) / die_hole_sa)
+                    tt_new = hb_new + 2.0 * dc_val
+                    return round(tt_new, 4), dash.no_update, dash.no_update
+        
+        elif calc_constant == "thickness":
+            if trig == "input-weight":
+                if vol_now > 1e-9 and weight is not None:
+                    new_density = float(weight) / vol_now
+                    return dash.no_update, dash.no_update, round(new_density, 4)
+            else:
+                return dash.no_update, round(expected_weight, 2), dash.no_update
+                
+        else: # density
+            if trig == "input-weight" and weight is not None and die_hole_sa > 1e-9:
+                target_weight = max(0.0, float(weight))
+                if abs(target_weight - expected_weight) <= max(5e-3, expected_weight * 1e-4):
+                    return dash.no_update, round(expected_weight, 2), dash.no_update
 
-            target_vol = target_weight / density_val
-            hb_new = max(0.01, (target_vol - fixed_vol) / die_hole_sa)
-            tt_new = hb_new + 2.0 * dc_val
-            actual_vol = die_hole_sa * hb_new + fixed_vol
-            actual_weight = density_val * actual_vol
-            return round(tt_new, 4), round(actual_weight, 2)
-
-        return dash.no_update, round(expected_weight, 2)
+                target_vol = target_weight / density_val
+                hb_new = max(0.01, (target_vol - fixed_vol) / die_hole_sa)
+                tt_new = hb_new + 2.0 * dc_val
+                actual_vol = die_hole_sa * hb_new + fixed_vol
+                actual_weight = density_val * actual_vol
+                return round(tt_new, 4), round(actual_weight, 2), dash.no_update
+            
+            return dash.no_update, round(expected_weight, 2), dash.no_update
+            
+        return dash.no_update, dash.no_update, dash.no_update
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in sync_weight_density_with_volume: {e}")
-        return dash.no_update, dash.no_update
-
+        return dash.no_update, dash.no_update, dash.no_update
 
 def _calc_rc_from_dc(span, dc):
     if span <= 0 or dc is None or dc <= 0:
@@ -1374,4 +1340,36 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
         out_rmm,
         out_rmn,
         out_beva
+    )
+
+@callback(
+    Output("calc-constant", "data"),
+    [
+        Input("lock-density", "n_clicks"),
+        Input("lock-weight", "n_clicks"),
+        Input("lock-tt", "n_clicks")
+    ],
+    State("calc-constant", "data"),
+    prevent_initial_call=True
+)
+def handle_lock_clicks(n_d, n_w, n_t, current_constant):
+    trig = ctx.triggered_id
+    if trig == "lock-density": return "density"
+    if trig == "lock-weight": return "weight"
+    if trig == "lock-tt": return "thickness"
+    return dash.no_update
+
+@callback(
+    [
+        Output("lock-density", "children"),
+        Output("lock-weight", "children"),
+        Output("lock-tt", "children"),
+    ],
+    Input("calc-constant", "data")
+)
+def update_lock_icons(constant):
+    return (
+        "🔒" if constant == "density" else "🔓",
+        "🔒" if constant == "weight" else "🔓",
+        "🔒" if constant == "thickness" else "🔓"
     )

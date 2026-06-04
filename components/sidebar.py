@@ -3,26 +3,45 @@ from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC, DEFAULT_APP_SETTINGS
 
-def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None, debounce=True, disabled=False, visible=True):
+def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None, debounce=True, disabled=False, visible=True, lock_id=None):
     step_value = "any" if disabled else step
     style = {"display": "block"} if visible else {"display": "none"}
-    return html.Div(
-        dbc.InputGroup([
-            dbc.InputGroupText(label, id=f"label-{id}", className="tablet-input-label", style={'width': '70%'}),
-            dbc.Input(
-                id=id,
-                type='number',
-                value=default_val,
-                step=step_value,
-                min=None,
-                max=None,
-                debounce=debounce,
-                disabled=disabled,
-                size="sm",
-                className="tablet-input-control",
-                inputMode="decimal",
+    
+    input_kwargs = {
+        "id": id,
+        "type": 'number',
+        "value": default_val,
+        "step": step_value,
+        "debounce": debounce,
+        "disabled": disabled,
+        "size": "sm",
+        "className": "tablet-input-control",
+        "inputMode": "decimal",
+    }
+    if min_value is not None: input_kwargs["min"] = min_value
+    if max_value is not None: input_kwargs["max"] = max_value
+    
+    if lock_id:
+        label_content = [
+            html.Span(label, id=f"label-{id}"),
+            html.Span(
+                "🔓",
+                id=lock_id,
+                n_clicks=0,
+                style={"cursor": "pointer", "userSelect": "none", "fontSize": "13px"}
             )
-        ], className="mb-2 input-group-sm", size="sm"),
+        ]
+        label_class = "tablet-input-label d-flex justify-content-between align-items-center"
+    else:
+        label_content = html.Span(label, id=f"label-{id}")
+        label_class = "tablet-input-label d-flex align-items-center"
+
+    input_group_content = [
+        dbc.InputGroupText(label_content, className=label_class, style={'width': '70%', 'padding': '4px 8px'}),
+        dbc.Input(**input_kwargs)
+    ]
+    return html.Div(
+        dbc.InputGroup(input_group_content, className="mb-2 input-group-sm", size="sm"),
         id=f"div-{id}",
         style=style
     )
@@ -51,6 +70,7 @@ def create_sidebar():
     return html.Div([
         dcc.Store(id="lang-store", storage_type="local", data="en"),
         dcc.Store(id="app-settings-store", storage_type="local", data=DEFAULT_APP_SETTINGS),
+        dcc.Store(id="calc-constant", data="density"),
         dcc.Store(id="bisect-edit-open", data=False),
         dcc.Store(id="is-loading-preset", data=False),
         dcc.Store(id="constraints-data", data=[]),
@@ -393,7 +413,7 @@ def create_sidebar():
                 make_input('input-blend-r', 'Blend Radius, mm', PROFILE_DEFAULTS["ffbe"]["blend_r"], visible=False),
                 make_input('input-land', 'Land, mm', BASE_DEFAULTS["land"]),
                 make_input('input-hb', 'Belly Band, mm', BASE_DEFAULTS["hb"]),
-                make_input('input-tt', 'Tablet Thickness, mm', BASE_DEFAULTS["tt"]),
+                make_input('input-tt', 'Tablet Thickness, mm', BASE_DEFAULTS["tt"], lock_id="lock-tt"),
             ],
             id="dimensions-table-block",
             className="dimensions-table-block",
@@ -413,6 +433,7 @@ def create_sidebar():
                     step=0.01,
                     min_value=0.01,
                     debounce=True,
+                    lock_id="lock-density"
                 ),
                 make_input(
                     "input-weight",
@@ -421,6 +442,7 @@ def create_sidebar():
                     step=0.01,
                     min_value=0.0,
                     debounce=True,
+                    lock_id="lock-weight"
                 ),
             ],
             id="physical-table-block",
