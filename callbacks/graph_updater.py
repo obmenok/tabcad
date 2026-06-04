@@ -504,7 +504,7 @@ def _build_calc_html(metrics, density, tip_force_value=None, lang="en"):
         Input("bisect-cruciform", "value"),
         Input("bisect-double-sided", "value"),
     ],
-    State("app-settings-store", "data"),
+    Input("app-settings-store", "data"),
     prevent_initial_call=True,
 )
 def generate_graphics(

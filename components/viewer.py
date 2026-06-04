@@ -10,7 +10,7 @@ def _panel_block(children, min_height=None):
     return html.Div(children, className="py-2 px-3 bg-light border rounded h-100", style=style)
 
 
-def _settings_mock_row(label, control):
+def _settings_row(label, control):
     return dbc.InputGroup(
         [
             dbc.InputGroupText(
@@ -28,10 +28,11 @@ def _settings_mock_row(label, control):
     )
 
 
-def _settings_mock_select_row(label, options, value):
-    return _settings_mock_row(
+def _settings_select_row(label, options, value, id):
+    return _settings_row(
         label,
         dbc.Select(
+            id=id,
             options=options,
             value=value,
             size="sm",
@@ -40,7 +41,7 @@ def _settings_mock_select_row(label, options, value):
     )
 
 
-def _settings_mock_section(title, rows):
+def _settings_section(title, rows):
     return html.Details(
         [
             html.Summary(title, className="settings-mock-section-title"),
@@ -59,114 +60,133 @@ def _settings_preview_panel():
                 className="fw-bold text-secondary mb-2",
                 style={"fontSize": "1rem"},
             ),
-            _settings_mock_section(
+            _settings_section(
                 "Web 2D",
                 [
-                    _settings_mock_row(
+                    _settings_row(
                         "Fill Color",
                         dbc.Input(
+                            id="set-web-2d-fill",
                             type="color",
                             value=DEFAULT_APP_SETTINGS["web_2d_fill_color"],
                             size="sm",
                             className="settings-mock-color",
+                            debounce=True,
                         ),
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "Dimension Color",
                         dbc.Input(
+                            id="set-web-2d-dim",
                             type="color",
                             value=DEFAULT_APP_SETTINGS["web_2d_dim_color"],
                             size="sm",
                             className="settings-mock-color",
+                            debounce=True,
                         ),
                     ),
                 ],
             ),
-            _settings_mock_section(
+            _settings_section(
                 "Web 3D",
                 [
-                    _settings_mock_row(
+                    _settings_row(
                         "Model Base Color",
                         dbc.Input(
+                            id="set-web-3d-model-color",
                             type="color",
                             value=DEFAULT_APP_SETTINGS["web_3d_model_color"],
                             size="sm",
                             className="settings-mock-color",
+                            debounce=True,
                         ),
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "Ambient",
                         dbc.Input(
+                            id="set-web-3d-ambient",
                             type="number",
                             value=DEFAULT_APP_SETTINGS["web_3d_lighting_ambient"],
                             step=0.1,
                             size="sm",
                             className="settings-mock-input",
+                            debounce=True,
                         ),
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "Diffuse",
                         dbc.Input(
+                            id="set-web-3d-diffuse",
                             type="number",
                             value=DEFAULT_APP_SETTINGS["web_3d_lighting_diffuse"],
                             step=0.1,
                             size="sm",
                             className="settings-mock-input",
+                            debounce=True,
                         ),
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "Specular",
                         dbc.Input(
+                            id="set-web-3d-specular",
                             type="number",
                             value=DEFAULT_APP_SETTINGS["web_3d_lighting_specular"],
                             step=0.1,
                             size="sm",
                             className="settings-mock-input",
+                            debounce=True,
                         ),
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "Roughness",
                         dbc.Input(
+                            id="set-web-3d-roughness",
                             type="number",
                             value=DEFAULT_APP_SETTINGS["web_3d_lighting_roughness"],
                             step=0.1,
                             size="sm",
                             className="settings-mock-input",
+                            debounce=True,
                         ),
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "Fresnel",
                         dbc.Input(
+                            id="set-web-3d-fresnel",
                             type="number",
                             value=DEFAULT_APP_SETTINGS["web_3d_lighting_fresnel"],
                             step=0.1,
                             size="sm",
                             className="settings-mock-input",
+                            debounce=True,
                         ),
                     ),
                 ],
             ),
-            _settings_mock_section(
+            _settings_section(
                 "PDF Export",
                 [
-                    _settings_mock_select_row(
+                    _settings_select_row(
                         "Orientation",
                         [
                             {"label": "Portrait", "value": "portrait"},
                             {"label": "Landscape", "value": "landscape"},
                         ],
                         DEFAULT_APP_SETTINGS["pdf_orientation"],
+                        id="set-pdf-orientation",
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "2D Fill Color",
                         dbc.Input(
+                            id="set-pdf-2d-fill",
                             type="color",
                             value=DEFAULT_APP_SETTINGS["pdf_2d_fill_color"],
                             size="sm",
                             className="settings-mock-color",
+                            debounce=True,
                         ),
                     ),
-                    _settings_mock_select_row(
+                    _settings_select_row(
                         "Dimension Font Size",
                         [
                             {"label": "8 pt", "value": 8},
@@ -176,22 +196,25 @@ def _settings_preview_panel():
                             {"label": "12 pt", "value": 12},
                         ],
                         DEFAULT_APP_SETTINGS["pdf_2d_dim_font_size"],
+                        id="set-pdf-dim-font-size",
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "Enable 2D Shading",
                         dbc.Checkbox(
+                            id="set-pdf-2d-shaded",
                             value=DEFAULT_APP_SETTINGS["pdf_2d_shaded"],
                             className="settings-mock-check",
                         ),
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "Include 3D View",
                         dbc.Checkbox(
+                            id="set-pdf-include-3d",
                             value=DEFAULT_APP_SETTINGS["pdf_include_3d"],
                             className="settings-mock-check",
                         ),
                     ),
-                    _settings_mock_select_row(
+                    _settings_select_row(
                         "3D Model Quality",
                         [
                             {"label": "Low", "value": "low"},
@@ -199,32 +222,38 @@ def _settings_preview_panel():
                             {"label": "High", "value": "high"},
                         ],
                         DEFAULT_APP_SETTINGS["pdf_3d_quality"],
+                        id="set-pdf-3d-quality",
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "Created by",
                         dbc.Input(
+                            id="set-pdf-created-by",
                             type="text",
                             value=DEFAULT_APP_SETTINGS["pdf_created_by"],
                             size="sm",
                             className="settings-mock-input",
+                            debounce=True,
                         ),
                     ),
-                    _settings_mock_row(
+                    _settings_row(
                         "Approved by",
                         dbc.Input(
+                            id="set-pdf-approved-by",
                             type="text",
                             value=DEFAULT_APP_SETTINGS["pdf_approved_by"],
                             size="sm",
                             className="settings-mock-input",
+                            debounce=True,
                         ),
                     ),
                 ],
             ),
             dbc.Button(
                 "Reset to Default",
+                id="btn-settings-reset",
                 outline=True,
                 color="secondary",
-                className="outline-soft-btn preset-modal-btn w-100",
+                className="outline-soft-btn preset-modal-btn w-100 mt-2",
             ),
         ],
         className="settings-preview-block",
