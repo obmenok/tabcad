@@ -60,6 +60,8 @@ def set_viewer_mode(_, __, current_mode):
         Output("viewer-3d-layer", "style"),
         Output("viewer-toolbar-2d", "style"),
         Output("viewer-toolbar-3d", "style"),
+        Output("viewer-settings-2d", "style"),
+        Output("viewer-settings-3d", "style"),
     ],
     Input("viewer-mode-store", "data"),
     prevent_initial_call=False,
@@ -67,27 +69,38 @@ def set_viewer_mode(_, __, current_mode):
 def toggle_viewer_mode_layout(mode):
     base_layer = {"height": "100%", "width": "100%"}
     toolbar_base = {
-        "position": "absolute",
-        "top": "8px",
-        "right": "8px",
-        "zIndex": 5000,
         "background": "rgba(255,255,255,0.92)",
         "borderRadius": "6px",
         "padding": "6px",
         "overflow": "visible",
     }
+    settings_base = {
+        "position": "absolute",
+        "bottom": "8px",
+        "left": "50%",
+        "transform": "translateX(-50%)",
+        "zIndex": 5000,
+        "background": "rgba(255,255,255,0.92)",
+        "borderRadius": "6px",
+        "padding": "6px 12px",
+    }
+    
     if mode == "3d":
         layer_2d = {**base_layer, "display": "none"}
         layer_3d = {**base_layer, "display": "block"}
         toolbar_2d = {**toolbar_base, "display": "none"}
         toolbar_3d = {**toolbar_base, "display": "flex"}
-        return layer_2d, layer_3d, toolbar_2d, toolbar_3d
+        settings_2d = {**settings_base, "display": "none"}
+        settings_3d = {**settings_base, "display": "flex"}
+        return layer_2d, layer_3d, toolbar_2d, toolbar_3d, settings_2d, settings_3d
 
     layer_2d = {**base_layer, "display": "block"}
     layer_3d = {**base_layer, "display": "none"}
     toolbar_2d = {**toolbar_base, "display": "flex"}
     toolbar_3d = {**toolbar_base, "display": "none"}
-    return layer_2d, layer_3d, toolbar_2d, toolbar_3d
+    settings_2d = {**settings_base, "display": "flex"}
+    settings_3d = {**settings_base, "display": "none"}
+    return layer_2d, layer_3d, toolbar_2d, toolbar_3d, settings_2d, settings_3d
 
 
 @callback(

@@ -32,7 +32,7 @@ app.layout = dbc.Container(
                     create_info_panel(),
                     xs=12,
                     lg=3,
-                    className="app-col-right bg-white",
+                    className="app-col-right bg-light border-start",
                     style={"height": "100vh", "overflowY": "auto", "overflowX": "hidden", "padding": "20px 10px"},
                 ),
             ],

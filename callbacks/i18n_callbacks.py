@@ -180,7 +180,7 @@ def update_texts(lang):
         t("scoring.angle", lang),
         t("scoring.ri", lang),
         t("actions.generate", lang),
-        t("actions.export_pdf", lang),
+        t("actions.generate", lang),
         [{"label": t("cup.modified", lang), "value": True}],
         [{"label": t("cup.modified", lang), "value": True}],
         [{"label": t("scoring.cross", lang), "value": "on"}],
