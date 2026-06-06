@@ -25,10 +25,15 @@ def make_input(id, label, default_val, step=0.01, min_value=0.01, max_value=None
         label_content = [
             html.Span(label, id=f"label-{id}"),
             html.Span(
-                "🔓",
+                html.Span(
+                    className="tablet-lock-icon is-unlocked",
+                    **{"aria-hidden": "true"},
+                ),
                 id=lock_id,
                 n_clicks=0,
-                style={"cursor": "pointer", "userSelect": "none", "fontSize": "13px"}
+                className="tablet-lock-toggle",
+                title="Lock calculated parameter",
+                role="button",
             )
         ]
         label_class = "tablet-input-label d-flex justify-content-between align-items-center"
