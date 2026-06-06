@@ -470,8 +470,6 @@ def create_sidebar():
             className="dimensions-table-block",
         ),
 
-
-        html.Hr(),
         dbc.Button(
             "Generate Drawing",
             id="btn-generate",
@@ -479,6 +477,4 @@ def create_sidebar():
             className="w-100 mb-2",
             style={"display": "none"},
         ),
-        dbc.Button("PDF Export", id="export-pdf-btn", color="success", className="w-100 mb-3"),
-        dcc.Download(id="download-pdf")
     ], id="sidebar-container", style={"opacity": "0", "transition": "opacity 0.1s", "overflowX": "hidden"})

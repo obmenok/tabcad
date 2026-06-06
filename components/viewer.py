@@ -41,27 +41,15 @@ def _settings_select_row(label, options, value, id):
     )
 
 
-def _settings_section(title, rows):
-    return html.Details(
-        [
-            html.Summary(title, className="settings-mock-section-title"),
-            html.Div(rows, className="dimensions-table-block settings-mock-table"),
-        ],
-        className="settings-mock-section mb-3",
-        open=True,
-    )
-
-
 def _settings_preview_panel():
     return html.Div(
         [
             html.Div(
-                "Settings",
+                "PDF Export",
                 className="fw-bold text-secondary mb-2",
                 style={"fontSize": "1rem"},
             ),
-            _settings_section(
-                "PDF Export",
+            html.Div(
                 [
                     _settings_select_row(
                         "Orientation",
@@ -144,14 +132,24 @@ def _settings_preview_panel():
                         ),
                     ),
                 ],
+                className="dimensions-table-block settings-mock-table mb-3",
             ),
             dbc.Button(
-                "Reset to Default",
-                id="btn-settings-reset",
+                "Generate Drawing",
+                id="export-pdf-btn",
                 outline=True,
                 color="secondary",
                 className="outline-soft-btn preset-modal-btn w-100 mt-2",
             ),
+            html.Hr(className="my-3"),
+            dbc.Button(
+                "Reset Settings",
+                id="btn-settings-reset",
+                outline=True,
+                color="secondary",
+                className="outline-soft-btn preset-modal-btn w-100",
+            ),
+            dcc.Download(id="download-pdf"),
         ],
         className="settings-preview-block",
     )
@@ -280,206 +278,222 @@ def create_model_panel():
             html.Div(
                 [
                     html.Div(
-                        dbc.ButtonGroup(
-                            [
-                                dbc.Button(
-                                    "2D",
-                                    id="viewer-mode-2d-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn active",
-                                    title="2D View",
-                                    n_clicks=0,
-                                ),
-                                dbc.Button(
-                                    "3D",
-                                    id="viewer-mode-3d-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn",
-                                    title="3D View",
-                                    n_clicks=0,
-                                ),
-                            ],
-                            size="sm",
-                            className="plotly-toolbar-group segmented-btn-group",
-                        ),
-                        className="flex-nowrap align-items-center gap-2 plotly-toolbar-wrap",
-                        style={
-                            "position": "absolute",
-                            "top": "8px",
-                            "left": "8px",
-                            "zIndex": 5000,
-                            "background": "rgba(255,255,255,0.92)",
-                            "borderRadius": "6px",
-                            "padding": "6px",
-                            "overflow": "visible",
-                        },
-                    ),
-                    html.Div(
-                        dbc.ButtonGroup(
-                            [
-                                dbc.Button(
-                                    html.Span(className="apollo-icon av-i-shaded"),
-                                    id="drawing-shaded-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn plotly-toggle-btn",
-                                    n_clicks=0,
-                                    title="Shaded",
-                                ),
-                                dbc.Button(
-                                    html.Span(className="apollo-icon av-i-fullscreen"),
-                                    id="drawing-fullscreen-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn",
-                                    title="Full screen",
-                                ),
-                                dbc.Button(
-                                    html.Span("PNG", style={"fontWeight": "bold", "fontSize": "0.8rem"}),
-                                    id="drawing-download-png-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn",
-                                    title="Download PNG",
-                                ),
-                                dbc.Button(
-                                    html.Span("SVG", style={"fontWeight": "bold", "fontSize": "0.8rem"}),
-                                    id="drawing-download-svg-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn",
-                                    title="Download SVG",
-                                ),
-                            ],
-                            size="sm",
-                            className="plotly-toolbar-group",
-                        ),
-                        id="viewer-toolbar-2d",
-                        className="flex-nowrap align-items-center gap-2 plotly-toolbar-wrap",
-                        style={
-                            "position": "absolute",
-                            "top": "8px",
-                            "right": "8px",
-                            "zIndex": 5000,
-                            "background": "rgba(255,255,255,0.92)",
-                            "borderRadius": "6px",
-                            "padding": "6px",
-                            "overflow": "visible",
-                        },
-                    ),
-                    html.Div(
-                        dbc.ButtonGroup(
-                            [
-                                dbc.DropdownMenu(
-                                    id="plotly-view-menu",
-                                    label=html.Span(
-                                        [
-                                            html.Span(className="apollo-icon av-i-view av-view-icon"),
-                                            html.Span("View"),
-                                        ],
-                                        className="d-inline-flex align-items-center av-view-label",
-                                    ),
-                                    color="light",
-                                    className="plotly-toolbar-btn",
-                                    toggle_style={"minWidth": "104px"},
-                                    children=[
-                                        dbc.DropdownMenuItem(
-                                            html.Span(
-                                                [html.Span(className="apollo-icon av-i-front av-menu-icon"), "Front"]
-                                            ),
-                                            id="plotly-view-front",
+                        [
+                            html.Div(
+                                dbc.ButtonGroup(
+                                    [
+                                        dbc.Button(
+                                            "2D",
+                                            id="viewer-mode-2d-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn active",
+                                            title="2D View",
+                                            n_clicks=0,
                                         ),
-                                        dbc.DropdownMenuItem(
-                                            html.Span(
-                                                [html.Span(className="apollo-icon av-i-back av-menu-icon"), "Back"]
-                                            ),
-                                            id="plotly-view-back",
-                                        ),
-                                        dbc.DropdownMenuItem(
-                                            html.Span(
-                                                [html.Span(className="apollo-icon av-i-left av-menu-icon"), "Left"]
-                                            ),
-                                            id="plotly-view-left",
-                                        ),
-                                        dbc.DropdownMenuItem(
-                                            html.Span(
-                                                [html.Span(className="apollo-icon av-i-right av-menu-icon"), "Right"]
-                                            ),
-                                            id="plotly-view-right",
-                                        ),
-                                        dbc.DropdownMenuItem(
-                                            html.Span(
-                                                [html.Span(className="apollo-icon av-i-top av-menu-icon"), "Top"]
-                                            ),
-                                            id="plotly-view-top",
-                                        ),
-                                        dbc.DropdownMenuItem(
-                                            html.Span(
-                                                [html.Span(className="apollo-icon av-i-bottom av-menu-icon"), "Bottom"]
-                                            ),
-                                            id="plotly-view-bottom",
-                                        ),
-                                        dbc.DropdownMenuItem(
-                                            html.Span(
-                                                [
-                                                    html.Span(className="apollo-icon av-i-isometric av-menu-icon"),
-                                                    "Isometric",
-                                                ]
-                                            ),
-                                            id="plotly-view-isometric",
+                                        dbc.Button(
+                                            "3D",
+                                            id="viewer-mode-3d-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn",
+                                            title="3D View",
+                                            n_clicks=0,
                                         ),
                                     ],
+                                    size="sm",
+                                    className="plotly-toolbar-group segmented-btn-group",
                                 ),
-                                dbc.Button(
-                                    html.Span(className="apollo-icon av-i-edge"),
-                                    id="plotly-edge-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn plotly-toggle-btn",
-                                    n_clicks=0,
-                                    title="Edge",
+                                className=(
+                                    "viewer-toolbar-cluster viewer-toolbar-cluster-left "
+                                    "flex-nowrap align-items-center gap-2 plotly-toolbar-wrap"
                                 ),
-                                dbc.Button(
-                                    html.Span(className="apollo-icon av-i-bbox"),
-                                    id="plotly-bbox-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn plotly-toggle-btn",
-                                    n_clicks=0,
-                                    title="Boundary box",
+                            ),
+                            html.Div(
+                                dbc.ButtonGroup(
+                                    [
+                                        dbc.Button(
+                                            html.Span(className="apollo-icon av-i-shaded"),
+                                            id="drawing-shaded-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn plotly-toggle-btn",
+                                            n_clicks=0,
+                                            title="Shaded",
+                                        ),
+                                        dbc.Button(
+                                            html.Span(className="apollo-icon av-i-fullscreen"),
+                                            id="drawing-fullscreen-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn",
+                                            title="Full screen",
+                                        ),
+                                        dbc.Button(
+                                            html.Span("PNG", style={"fontWeight": "bold", "fontSize": "0.8rem"}),
+                                            id="drawing-download-png-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn",
+                                            title="Download PNG",
+                                        ),
+                                        dbc.Button(
+                                            html.Span("SVG", style={"fontWeight": "bold", "fontSize": "0.8rem"}),
+                                            id="drawing-download-svg-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn",
+                                            title="Download SVG",
+                                        ),
+                                    ],
+                                    size="sm",
+                                    className="plotly-toolbar-group",
                                 ),
-                                dbc.Button(
-                                    html.Span(className="apollo-icon av-i-fullscreen"),
-                                    id="plotly-fullscreen-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn",
-                                    title="Full screen",
+                                id="viewer-toolbar-2d",
+                                className=(
+                                    "viewer-toolbar-cluster viewer-toolbar-cluster-right "
+                                    "flex-nowrap align-items-center gap-2 plotly-toolbar-wrap"
                                 ),
-                                dbc.Button(
-                                    html.Span("PNG", style={"fontWeight": "bold", "fontSize": "0.8rem"}),
-                                    id="plotly-screenshot-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn",
-                                    title="Download PNG",
+                            ),
+                            html.Div(
+                                dbc.ButtonGroup(
+                                    [
+                                        dbc.DropdownMenu(
+                                            id="plotly-view-menu",
+                                            label=html.Span(
+                                                [
+                                                    html.Span(className="apollo-icon av-i-view av-view-icon"),
+                                                    html.Span("View"),
+                                                ],
+                                                className="d-inline-flex align-items-center av-view-label",
+                                            ),
+                                            color="light",
+                                            className="plotly-toolbar-btn",
+                                            toggle_style={"minWidth": "104px"},
+                                            children=[
+                                                dbc.DropdownMenuItem(
+                                                    html.Span(
+                                                        [
+                                                            html.Span(
+                                                                className="apollo-icon av-i-front av-menu-icon"
+                                                            ),
+                                                            "Front",
+                                                        ]
+                                                    ),
+                                                    id="plotly-view-front",
+                                                ),
+                                                dbc.DropdownMenuItem(
+                                                    html.Span(
+                                                        [
+                                                            html.Span(
+                                                                className="apollo-icon av-i-back av-menu-icon"
+                                                            ),
+                                                            "Back",
+                                                        ]
+                                                    ),
+                                                    id="plotly-view-back",
+                                                ),
+                                                dbc.DropdownMenuItem(
+                                                    html.Span(
+                                                        [
+                                                            html.Span(
+                                                                className="apollo-icon av-i-left av-menu-icon"
+                                                            ),
+                                                            "Left",
+                                                        ]
+                                                    ),
+                                                    id="plotly-view-left",
+                                                ),
+                                                dbc.DropdownMenuItem(
+                                                    html.Span(
+                                                        [
+                                                            html.Span(
+                                                                className="apollo-icon av-i-right av-menu-icon"
+                                                            ),
+                                                            "Right",
+                                                        ]
+                                                    ),
+                                                    id="plotly-view-right",
+                                                ),
+                                                dbc.DropdownMenuItem(
+                                                    html.Span(
+                                                        [
+                                                            html.Span(
+                                                                className="apollo-icon av-i-top av-menu-icon"
+                                                            ),
+                                                            "Top",
+                                                        ]
+                                                    ),
+                                                    id="plotly-view-top",
+                                                ),
+                                                dbc.DropdownMenuItem(
+                                                    html.Span(
+                                                        [
+                                                            html.Span(
+                                                                className="apollo-icon av-i-bottom av-menu-icon"
+                                                            ),
+                                                            "Bottom",
+                                                        ]
+                                                    ),
+                                                    id="plotly-view-bottom",
+                                                ),
+                                                dbc.DropdownMenuItem(
+                                                    html.Span(
+                                                        [
+                                                            html.Span(
+                                                                className="apollo-icon av-i-isometric av-menu-icon"
+                                                            ),
+                                                            "Isometric",
+                                                        ]
+                                                    ),
+                                                    id="plotly-view-isometric",
+                                                ),
+                                            ],
+                                        ),
+                                        dbc.Button(
+                                            html.Span(className="apollo-icon av-i-edge"),
+                                            id="plotly-edge-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn plotly-toggle-btn",
+                                            n_clicks=0,
+                                            title="Edge",
+                                        ),
+                                        dbc.Button(
+                                            html.Span(className="apollo-icon av-i-bbox"),
+                                            id="plotly-bbox-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn plotly-toggle-btn",
+                                            n_clicks=0,
+                                            title="Boundary box",
+                                        ),
+                                        dbc.Button(
+                                            html.Span(className="apollo-icon av-i-fullscreen"),
+                                            id="plotly-fullscreen-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn",
+                                            title="Full screen",
+                                        ),
+                                        dbc.Button(
+                                            html.Span("PNG", style={"fontWeight": "bold", "fontSize": "0.8rem"}),
+                                            id="plotly-screenshot-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn",
+                                            title="Download PNG",
+                                        ),
+                                        dbc.Button(
+                                            html.Span("STL", style={"fontWeight": "bold", "fontSize": "0.8rem"}),
+                                            id="plotly-stl-btn",
+                                            color="light",
+                                            class_name="plotly-toolbar-btn",
+                                            title="Download STL",
+                                        ),
+                                    ],
+                                    size="sm",
+                                    className="plotly-toolbar-group",
                                 ),
-                                dbc.Button(
-                                    html.Span("STL", style={"fontWeight": "bold", "fontSize": "0.8rem"}),
-                                    id="plotly-stl-btn",
-                                    color="light",
-                                    class_name="plotly-toolbar-btn",
-                                    title="Download STL",
+                                id="viewer-toolbar-3d",
+                                className=(
+                                    "viewer-toolbar-cluster viewer-toolbar-cluster-right "
+                                    "flex-nowrap align-items-center gap-2 plotly-toolbar-wrap"
                                 ),
-                            ],
-                            size="sm",
-                            className="plotly-toolbar-group",
-                        ),
-                        id="viewer-toolbar-3d",
-                        className="flex-nowrap align-items-center gap-2 plotly-toolbar-wrap",
-                        style={
-                            "position": "absolute",
-                            "top": "8px",
-                            "right": "8px",
-                            "zIndex": 5000,
-                            "background": "rgba(255,255,255,0.92)",
-                            "borderRadius": "6px",
-                            "padding": "6px",
-                            "overflow": "visible",
-                            "display": "none",
-                        },
+                                style={"display": "none"},
+                            ),
+                        ],
+                        className="viewer-top-toolbar",
                     ),
                     html.Div(
                         html.Img(
@@ -488,11 +502,13 @@ def create_model_panel():
                             style={"width": "100%", "height": "100%", "object-fit": "contain"},
                         ),
                         id="viewer-2d-layer",
+                        className="viewer-content-layer",
                         style={"height": "100%", "width": "100%"},
                     ),
                     html.Div(
-                        html.Div(id="tablet-3d", style={"height": "100%"}),
+                        html.Div(id="tablet-3d", className="viewer-plotly-host", style={"height": "100%"}),
                         id="viewer-3d-layer",
+                        className="viewer-content-layer",
                         style={"height": "100%", "width": "100%", "display": "none"},
                     ),
 
@@ -638,8 +654,8 @@ def create_model_panel():
                     dcc.Download(id="download-stl"),
                 ],
                 id="viewer-viewport-panel",
-                className="border rounded bg-white p-2",
-                style={"height": "100%", "position": "relative", "overflow": "visible"},
+                className="viewer-shell border rounded bg-white p-2",
+                style={"height": "100%", "position": "relative", "overflow": "hidden"},
             )
         ],
         className="h-100",

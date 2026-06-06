@@ -821,6 +821,76 @@
   }
 }
 
+.app-col-center {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#viewer-viewport-panel.viewer-shell {
+  box-sizing: border-box;
+  contain: layout paint;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden !important;
+  position: relative;
+  width: 100%;
+}
+
+.viewer-top-toolbar {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  inset: 8px 8px auto 8px;
+  justify-content: space-between;
+  pointer-events: none;
+  position: absolute;
+  z-index: 5000;
+}
+
+.viewer-top-toolbar > * {
+  pointer-events: auto;
+}
+
+.viewer-toolbar-cluster {
+  background: rgba(255,255,255,0.92);
+  border-radius: 6px;
+  box-sizing: border-box;
+  overflow: visible;
+  padding: 6px;
+}
+
+.viewer-content-layer {
+  box-sizing: border-box;
+  inset: 8px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: absolute;
+}
+
+#viewer-2d-layer,
+#viewer-3d-layer {
+  height: auto !important;
+  width: auto !important;
+}
+
+#tablet-drawing,
+.viewer-plotly-host,
+#tablet-3d-graph,
+#tablet-3d-graph .js-plotly-plot,
+#tablet-3d-graph .plot-container,
+#tablet-3d-graph .svg-container {
+  box-sizing: border-box;
+  height: 100% !important;
+  max-height: 100% !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
 .calculations-table-block .calc-table-value {
   display: flex;
   align-items: center;
@@ -831,23 +901,6 @@
 .dimensions-table-block.calculations-table-block .input-group:focus-within .tablet-input-control.calc-table-value {
   box-shadow: none !important;
   background: transparent !important;
-}
-
-.settings-mock-section-title {
-  color: #6c757d;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 700;
-  margin-bottom: 6px;
-  user-select: none;
-}
-
-.settings-mock-section-title::marker {
-  color: #6c757d;
-}
-
-.settings-mock-section {
-  margin-bottom: 0.5rem !important;
 }
 
 .settings-mock-table .input-group,

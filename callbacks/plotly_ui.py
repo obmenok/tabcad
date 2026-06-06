@@ -69,10 +69,6 @@ def set_viewer_mode(_, __, current_mode):
 def toggle_viewer_mode_layout(mode):
     base_layer = {"height": "100%", "width": "100%"}
     toolbar_base = {
-        "position": "absolute",
-        "top": "8px",
-        "right": "8px",
-        "zIndex": 5000,
         "background": "rgba(255,255,255,0.92)",
         "borderRadius": "6px",
         "padding": "6px",
