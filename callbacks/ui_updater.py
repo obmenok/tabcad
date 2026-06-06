@@ -1,6 +1,6 @@
 import dash
 import numpy as np
-from dash import Input, Output, State, callback, ctx
+from dash import Input, Output, State, callback, ctx, html
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
 
 
@@ -1368,8 +1368,15 @@ def handle_lock_clicks(n_d, n_w, n_t, current_constant):
     Input("calc-constant", "data")
 )
 def update_lock_icons(constant):
+    def lock_icon(is_locked):
+        state_class = "is-locked" if is_locked else "is-unlocked"
+        return html.Span(
+            className=f"tablet-lock-icon {state_class}",
+            **{"aria-hidden": "true"},
+        )
+
     return (
-        "🔒" if constant == "density" else "🔓",
-        "🔒" if constant == "weight" else "🔓",
-        "🔒" if constant == "thickness" else "🔓"
+        lock_icon(constant == "density"),
+        lock_icon(constant == "weight"),
+        lock_icon(constant == "thickness"),
     )

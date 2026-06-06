@@ -778,6 +778,52 @@
   line-height: 24px !important;
 }
 
+.tablet-lock-toggle {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  height: 16px;
+  justify-content: center;
+  margin-left: 6px;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  width: 16px;
+}
+
+.tablet-lock-icon {
+  border: 1.4px solid #7c8793;
+  border-radius: 2px;
+  box-sizing: border-box;
+  display: inline-block;
+  height: 8px;
+  position: relative;
+  width: 10px;
+}
+
+.tablet-lock-icon::before {
+  border: 1.4px solid #7c8793;
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  box-sizing: border-box;
+  content: "";
+  height: 7px;
+  left: 1px;
+  position: absolute;
+  top: -7px;
+  width: 6px;
+}
+
+.tablet-lock-icon.is-locked,
+.tablet-lock-icon.is-locked::before {
+  border-color: #6f7782;
+}
+
+.tablet-lock-icon.is-unlocked::before {
+  left: 4px;
+  transform: rotate(18deg);
+  transform-origin: bottom left;
+}
+
 
 /* Compact sliders for settings modal */
 .preset-modal .rc-slider {
@@ -818,6 +864,32 @@
   .app-col-center,
   .app-col-right {
     height: auto !important;
+  }
+
+  .app-col-center {
+    min-height: 520px;
+    overflow: visible;
+  }
+
+  .app-col-center > .h-100 {
+    height: auto !important;
+    min-height: inherit;
+  }
+
+  #viewer-viewport-panel.viewer-shell {
+    height: clamp(440px, 62vh, 560px) !important;
+    min-height: 440px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .app-col-center {
+    min-height: 460px;
+  }
+
+  #viewer-viewport-panel.viewer-shell {
+    height: 460px !important;
+    min-height: 460px;
   }
 }
 
@@ -1041,4 +1113,3 @@
   border: 1px solid rgba(0,0,0,0.2);
   border-radius: 4px;
 }
-
