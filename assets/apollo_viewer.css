@@ -920,13 +920,55 @@
 
 
 /* Toolbar Color Pickers */
+.viewer-settings-toolbar {
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  column-gap: 16px !important;
+  row-gap: 6px !important;
+  max-width: calc(100% - 24px) !important;
+  width: max-content;
+  white-space: normal !important;
+  box-sizing: border-box;
+}
+
+.viewer-settings-field {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.viewer-settings-label {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  line-height: 26px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.viewer-settings-number.form-control {
+  width: 50px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 0 4px 0 8px !important;
+  border: 1px solid #9aa0a6 !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+  line-height: 24px !important;
+  box-sizing: border-box !important;
+}
+
 .toolbar-color-picker {
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  max-width: 24px !important;
-  min-height: 24px !important;
-  max-height: 24px !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  max-width: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
   padding: 0 !important;
   border: none !important;
   cursor: pointer !important;

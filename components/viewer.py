@@ -498,25 +498,35 @@ def create_model_panel():
 
                     html.Div(
                         [
-                            html.Span("Fill Color:", className="me-1", style={"fontSize": "14px"}),
-                            dbc.Input(
-                                id="set-web-2d-fill",
-                                type="color",
-                                value=DEFAULT_APP_SETTINGS["web_2d_fill_color"],
-                                size="sm",
-                                className="toolbar-color-picker"
+                            html.Span(
+                                [
+                                    html.Span("Fill Color:", className="viewer-settings-label me-1"),
+                                    dbc.Input(
+                                        id="set-web-2d-fill",
+                                        type="color",
+                                        value=DEFAULT_APP_SETTINGS["web_2d_fill_color"],
+                                        size="sm",
+                                        className="toolbar-color-picker",
+                                    ),
+                                ],
+                                className="viewer-settings-field",
                             ),
-                            html.Span("Dimension Color:", className="ms-3 me-1", style={"fontSize": "14px"}),
-                            dbc.Input(
-                                id="set-web-2d-dim",
-                                type="color",
-                                value=DEFAULT_APP_SETTINGS["web_2d_dim_color"],
-                                size="sm",
-                                className="toolbar-color-picker"
+                            html.Span(
+                                [
+                                    html.Span("Dimension Color:", className="viewer-settings-label me-1"),
+                                    dbc.Input(
+                                        id="set-web-2d-dim",
+                                        type="color",
+                                        value=DEFAULT_APP_SETTINGS["web_2d_dim_color"],
+                                        size="sm",
+                                        className="toolbar-color-picker",
+                                    ),
+                                ],
+                                className="viewer-settings-field",
                             ),
                         ],
                         id="viewer-settings-2d",
-                        className="flex-nowrap align-items-center gap-2 plotly-toolbar-wrap",
+                        className="viewer-settings-toolbar align-items-center plotly-toolbar-wrap",
                         style={
                             "position": "absolute",
                             "bottom": "8px",
@@ -531,53 +541,78 @@ def create_model_panel():
                     ),
                     html.Div(
                         [
-                            html.Span("Model Color:", className="me-1", style={"fontSize": "14px"}),
-                            dbc.Input(
-                                id="set-web-3d-model-color",
-                                type="color",
-                                value=DEFAULT_APP_SETTINGS["web_3d_model_color"],
-                                size="sm",
-                                className="toolbar-color-picker me-2"
+                            html.Span(
+                                [
+                                    html.Span("Model Color:", className="viewer-settings-label me-1"),
+                                    dbc.Input(
+                                        id="set-web-3d-model-color",
+                                        type="color",
+                                        value=DEFAULT_APP_SETTINGS["web_3d_model_color"],
+                                        size="sm",
+                                        className="toolbar-color-picker",
+                                    ),
+                                ],
+                                className="viewer-settings-field",
                             ),
-                            html.Span("Ambient:", className="me-1", style={"fontSize": "14px"}),
-                            dbc.Input(
-                                id="set-web-3d-ambient",
-                                type="number",
-                                value=DEFAULT_APP_SETTINGS["web_3d_lighting_ambient"],
-                                step=0.1,
-                                size="sm",
-                                style={"width": "50px", "height": "24px", "fontSize": "14px", "padding": "0 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none", "lineHeight": "24px"}
+                            html.Span(
+                                [
+                                    html.Span("Ambient:", className="viewer-settings-label me-1"),
+                                    dbc.Input(
+                                        id="set-web-3d-ambient",
+                                        type="number",
+                                        value=DEFAULT_APP_SETTINGS["web_3d_lighting_ambient"],
+                                        step=0.1,
+                                        size="sm",
+                                        className="viewer-settings-number",
+                                    ),
+                                ],
+                                className="viewer-settings-field",
                             ),
-                            html.Span("Diffuse:", className="me-1", style={"fontSize": "14px"}),
-                            dbc.Input(
-                                id="set-web-3d-diffuse",
-                                type="number",
-                                value=DEFAULT_APP_SETTINGS["web_3d_lighting_diffuse"],
-                                step=0.1,
-                                size="sm",
-                                style={"width": "50px", "height": "24px", "fontSize": "14px", "padding": "0 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none", "lineHeight": "24px"}
+                            html.Span(
+                                [
+                                    html.Span("Diffuse:", className="viewer-settings-label me-1"),
+                                    dbc.Input(
+                                        id="set-web-3d-diffuse",
+                                        type="number",
+                                        value=DEFAULT_APP_SETTINGS["web_3d_lighting_diffuse"],
+                                        step=0.1,
+                                        size="sm",
+                                        className="viewer-settings-number",
+                                    ),
+                                ],
+                                className="viewer-settings-field",
                             ),
-                            html.Span("Specular:", className="me-1", style={"fontSize": "14px"}),
-                            dbc.Input(
-                                id="set-web-3d-specular",
-                                type="number",
-                                value=DEFAULT_APP_SETTINGS["web_3d_lighting_specular"],
-                                step=0.1,
-                                size="sm",
-                                style={"width": "50px", "height": "24px", "fontSize": "14px", "padding": "0 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none", "lineHeight": "24px"}
+                            html.Span(
+                                [
+                                    html.Span("Specular:", className="viewer-settings-label me-1"),
+                                    dbc.Input(
+                                        id="set-web-3d-specular",
+                                        type="number",
+                                        value=DEFAULT_APP_SETTINGS["web_3d_lighting_specular"],
+                                        step=0.1,
+                                        size="sm",
+                                        className="viewer-settings-number",
+                                    ),
+                                ],
+                                className="viewer-settings-field",
                             ),
-                            html.Span("Roughness:", className="me-1", style={"fontSize": "14px"}),
-                            dbc.Input(
-                                id="set-web-3d-roughness",
-                                type="number",
-                                value=DEFAULT_APP_SETTINGS["web_3d_lighting_roughness"],
-                                step=0.1,
-                                size="sm",
-                                style={"width": "50px", "height": "24px", "fontSize": "14px", "padding": "0 4px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none", "lineHeight": "24px"}
+                            html.Span(
+                                [
+                                    html.Span("Roughness:", className="viewer-settings-label me-1"),
+                                    dbc.Input(
+                                        id="set-web-3d-roughness",
+                                        type="number",
+                                        value=DEFAULT_APP_SETTINGS["web_3d_lighting_roughness"],
+                                        step=0.1,
+                                        size="sm",
+                                        className="viewer-settings-number",
+                                    ),
+                                ],
+                                className="viewer-settings-field",
                             ),
                         ],
                         id="viewer-settings-3d",
-                        className="flex-nowrap align-items-center gap-2 plotly-toolbar-wrap",
+                        className="viewer-settings-toolbar align-items-center plotly-toolbar-wrap",
                         style={
                             "position": "absolute",
                             "bottom": "8px",
