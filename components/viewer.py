@@ -498,7 +498,7 @@ def create_model_panel():
 
                     html.Div(
                         [
-                            html.Span("Fill Color:", className="me-2", style={"fontSize": "0.8rem"}),
+                            html.Span("Fill Color:", className="me-1", style={"fontSize": "14px"}),
                             dbc.Input(
                                 id="set-web-2d-fill",
                                 type="color",
@@ -506,7 +506,7 @@ def create_model_panel():
                                 size="sm",
                                 className="toolbar-color-picker"
                             ),
-                            html.Span("Dimension Color:", className="ms-3 me-2", style={"fontSize": "0.8rem"}),
+                            html.Span("Dimension Color:", className="ms-3 me-1", style={"fontSize": "14px"}),
                             dbc.Input(
                                 id="set-web-2d-dim",
                                 type="color",
@@ -531,7 +531,7 @@ def create_model_panel():
                     ),
                     html.Div(
                         [
-                            html.Span("Model Color:", className="me-2", style={"fontSize": "0.8rem"}),
+                            html.Span("Model Color:", className="me-1", style={"fontSize": "14px"}),
                             dbc.Input(
                                 id="set-web-3d-model-color",
                                 type="color",
@@ -539,41 +539,41 @@ def create_model_panel():
                                 size="sm",
                                 className="toolbar-color-picker me-2"
                             ),
-                            html.Span("Ambient:", className="me-2", style={"fontSize": "0.8rem"}),
+                            html.Span("Ambient:", className="me-1", style={"fontSize": "14px"}),
                             dbc.Input(
                                 id="set-web-3d-ambient",
                                 type="number",
                                 value=DEFAULT_APP_SETTINGS["web_3d_lighting_ambient"],
                                 step=0.1,
                                 size="sm",
-                                style={"width": "50px", "height": "24px", "fontSize": "0.8rem", "padding": "2px 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none"}
+                                style={"width": "50px", "height": "24px", "fontSize": "14px", "padding": "0 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none", "lineHeight": "24px"}
                             ),
-                            html.Span("Diffuse:", className="me-2", style={"fontSize": "0.8rem"}),
+                            html.Span("Diffuse:", className="me-1", style={"fontSize": "14px"}),
                             dbc.Input(
                                 id="set-web-3d-diffuse",
                                 type="number",
                                 value=DEFAULT_APP_SETTINGS["web_3d_lighting_diffuse"],
                                 step=0.1,
                                 size="sm",
-                                style={"width": "50px", "height": "24px", "fontSize": "0.8rem", "padding": "2px 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none"}
+                                style={"width": "50px", "height": "24px", "fontSize": "14px", "padding": "0 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none", "lineHeight": "24px"}
                             ),
-                            html.Span("Specular:", className="me-2", style={"fontSize": "0.8rem"}),
+                            html.Span("Specular:", className="me-1", style={"fontSize": "14px"}),
                             dbc.Input(
                                 id="set-web-3d-specular",
                                 type="number",
                                 value=DEFAULT_APP_SETTINGS["web_3d_lighting_specular"],
                                 step=0.1,
                                 size="sm",
-                                style={"width": "50px", "height": "24px", "fontSize": "0.8rem", "padding": "2px 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none"}
+                                style={"width": "50px", "height": "24px", "fontSize": "14px", "padding": "0 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none", "lineHeight": "24px"}
                             ),
-                            html.Span("Roughness:", className="me-2", style={"fontSize": "0.8rem"}),
+                            html.Span("Roughness:", className="me-1", style={"fontSize": "14px"}),
                             dbc.Input(
                                 id="set-web-3d-roughness",
                                 type="number",
                                 value=DEFAULT_APP_SETTINGS["web_3d_lighting_roughness"],
                                 step=0.1,
                                 size="sm",
-                                style={"width": "50px", "height": "24px", "fontSize": "0.8rem", "padding": "2px 4px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none"}
+                                style={"width": "50px", "height": "24px", "fontSize": "14px", "padding": "0 4px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none", "lineHeight": "24px"}
                             ),
                         ],
                         id="viewer-settings-3d",
