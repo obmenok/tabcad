@@ -13,7 +13,6 @@ from core.defaults import DEFAULT_APP_SETTINGS
         Input("set-web-3d-diffuse", "value"),
         Input("set-web-3d-specular", "value"),
         Input("set-web-3d-roughness", "value"),
-        Input("set-web-3d-fresnel", "value"),
         Input("set-pdf-orientation", "value"),
         Input("set-pdf-2d-fill", "value"),
         Input("set-pdf-dim-font-size", "value"),
@@ -28,7 +27,7 @@ from core.defaults import DEFAULT_APP_SETTINGS
 )
 def update_settings_store(
     w2d_fill, w2d_dim,
-    w3d_color, w3d_amb, w3d_diff, w3d_spec, w3d_rough, w3d_fresnel,
+    w3d_color, w3d_amb, w3d_diff, w3d_spec, w3d_rough,
     pdf_ori, pdf_2d_fill, pdf_dim_font_size, pdf_2d_shaded, pdf_include_3d, pdf_3d_quality, pdf_created, pdf_approved,
     current_data
 ):
@@ -46,7 +45,6 @@ def update_settings_store(
     settings["web_3d_lighting_diffuse"] = w3d_diff
     settings["web_3d_lighting_specular"] = w3d_spec
     settings["web_3d_lighting_roughness"] = w3d_rough
-    settings["web_3d_lighting_fresnel"] = w3d_fresnel
     
     # Remove legacy bot lighting settings if they exist
     for key in list(settings.keys()):
@@ -77,7 +75,6 @@ def update_settings_store(
         Output("set-web-3d-diffuse", "value"),
         Output("set-web-3d-specular", "value"),
         Output("set-web-3d-roughness", "value"),
-        Output("set-web-3d-fresnel", "value"),
         Output("set-pdf-orientation", "value"),
         Output("set-pdf-2d-fill", "value"),
         Output("set-pdf-dim-font-size", "value"),
@@ -92,7 +89,7 @@ def update_settings_store(
 )
 def reset_settings_inputs(n_clicks):
     if not n_clicks:
-        return [dash.no_update] * 16
+        return [dash.no_update] * 15
 
     return (
         DEFAULT_APP_SETTINGS["web_2d_fill_color"],
@@ -102,7 +99,6 @@ def reset_settings_inputs(n_clicks):
         DEFAULT_APP_SETTINGS["web_3d_lighting_diffuse"],
         DEFAULT_APP_SETTINGS["web_3d_lighting_specular"],
         DEFAULT_APP_SETTINGS["web_3d_lighting_roughness"],
-        DEFAULT_APP_SETTINGS["web_3d_lighting_fresnel"],
         DEFAULT_APP_SETTINGS["pdf_orientation"],
         DEFAULT_APP_SETTINGS["pdf_2d_fill_color"],
         DEFAULT_APP_SETTINGS["pdf_2d_dim_font_size"],

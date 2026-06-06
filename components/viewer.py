@@ -61,109 +61,6 @@ def _settings_preview_panel():
                 style={"fontSize": "1rem"},
             ),
             _settings_section(
-                "Web 2D",
-                [
-                    _settings_row(
-                        "Fill Color",
-                        dbc.Input(
-                            id="set-web-2d-fill",
-                            type="color",
-                            value=DEFAULT_APP_SETTINGS["web_2d_fill_color"],
-                            size="sm",
-                            className="settings-mock-color",
-                            debounce=True,
-                        ),
-                    ),
-                    _settings_row(
-                        "Dimension Color",
-                        dbc.Input(
-                            id="set-web-2d-dim",
-                            type="color",
-                            value=DEFAULT_APP_SETTINGS["web_2d_dim_color"],
-                            size="sm",
-                            className="settings-mock-color",
-                            debounce=True,
-                        ),
-                    ),
-                ],
-            ),
-            _settings_section(
-                "Web 3D",
-                [
-                    _settings_row(
-                        "Model Base Color",
-                        dbc.Input(
-                            id="set-web-3d-model-color",
-                            type="color",
-                            value=DEFAULT_APP_SETTINGS["web_3d_model_color"],
-                            size="sm",
-                            className="settings-mock-color",
-                            debounce=True,
-                        ),
-                    ),
-                    _settings_row(
-                        "Ambient",
-                        dbc.Input(
-                            id="set-web-3d-ambient",
-                            type="number",
-                            value=DEFAULT_APP_SETTINGS["web_3d_lighting_ambient"],
-                            step=0.1,
-                            size="sm",
-                            className="settings-mock-input",
-                            debounce=True,
-                        ),
-                    ),
-                    _settings_row(
-                        "Diffuse",
-                        dbc.Input(
-                            id="set-web-3d-diffuse",
-                            type="number",
-                            value=DEFAULT_APP_SETTINGS["web_3d_lighting_diffuse"],
-                            step=0.1,
-                            size="sm",
-                            className="settings-mock-input",
-                            debounce=True,
-                        ),
-                    ),
-                    _settings_row(
-                        "Specular",
-                        dbc.Input(
-                            id="set-web-3d-specular",
-                            type="number",
-                            value=DEFAULT_APP_SETTINGS["web_3d_lighting_specular"],
-                            step=0.1,
-                            size="sm",
-                            className="settings-mock-input",
-                            debounce=True,
-                        ),
-                    ),
-                    _settings_row(
-                        "Roughness",
-                        dbc.Input(
-                            id="set-web-3d-roughness",
-                            type="number",
-                            value=DEFAULT_APP_SETTINGS["web_3d_lighting_roughness"],
-                            step=0.1,
-                            size="sm",
-                            className="settings-mock-input",
-                            debounce=True,
-                        ),
-                    ),
-                    _settings_row(
-                        "Fresnel",
-                        dbc.Input(
-                            id="set-web-3d-fresnel",
-                            type="number",
-                            value=DEFAULT_APP_SETTINGS["web_3d_lighting_fresnel"],
-                            step=0.1,
-                            size="sm",
-                            className="settings-mock-input",
-                            debounce=True,
-                        ),
-                    ),
-                ],
-            ),
-            _settings_section(
                 "PDF Export",
                 [
                     _settings_select_row(
@@ -597,6 +494,101 @@ def create_model_panel():
                         html.Div(id="tablet-3d", style={"height": "100%"}),
                         id="viewer-3d-layer",
                         style={"height": "100%", "width": "100%", "display": "none"},
+                    ),
+
+                    html.Div(
+                        [
+                            html.Span("Fill Color:", className="me-2", style={"fontSize": "0.8rem"}),
+                            dbc.Input(
+                                id="set-web-2d-fill",
+                                type="color",
+                                value=DEFAULT_APP_SETTINGS["web_2d_fill_color"],
+                                size="sm",
+                                className="toolbar-color-picker"
+                            ),
+                            html.Span("Dimension Color:", className="ms-3 me-2", style={"fontSize": "0.8rem"}),
+                            dbc.Input(
+                                id="set-web-2d-dim",
+                                type="color",
+                                value=DEFAULT_APP_SETTINGS["web_2d_dim_color"],
+                                size="sm",
+                                className="toolbar-color-picker"
+                            ),
+                        ],
+                        id="viewer-settings-2d",
+                        className="flex-nowrap align-items-center gap-2 plotly-toolbar-wrap",
+                        style={
+                            "position": "absolute",
+                            "bottom": "8px",
+                            "left": "50%",
+                            "transform": "translateX(-50%)",
+                            "zIndex": 5000,
+                            "background": "rgba(255,255,255,0.92)",
+                            "borderRadius": "6px",
+                            "padding": "6px 12px",
+                            "display": "flex",
+                        },
+                    ),
+                    html.Div(
+                        [
+                            html.Span("Model Color:", className="me-2", style={"fontSize": "0.8rem"}),
+                            dbc.Input(
+                                id="set-web-3d-model-color",
+                                type="color",
+                                value=DEFAULT_APP_SETTINGS["web_3d_model_color"],
+                                size="sm",
+                                className="toolbar-color-picker me-2"
+                            ),
+                            html.Span("Ambient:", className="me-2", style={"fontSize": "0.8rem"}),
+                            dbc.Input(
+                                id="set-web-3d-ambient",
+                                type="number",
+                                value=DEFAULT_APP_SETTINGS["web_3d_lighting_ambient"],
+                                step=0.1,
+                                size="sm",
+                                style={"width": "50px", "height": "24px", "fontSize": "0.8rem", "padding": "2px 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none"}
+                            ),
+                            html.Span("Diffuse:", className="me-2", style={"fontSize": "0.8rem"}),
+                            dbc.Input(
+                                id="set-web-3d-diffuse",
+                                type="number",
+                                value=DEFAULT_APP_SETTINGS["web_3d_lighting_diffuse"],
+                                step=0.1,
+                                size="sm",
+                                style={"width": "50px", "height": "24px", "fontSize": "0.8rem", "padding": "2px 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none"}
+                            ),
+                            html.Span("Specular:", className="me-2", style={"fontSize": "0.8rem"}),
+                            dbc.Input(
+                                id="set-web-3d-specular",
+                                type="number",
+                                value=DEFAULT_APP_SETTINGS["web_3d_lighting_specular"],
+                                step=0.1,
+                                size="sm",
+                                style={"width": "50px", "height": "24px", "fontSize": "0.8rem", "padding": "2px 4px", "marginRight": "12px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none"}
+                            ),
+                            html.Span("Roughness:", className="me-2", style={"fontSize": "0.8rem"}),
+                            dbc.Input(
+                                id="set-web-3d-roughness",
+                                type="number",
+                                value=DEFAULT_APP_SETTINGS["web_3d_lighting_roughness"],
+                                step=0.1,
+                                size="sm",
+                                style={"width": "50px", "height": "24px", "fontSize": "0.8rem", "padding": "2px 4px", "border": "1px solid #9aa0a6", "borderRadius": "4px", "boxShadow": "none"}
+                            ),
+                        ],
+                        id="viewer-settings-3d",
+                        className="flex-nowrap align-items-center gap-2 plotly-toolbar-wrap",
+                        style={
+                            "position": "absolute",
+                            "bottom": "8px",
+                            "left": "50%",
+                            "transform": "translateX(-50%)",
+                            "zIndex": 5000,
+                            "background": "rgba(255,255,255,0.92)",
+                            "borderRadius": "6px",
+                            "padding": "6px 12px",
+                            "display": "none",
+                        },
                     ),
                     dcc.Store(id="viewer-mode-store", data="2d"),
                     dcc.Store(id="drawing-2d-shaded", data=False),
