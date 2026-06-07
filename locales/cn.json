@@ -4,7 +4,8 @@
     "title": "药片形状",
     "round": "圆形",
     "capsule": "胶囊形",
-    "oval": "椭圆形"
+    "oval": "椭圆形",
+    "label": "形状"
   },
   "cup": {
     "title": "片形轮廓",
@@ -14,7 +15,8 @@
     "cbe": "凹面斜边",
     "ffre": "平面圆弧",
     "ffbe": "平面斜边",
-    "mod": "修改椭圆"
+    "mod": "修改椭圆",
+    "profile_title": "杯型轮廓"
   },
   "dim": {
     "title": "尺寸",
@@ -53,11 +55,12 @@
     "width": "宽度, mm",
     "depth": "深度, mm",
     "angle": "角度, °",
-    "ri": "内半径, mm"
+    "ri": "内半径, mm",
+    "line_title": "刻痕"
   },
   "actions": {
     "generate": "生成图纸",
-    "export_pdf": "导出 PDF"
+    "export_pdf": "生成 PDF"
   },
   "calc": {
     "title": "计算",
@@ -105,5 +108,51 @@
     "title": "压片力",
     "steel": "钢号",
     "max": "最大压片力"
+  },
+  "geometry": {
+    "title": "药片几何"
+  },
+  "settings": {
+    "title": "PDF 导出",
+    "orientation": "方向",
+    "orientation_portrait": "纵向",
+    "orientation_landscape": "横向",
+    "pdf_fill_color": "2D 填充颜色",
+    "dimension_font_size": "尺寸字体大小",
+    "enable_2d_shading": "启用 2D 阴影",
+    "include_3d_view": "包含 3D 视图",
+    "quality": "3D 模型质量",
+    "quality_low": "低",
+    "quality_medium": "中",
+    "quality_high": "高",
+    "created_by": "创建者",
+    "approved_by": "批准者",
+    "reset": "重置设置"
+  },
+  "viewer": {
+    "view": "视图",
+    "view_2d": "2D 视图",
+    "view_3d": "3D 视图",
+    "front": "前视图",
+    "back": "后视图",
+    "left": "左视图",
+    "right": "右视图",
+    "top": "顶视图",
+    "bottom": "底视图",
+    "isometric": "等轴测",
+    "shaded": "阴影",
+    "fullscreen": "全屏",
+    "download_png": "下载 PNG",
+    "download_svg": "下载 SVG",
+    "download_stl": "下载 STL",
+    "edge": "边线",
+    "boundary_box": "边界框",
+    "fill_color": "填充颜色:",
+    "dimension_color": "尺寸颜色:",
+    "model_color": "模型颜色:",
+    "ambient": "环境光:",
+    "diffuse": "漫反射:",
+    "specular": "高光:",
+    "roughness": "粗糙度:"
   }
 }

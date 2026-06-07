@@ -108,29 +108,53 @@ dash.clientside_callback(
         Output("preset-name-input", "placeholder"),
         Output("preset-modal-save-btn", "children"),
         Output("preset-modal-cancel-btn", "children"),
+        Output("preset-dropdown", "placeholder"),
+        Output("settings-title", "children"),
+        Output("settings-orientation-label", "children"),
+        Output("set-pdf-orientation", "options"),
+        Output("settings-pdf-2d-fill-label", "children"),
+        Output("settings-dim-font-size-label", "children"),
+        Output("settings-pdf-2d-shaded-label", "children"),
+        Output("settings-pdf-include-3d-label", "children"),
+        Output("settings-pdf-3d-quality-label", "children"),
+        Output("set-pdf-3d-quality", "options"),
+        Output("settings-pdf-created-by-label", "children"),
+        Output("settings-pdf-approved-by-label", "children"),
+        Output("btn-settings-reset", "children"),
+        Output("viewer-mode-2d-btn", "title"),
+        Output("viewer-mode-3d-btn", "title"),
+        Output("drawing-shaded-btn", "title"),
+        Output("drawing-fullscreen-btn", "title"),
+        Output("drawing-download-png-btn", "title"),
+        Output("drawing-download-svg-btn", "title"),
+        Output("plotly-view-label", "children"),
+        Output("plotly-view-front-label", "children"),
+        Output("plotly-view-back-label", "children"),
+        Output("plotly-view-left-label", "children"),
+        Output("plotly-view-right-label", "children"),
+        Output("plotly-view-top-label", "children"),
+        Output("plotly-view-bottom-label", "children"),
+        Output("plotly-view-isometric-label", "children"),
+        Output("plotly-edge-btn", "title"),
+        Output("plotly-bbox-btn", "title"),
+        Output("plotly-fullscreen-btn", "title"),
+        Output("plotly-screenshot-btn", "title"),
+        Output("plotly-stl-btn", "title"),
+        Output("viewer-fill-color-label", "children"),
+        Output("viewer-dimension-color-label", "children"),
+        Output("viewer-model-color-label", "children"),
+        Output("viewer-ambient-label", "children"),
+        Output("viewer-diffuse-label", "children"),
+        Output("viewer-specular-label", "children"),
+        Output("viewer-roughness-label", "children"),
     ],
     Input("lang-store", "data")
 )
 def update_texts(lang):
-    geometry_title = {
-        "en": "Tablet Geometry",
-        "ru": "Геометрия таблетки",
-        "cn": "片剂几何"
-    }.get(lang, "Tablet Geometry")
-
-    shape_title = {
-        "en": "Shape",
-        "ru": "Форма",
-        "cn": "形状"
-    }.get(lang, "Shape")
-
-    cup_title = "Cup Profile" if lang == "en" else t("cup.title", lang)
-
-    scoring_title = {
-        "en": "Scoring Line",
-        "ru": "Риска",
-        "cn": "刻痕"
-    }.get(lang, "Scoring Line")
+    geometry_title = t("geometry.title", lang)
+    shape_title = t("shape.label", lang)
+    cup_title = t("cup.profile_title", lang)
+    scoring_title = t("scoring.line_title", lang)
 
     return (
         t("modal.title", lang),
@@ -180,7 +204,7 @@ def update_texts(lang):
         t("scoring.angle", lang),
         t("scoring.ri", lang),
         t("actions.generate", lang),
-        t("actions.generate", lang),
+        t("actions.export_pdf", lang),
         [{"label": t("cup.modified", lang), "value": True}],
         [{"label": t("cup.modified", lang), "value": True}],
         [{"label": t("scoring.cross", lang), "value": "on"}],
@@ -193,4 +217,50 @@ def update_texts(lang):
         t("presets.placeholder", lang),
         t("presets.save", lang),
         t("presets.cancel", lang),
+        t("presets.select", lang),
+        t("settings.title", lang),
+        t("settings.orientation", lang),
+        [
+            {"label": t("settings.orientation_portrait", lang), "value": "portrait"},
+            {"label": t("settings.orientation_landscape", lang), "value": "landscape"},
+        ],
+        t("settings.pdf_fill_color", lang),
+        t("settings.dimension_font_size", lang),
+        t("settings.enable_2d_shading", lang),
+        t("settings.include_3d_view", lang),
+        t("settings.quality", lang),
+        [
+            {"label": t("settings.quality_low", lang), "value": "low"},
+            {"label": t("settings.quality_medium", lang), "value": "medium"},
+            {"label": t("settings.quality_high", lang), "value": "high"},
+        ],
+        t("settings.created_by", lang),
+        t("settings.approved_by", lang),
+        t("settings.reset", lang),
+        t("viewer.view_2d", lang),
+        t("viewer.view_3d", lang),
+        t("viewer.shaded", lang),
+        t("viewer.fullscreen", lang),
+        t("viewer.download_png", lang),
+        t("viewer.download_svg", lang),
+        t("viewer.view", lang),
+        t("viewer.front", lang),
+        t("viewer.back", lang),
+        t("viewer.left", lang),
+        t("viewer.right", lang),
+        t("viewer.top", lang),
+        t("viewer.bottom", lang),
+        t("viewer.isometric", lang),
+        t("viewer.edge", lang),
+        t("viewer.boundary_box", lang),
+        t("viewer.fullscreen", lang),
+        t("viewer.download_png", lang),
+        t("viewer.download_stl", lang),
+        t("viewer.fill_color", lang),
+        t("viewer.dimension_color", lang),
+        t("viewer.model_color", lang),
+        t("viewer.ambient", lang),
+        t("viewer.diffuse", lang),
+        t("viewer.specular", lang),
+        t("viewer.roughness", lang),
     )

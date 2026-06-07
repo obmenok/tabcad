@@ -4,7 +4,8 @@
     "title": "Форма таблетки",
     "round": "Круглая",
     "capsule": "Капсула",
-    "oval": "Овал"
+    "oval": "Овал",
+    "label": "Форма"
   },
   "cup": {
     "title": "Профиль чаши",
@@ -14,7 +15,8 @@
     "cbe": "Вогнутый с фаской",
     "ffre": "Плоский с закруглением",
     "ffbe": "Плоский с фаской",
-    "mod": "Модиф. овал"
+    "mod": "Модиф. овал",
+    "profile_title": "Профиль чаши"
   },
   "dim": {
     "title": "Размеры",
@@ -53,11 +55,12 @@
     "width": "Ширина, мм",
     "depth": "Глубина, мм",
     "angle": "Угол, °",
-    "ri": "Внутренний радиус, мм"
+    "ri": "Внутренний радиус, мм",
+    "line_title": "Риска"
   },
   "actions": {
     "generate": "Сгенерировать чертеж",
-    "export_pdf": "Экспорт в PDF"
+    "export_pdf": "Сгенерировать PDF"
   },
   "calc": {
     "title": "Расчеты",
@@ -105,5 +108,51 @@
     "title": "Усилие прессования",
     "steel": "Марка стали",
     "max": "Макс. усилие"
+  },
+  "geometry": {
+    "title": "Геометрия таблетки"
+  },
+  "settings": {
+    "title": "PDF экспорт",
+    "orientation": "Ориентация",
+    "orientation_portrait": "Книжная",
+    "orientation_landscape": "Альбомная",
+    "pdf_fill_color": "Цвет заливки 2D",
+    "dimension_font_size": "Размер шрифта размеров",
+    "enable_2d_shading": "Включить заливку 2D",
+    "include_3d_view": "Включить 3D вид",
+    "quality": "Качество 3D модели",
+    "quality_low": "Низкое",
+    "quality_medium": "Среднее",
+    "quality_high": "Высокое",
+    "created_by": "Создал",
+    "approved_by": "Проверил",
+    "reset": "Сбросить настройки"
+  },
+  "viewer": {
+    "view": "Вид",
+    "view_2d": "2D вид",
+    "view_3d": "3D вид",
+    "front": "Спереди",
+    "back": "Сзади",
+    "left": "Слева",
+    "right": "Справа",
+    "top": "Сверху",
+    "bottom": "Снизу",
+    "isometric": "Изометрия",
+    "shaded": "Затенение",
+    "fullscreen": "На весь экран",
+    "download_png": "Скачать PNG",
+    "download_svg": "Скачать SVG",
+    "download_stl": "Скачать STL",
+    "edge": "Ребра",
+    "boundary_box": "Габаритная рамка",
+    "fill_color": "Цвет заливки:",
+    "dimension_color": "Цвет размеров:",
+    "model_color": "Цвет модели:",
+    "ambient": "Фоновый свет:",
+    "diffuse": "Рассеивание:",
+    "specular": "Блик:",
+    "roughness": "Шероховатость:"
   }
 }

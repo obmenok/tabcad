@@ -1,26 +1,10 @@
 import dash
 
-from dash import Input, Output, State, callback, clientside_callback, ctx
+from dash import ClientsideFunction, Input, Output, State, callback, clientside_callback, ctx
 
 
 clientside_callback(
-    """
-    function(n) {
-        if (!n) {
-            return window.dash_clientside.no_update;
-        }
-        const panel = document.querySelector("#viewer-viewport-panel");
-        if (!panel) {
-            return "fullscreen:panel_not_found";
-        }
-        if (!document.fullscreenElement) {
-            panel.requestFullscreen();
-            return "fullscreen:on:" + String(n);
-        }
-        document.exitFullscreen();
-        return "fullscreen:off:" + String(n);
-    }
-    """,
+    ClientsideFunction(namespace="viewerFullscreen", function_name="toggle"),
     Output("plotly-fullscreen-signal", "children"),
     Input("plotly-fullscreen-btn", "n_clicks"),
     prevent_initial_call=True,
@@ -221,23 +205,7 @@ clientside_callback(
 
 
 clientside_callback(
-    """
-    function(n) {
-        if (!n) {
-            return window.dash_clientside.no_update;
-        }
-        const panel = document.querySelector("#viewer-viewport-panel");
-        if (!panel) {
-            return "drawing-fullscreen:panel_not_found";
-        }
-        if (!document.fullscreenElement) {
-            panel.requestFullscreen();
-            return "drawing-fullscreen:on:" + String(n);
-        }
-        document.exitFullscreen();
-        return "drawing-fullscreen:off:" + String(n);
-    }
-    """,
+    ClientsideFunction(namespace="viewerFullscreen", function_name="toggle"),
     Output("drawing-fullscreen-signal", "children"),
     Input("drawing-fullscreen-btn", "n_clicks"),
     prevent_initial_call=True,

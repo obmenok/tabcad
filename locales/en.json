@@ -4,7 +4,8 @@
     "title": "Tablet Shape",
     "round": "Round",
     "capsule": "Capsule",
-    "oval": "Oval"
+    "oval": "Oval",
+    "label": "Shape"
   },
   "cup": {
     "title": "Cup Configuration",
@@ -14,7 +15,8 @@
     "cbe": "Concave Bevel Edge",
     "ffre": "Flat Face Radius Edge",
     "ffbe": "Flat Face Bevel Edge",
-    "mod": "Modified Oval"
+    "mod": "Modified Oval",
+    "profile_title": "Cup Profile"
   },
   "dim": {
     "title": "Dimensions",
@@ -53,11 +55,12 @@
     "width": "Width, mm",
     "depth": "Depth, mm",
     "angle": "Angle, °",
-    "ri": "Radius Inner, mm"
+    "ri": "Radius Inner, mm",
+    "line_title": "Scoring Line"
   },
   "actions": {
     "generate": "Generate Drawing",
-    "export_pdf": "PDF Export"
+    "export_pdf": "Generate PDF"
   },
   "calc": {
     "title": "Calculations",
@@ -105,5 +108,51 @@
     "title": "Tip force",
     "steel": "Steel type",
     "max": "Max Tip Force"
+  },
+  "geometry": {
+    "title": "Tablet Geometry"
+  },
+  "settings": {
+    "title": "PDF Export",
+    "orientation": "Orientation",
+    "orientation_portrait": "Portrait",
+    "orientation_landscape": "Landscape",
+    "pdf_fill_color": "2D Fill Color",
+    "dimension_font_size": "Dimension Font Size",
+    "enable_2d_shading": "Enable 2D Shading",
+    "include_3d_view": "Include 3D View",
+    "quality": "3D Model Quality",
+    "quality_low": "Low",
+    "quality_medium": "Medium",
+    "quality_high": "High",
+    "created_by": "Created by",
+    "approved_by": "Approved by",
+    "reset": "Reset Settings"
+  },
+  "viewer": {
+    "view": "View",
+    "view_2d": "2D View",
+    "view_3d": "3D View",
+    "front": "Front",
+    "back": "Back",
+    "left": "Left",
+    "right": "Right",
+    "top": "Top",
+    "bottom": "Bottom",
+    "isometric": "Isometric",
+    "shaded": "Shading",
+    "fullscreen": "Full screen",
+    "download_png": "Download PNG",
+    "download_svg": "Download SVG",
+    "download_stl": "Download STL",
+    "edge": "Edges",
+    "boundary_box": "Boundary box",
+    "fill_color": "Fill Color:",
+    "dimension_color": "Dimension Color:",
+    "model_color": "Model Color:",
+    "ambient": "Ambient:",
+    "diffuse": "Diffuse:",
+    "specular": "Specular:",
+    "roughness": "Roughness:"
   }
 }
