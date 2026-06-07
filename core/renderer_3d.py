@@ -295,7 +295,7 @@ def render_tablet_3d(mesh_data, params):
         else:
             t_res, r_res = 320, 160
     else:
-        t_res, r_res = 320, 160
+        t_res, r_res = 220, 110
 
     theta = np.linspace(0, 2 * np.pi, t_res)
     rr = np.linspace(0, 1, r_res)
