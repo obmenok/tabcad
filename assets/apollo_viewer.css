@@ -909,11 +909,39 @@
   width: 100%;
 }
 
+html.viewer-pseudo-fullscreen-active,
+body.viewer-pseudo-fullscreen-active {
+  overflow: hidden !important;
+}
+
+#viewer-viewport-panel.viewer-shell.viewer-pseudo-fullscreen {
+  background: #ffffff;
+  border-radius: 0 !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  inset: 0 !important;
+  max-height: 100dvh !important;
+  max-width: 100vw !important;
+  min-height: 100dvh !important;
+  min-width: 100vw !important;
+  position: fixed !important;
+  width: 100vw !important;
+  z-index: 20000 !important;
+}
+
+#viewer-viewport-panel.viewer-shell.viewer-pseudo-fullscreen .viewer-top-toolbar {
+  inset: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) auto max(8px, env(safe-area-inset-left));
+}
+
+#viewer-viewport-panel.viewer-shell.viewer-pseudo-fullscreen .viewer-settings-toolbar {
+  bottom: max(8px, env(safe-area-inset-bottom)) !important;
+}
+
 .viewer-top-toolbar {
   align-items: flex-start;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 8px;
+  gap: 2px 8px;
   inset: 8px 8px auto 8px;
   justify-content: space-between;
   pointer-events: none;
@@ -1072,6 +1100,10 @@
   margin-bottom: 0;
   font-size: 14px;
   font-weight: 400;
+}
+
+.viewer-settings-label.me-1 {
+  margin-right: 6px !important;
 }
 
 .viewer-settings-number.form-control {

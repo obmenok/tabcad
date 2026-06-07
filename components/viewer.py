@@ -46,13 +46,14 @@ def _settings_preview_panel():
         [
             html.Div(
                 "PDF Export",
+                id="settings-title",
                 className="fw-bold text-secondary mb-2",
                 style={"fontSize": "1rem"},
             ),
             html.Div(
                 [
                     _settings_select_row(
-                        "Orientation",
+                        html.Span("Orientation", id="settings-orientation-label"),
                         [
                             {"label": "Portrait", "value": "portrait"},
                             {"label": "Landscape", "value": "landscape"},
@@ -61,7 +62,7 @@ def _settings_preview_panel():
                         id="set-pdf-orientation",
                     ),
                     _settings_row(
-                        "2D Fill Color",
+                        html.Span("2D Fill Color", id="settings-pdf-2d-fill-label"),
                         dbc.Input(
                             id="set-pdf-2d-fill",
                             type="color",
@@ -72,7 +73,7 @@ def _settings_preview_panel():
                         ),
                     ),
                     _settings_select_row(
-                        "Dimension Font Size",
+                        html.Span("Dimension Font Size", id="settings-dim-font-size-label"),
                         [
                             {"label": "8 pt", "value": 8},
                             {"label": "9 pt", "value": 9},
@@ -84,7 +85,7 @@ def _settings_preview_panel():
                         id="set-pdf-dim-font-size",
                     ),
                     _settings_row(
-                        "Enable 2D Shading",
+                        html.Span("Enable 2D Shading", id="settings-pdf-2d-shaded-label"),
                         dbc.Checkbox(
                             id="set-pdf-2d-shaded",
                             value=DEFAULT_APP_SETTINGS["pdf_2d_shaded"],
@@ -92,7 +93,7 @@ def _settings_preview_panel():
                         ),
                     ),
                     _settings_row(
-                        "Include 3D View",
+                        html.Span("Include 3D View", id="settings-pdf-include-3d-label"),
                         dbc.Checkbox(
                             id="set-pdf-include-3d",
                             value=DEFAULT_APP_SETTINGS["pdf_include_3d"],
@@ -100,7 +101,7 @@ def _settings_preview_panel():
                         ),
                     ),
                     _settings_select_row(
-                        "3D Model Quality",
+                        html.Span("3D Model Quality", id="settings-pdf-3d-quality-label"),
                         [
                             {"label": "Low", "value": "low"},
                             {"label": "Medium", "value": "medium"},
@@ -110,7 +111,7 @@ def _settings_preview_panel():
                         id="set-pdf-3d-quality",
                     ),
                     _settings_row(
-                        "Created by",
+                        html.Span("Created by", id="settings-pdf-created-by-label"),
                         dbc.Input(
                             id="set-pdf-created-by",
                             type="text",
@@ -121,7 +122,7 @@ def _settings_preview_panel():
                         ),
                     ),
                     _settings_row(
-                        "Approved by",
+                        html.Span("Approved by", id="settings-pdf-approved-by-label"),
                         dbc.Input(
                             id="set-pdf-approved-by",
                             type="text",
@@ -135,7 +136,7 @@ def _settings_preview_panel():
                 className="dimensions-table-block settings-mock-table mb-3",
             ),
             dbc.Button(
-                "Generate Drawing",
+                "Generate PDF",
                 id="export-pdf-btn",
                 outline=True,
                 color="secondary",
@@ -357,7 +358,7 @@ def create_model_panel():
                                             label=html.Span(
                                                 [
                                                     html.Span(className="apollo-icon av-i-view av-view-icon"),
-                                                    html.Span("View"),
+                                                    html.Span("View", id="plotly-view-label"),
                                                 ],
                                                 className="d-inline-flex align-items-center av-view-label",
                                             ),
@@ -371,7 +372,7 @@ def create_model_panel():
                                                             html.Span(
                                                                 className="apollo-icon av-i-front av-menu-icon"
                                                             ),
-                                                            "Front",
+                                                            html.Span("Front", id="plotly-view-front-label"),
                                                         ]
                                                     ),
                                                     id="plotly-view-front",
@@ -382,7 +383,7 @@ def create_model_panel():
                                                             html.Span(
                                                                 className="apollo-icon av-i-back av-menu-icon"
                                                             ),
-                                                            "Back",
+                                                            html.Span("Back", id="plotly-view-back-label"),
                                                         ]
                                                     ),
                                                     id="plotly-view-back",
@@ -393,7 +394,7 @@ def create_model_panel():
                                                             html.Span(
                                                                 className="apollo-icon av-i-left av-menu-icon"
                                                             ),
-                                                            "Left",
+                                                            html.Span("Left", id="plotly-view-left-label"),
                                                         ]
                                                     ),
                                                     id="plotly-view-left",
@@ -404,7 +405,7 @@ def create_model_panel():
                                                             html.Span(
                                                                 className="apollo-icon av-i-right av-menu-icon"
                                                             ),
-                                                            "Right",
+                                                            html.Span("Right", id="plotly-view-right-label"),
                                                         ]
                                                     ),
                                                     id="plotly-view-right",
@@ -415,7 +416,7 @@ def create_model_panel():
                                                             html.Span(
                                                                 className="apollo-icon av-i-top av-menu-icon"
                                                             ),
-                                                            "Top",
+                                                            html.Span("Top", id="plotly-view-top-label"),
                                                         ]
                                                     ),
                                                     id="plotly-view-top",
@@ -426,7 +427,7 @@ def create_model_panel():
                                                             html.Span(
                                                                 className="apollo-icon av-i-bottom av-menu-icon"
                                                             ),
-                                                            "Bottom",
+                                                            html.Span("Bottom", id="plotly-view-bottom-label"),
                                                         ]
                                                     ),
                                                     id="plotly-view-bottom",
@@ -437,7 +438,10 @@ def create_model_panel():
                                                             html.Span(
                                                                 className="apollo-icon av-i-isometric av-menu-icon"
                                                             ),
-                                                            "Isometric",
+                                                            html.Span(
+                                                                "Isometric",
+                                                                id="plotly-view-isometric-label",
+                                                            ),
                                                         ]
                                                     ),
                                                     id="plotly-view-isometric",
@@ -516,7 +520,11 @@ def create_model_panel():
                         [
                             html.Span(
                                 [
-                                    html.Span("Fill Color:", className="viewer-settings-label me-1"),
+                                    html.Span(
+                                        "Fill Color:",
+                                        id="viewer-fill-color-label",
+                                        className="viewer-settings-label me-1",
+                                    ),
                                     dbc.Input(
                                         id="set-web-2d-fill",
                                         type="color",
@@ -529,7 +537,11 @@ def create_model_panel():
                             ),
                             html.Span(
                                 [
-                                    html.Span("Dimension Color:", className="viewer-settings-label me-1"),
+                                    html.Span(
+                                        "Dimension Color:",
+                                        id="viewer-dimension-color-label",
+                                        className="viewer-settings-label me-1",
+                                    ),
                                     dbc.Input(
                                         id="set-web-2d-dim",
                                         type="color",
@@ -559,7 +571,11 @@ def create_model_panel():
                         [
                             html.Span(
                                 [
-                                    html.Span("Model Color:", className="viewer-settings-label me-1"),
+                                    html.Span(
+                                        "Model Color:",
+                                        id="viewer-model-color-label",
+                                        className="viewer-settings-label me-1",
+                                    ),
                                     dbc.Input(
                                         id="set-web-3d-model-color",
                                         type="color",
@@ -572,7 +588,11 @@ def create_model_panel():
                             ),
                             html.Span(
                                 [
-                                    html.Span("Ambient:", className="viewer-settings-label me-1"),
+                                    html.Span(
+                                        "Ambient:",
+                                        id="viewer-ambient-label",
+                                        className="viewer-settings-label me-1",
+                                    ),
                                     dbc.Input(
                                         id="set-web-3d-ambient",
                                         type="number",
@@ -586,7 +606,11 @@ def create_model_panel():
                             ),
                             html.Span(
                                 [
-                                    html.Span("Diffuse:", className="viewer-settings-label me-1"),
+                                    html.Span(
+                                        "Diffuse:",
+                                        id="viewer-diffuse-label",
+                                        className="viewer-settings-label me-1",
+                                    ),
                                     dbc.Input(
                                         id="set-web-3d-diffuse",
                                         type="number",
@@ -600,7 +624,11 @@ def create_model_panel():
                             ),
                             html.Span(
                                 [
-                                    html.Span("Specular:", className="viewer-settings-label me-1"),
+                                    html.Span(
+                                        "Specular:",
+                                        id="viewer-specular-label",
+                                        className="viewer-settings-label me-1",
+                                    ),
                                     dbc.Input(
                                         id="set-web-3d-specular",
                                         type="number",
@@ -614,7 +642,11 @@ def create_model_panel():
                             ),
                             html.Span(
                                 [
-                                    html.Span("Roughness:", className="viewer-settings-label me-1"),
+                                    html.Span(
+                                        "Roughness:",
+                                        id="viewer-roughness-label",
+                                        className="viewer-settings-label me-1",
+                                    ),
                                     dbc.Input(
                                         id="set-web-3d-roughness",
                                         type="number",
