@@ -475,6 +475,7 @@ def _build_calc_html(metrics, density, tip_force_value=None, lang="en"):
         Input("plotly-view-preset", "data"),
         Input("plotly-show-edges", "data"),
         Input("plotly-show-bbox", "data"),
+        Input("viewer-mode-store", "data"),
         Input("shape-dropdown", "value"),
         Input("profile-dropdown", "value"),
         Input("modified-switch", "value"),
@@ -513,6 +514,7 @@ def generate_graphics(
     view_preset,
     show_edges,
     show_bbox,
+    viewer_mode,
     shape,
     profile,
     is_mod,
@@ -602,31 +604,46 @@ def generate_graphics(
             flush=True,
         )
 
-        t_svg_start = time.perf_counter()
-        img_src = render_tablet(mesh_data, params)
-        print(
-            f"generate_graphics render_2d_svg: {(time.perf_counter() - t_svg_start):.3f}s",
-            flush=True,
-        )
+        viewer_mode = (viewer_mode or "2d").lower()
+        render_2d_active = viewer_mode != "3d"
+        render_3d_active = viewer_mode == "3d"
 
-        t_3d_start = time.perf_counter()
-        fig = render_tablet_3d(mesh_data, params)
-        print(
-            f"generate_graphics render_3d: {(time.perf_counter() - t_3d_start):.3f}s",
-            flush=True,
-        )
+        img_src = dash.no_update
+        png_src = dash.no_update
+        fig_3d = dash.no_update
 
-        fig_3d = dcc.Graph(
-            figure=fig,
-            style={"height": "100%", "width": "100%"},
-            config={"displaylogo": False, "displayModeBar": False, "responsive": True},
-            id="tablet-3d-graph",
-        )
+        if render_2d_active:
+            t_svg_start = time.perf_counter()
+            img_src = render_tablet(mesh_data, params)
+            png_src = None
+            print(
+                f"generate_graphics render_2d_svg: {(time.perf_counter() - t_svg_start):.3f}s",
+                flush=True,
+            )
+        else:
+            print("generate_graphics render_2d_svg: skipped", flush=True)
+
+        if render_3d_active:
+            t_3d_start = time.perf_counter()
+            fig = render_tablet_3d(mesh_data, params)
+            print(
+                f"generate_graphics render_3d: {(time.perf_counter() - t_3d_start):.3f}s",
+                flush=True,
+            )
+
+            fig_3d = dcc.Graph(
+                figure=fig,
+                style={"height": "100%", "width": "100%"},
+                config={"displaylogo": False, "displayModeBar": False, "responsive": True},
+                id="tablet-3d-graph",
+            )
+        else:
+            print("generate_graphics render_3d: skipped", flush=True)
         print(
             f"generate_graphics total: {(time.perf_counter() - t_total_start):.3f}s",
             flush=True,
         )
-        return img_src, None, fig_3d
+        return img_src, png_src, fig_3d
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in generate_graphics: {e}")
         return dash.no_update, dash.no_update, dash.no_update
