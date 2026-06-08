@@ -79,7 +79,7 @@ DEFAULT_APP_SETTINGS = {
     # PDF Export Settings
     "pdf_orientation": "portrait",
     "pdf_2d_fill_color": "#dec9bd",
-    "pdf_2d_dim_font_size": 8,
+    "pdf_2d_dim_font_size": 10,
     "pdf_2d_shaded": True,
     "pdf_include_3d": True,
     "pdf_3d_quality": "medium",

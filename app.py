@@ -5,8 +5,29 @@ from components.viewer import create_model_panel, create_info_panel
 
 
 # Инициализация приложения (LUMEN - чистая светлая тема, похожая на оригинал)
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUMEN], suppress_callback_exceptions=True)
-app.title = "TabletCAD Pro"
+APP_TITLE = "TabCAD — Tablet design tool"
+APP_DESCRIPTION = (
+    "TabCAD is a web-based tool for pharmaceutical tablet design, geometry calculation, "
+    "and 2D/3D visualization. Export PDF specifications and STL models."
+)
+
+app = dash.Dash(
+    __name__,
+    external_stylesheets=[dbc.themes.LUMEN],
+    suppress_callback_exceptions=True,
+    meta_tags=[
+        {"name": "description", "content": APP_DESCRIPTION},
+        {
+            "name": "keywords",
+            "content": "tablet design, tablet tooling, tablet CAD, punch geometry, pharmaceutical tablets",
+        },
+        {"property": "og:title", "content": APP_TITLE},
+        {"property": "og:description", "content": APP_DESCRIPTION},
+        {"property": "og:type", "content": "website"},
+        {"property": "og:url", "content": "https://tabcad.ru/"},
+    ],
+)
+app.title = APP_TITLE
 server = app.server
 
 # Собираем Layout из компонентов
