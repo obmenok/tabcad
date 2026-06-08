@@ -34,12 +34,45 @@ A www -> 185.26.121.36
 
 ## Nginx
 
-Nginx proxies the domain to the Dash app:
+Nginx proxies the domain to the Dash app.
+
+Config file:
+
+```bash
+/etc/nginx/sites-available/tabcad
+```
+
+Current HTTPS server block:
 
 ```nginx
 server {
-    listen 80;
     server_name tabcad.ru www.tabcad.ru;
+
+    location /assets/ {
+        proxy_pass http://127.0.0.1:8050;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+    }
+
+    location /_dash-component-suites/ {
+        proxy_pass http://127.0.0.1:8050;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        expires 365d;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
 
     location / {
         proxy_pass http://127.0.0.1:8050;
@@ -53,13 +86,31 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
     }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/tabcad.ru/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/tabcad.ru/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 }
 ```
 
-Config file:
+HTTP server block redirects to HTTPS and is managed by Certbot:
 
-```bash
-/etc/nginx/sites-available/tabcad
+```nginx
+server {
+    if ($host = www.tabcad.ru) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    if ($host = tabcad.ru) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    server_name tabcad.ru www.tabcad.ru;
+    return 404; # managed by Certbot
+}
 ```
 
 Enable and reload:
@@ -69,6 +120,77 @@ sudo ln -s /etc/nginx/sites-available/tabcad /etc/nginx/sites-enabled/tabcad
 sudo nginx -t
 sudo systemctl reload nginx
 ```
+
+### Nginx Gzip
+
+Dash sends large text payloads for 2D SVG and 3D Plotly JSON. Gzip should be
+enabled for JSON, CSS, JavaScript, XML, and SVG responses.
+
+Global config file:
+
+```bash
+/etc/nginx/nginx.conf
+```
+
+Recommended gzip block inside `http { ... }`:
+
+```nginx
+gzip on;
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 5;
+gzip_buffers 16 8k;
+gzip_http_version 1.1;
+gzip_min_length 1024;
+gzip_types
+    text/plain
+    text/css
+    text/xml
+    text/javascript
+    application/json
+    application/javascript
+    application/xml
+    application/xml+rss
+    image/svg+xml;
+```
+
+After nginx changes:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Check gzip:
+
+```bash
+curl -I -H "Accept-Encoding: gzip" https://tabcad.ru/_dash-layout
+curl -I -H "Accept-Encoding: gzip" https://tabcad.ru/_dash-dependencies
+curl -I -H "Accept-Encoding: gzip" https://tabcad.ru/assets/apollo_viewer.css
+```
+
+Expected header:
+
+```text
+Content-Encoding: gzip
+```
+
+Check static cache headers:
+
+```bash
+curl -I https://tabcad.ru/assets/apollo_viewer.css
+curl -I https://tabcad.ru/_dash-component-suites/dash/dcc/dash_core_components.v4_1_0m1780781398.js
+```
+
+Expected cache behavior:
+
+```text
+/assets/...                  -> Cache-Control: public, max-age=2592000
+/_dash-component-suites/...  -> Cache-Control: public, max-age=31536000, immutable
+```
+
+Do not cache dynamic Dash endpoints such as `/_dash-update-component`,
+`/_dash-layout`, or `/_dash-dependencies`.
 
 ## HTTPS
 
