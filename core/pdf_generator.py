@@ -593,10 +593,10 @@ class TabletPDFGenerator:
         """Одиночный 3D вид (без рамок)"""
         if self.is_landscape:
             regions = self._landscape_regions()
-            x_start, y_start = regions["left_x"] + 6 * mm, self.bot_m + 10 * mm
-            v_size = 40 * mm
+            x_start, y_start = regions["left_x"] + 31 * mm, self.bot_m + 10 * mm
+            v_size = 25 * mm
         else:
-            x_start, y_start = self.left_m + 142 * mm, self.bot_m + 127 * mm
+            x_start, y_start = self.left_m + 17 * mm, self.bot_m + 67 * mm
             v_size = 25 * mm
         views_dict = {label: b64 for b64, label in self.views_3d}
 
@@ -619,12 +619,6 @@ class TabletPDFGenerator:
         self.c.showPage()
         self.c.save()
         return self.filename
-
-
-
-
-
-
 
 
 
