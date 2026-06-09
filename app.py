@@ -13,7 +13,6 @@ APP_DESCRIPTION = (
 
 app = dash.Dash(
     __name__,
-    external_stylesheets=[dbc.themes.LUMEN],
     suppress_callback_exceptions=True,
     meta_tags=[
         {"name": "description", "content": APP_DESCRIPTION},
