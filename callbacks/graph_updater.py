@@ -3,6 +3,8 @@ import base64
 import traceback
 import logging
 import time
+import hashlib
+import json
 from urllib.parse import unquote
 from dash import Input, Output, State, callback, html, dcc, ctx
 import dash_bootstrap_components as dbc
@@ -26,6 +28,42 @@ try:
     pio.kaleido.scope.mathjax = None
 except Exception:
     pass
+
+
+MESH_PARAM_KEYS = (
+    "shape",
+    "profile",
+    "is_modified",
+    "W",
+    "L",
+    "Re",
+    "Rs",
+    "Land",
+    "Dc",
+    "Hb",
+    "b_type",
+    "b_depth",
+    "b_angle",
+    "b_Ri",
+    "b_cruciform",
+    "b_double_sided",
+    "R_maj_maj",
+    "R_maj_min",
+    "R_min_maj",
+    "R_min_min",
+    "Rc_min",
+    "Rc_maj",
+    "Bev_A",
+    "Bev_D",
+    "R_edge",
+    "Blend_R",
+)
+
+
+def _mesh_params_hash(params: dict) -> str:
+    subset = {key: params.get(key) for key in MESH_PARAM_KEYS}
+    payload = json.dumps(subset, sort_keys=True, default=str, separators=(",", ":"))
+    return hashlib.md5(payload.encode("utf-8")).hexdigest()
 
 
 def _pdf_drawing_zone_size_mm(params):
@@ -468,6 +506,7 @@ def _build_calc_html(metrics, density, tip_force_value=None, lang="en"):
         Output("tablet-drawing", "src"),
         Output("drawing-2d-png-src", "data"),
         Output("tablet-3d", "children"),
+        Output("mesh-data-store", "data"),
     ],
     [
         Input("btn-generate", "n_clicks"),
@@ -546,7 +585,7 @@ def generate_graphics(
     app_settings,
 ):
     if w is None or dc is None or profile is None:
-        return dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     t_total_start = time.perf_counter()
     trigger = ctx.triggered_id
@@ -643,10 +682,14 @@ def generate_graphics(
             f"generate_graphics total: {(time.perf_counter() - t_total_start):.3f}s",
             flush=True,
         )
-        return img_src, png_src, fig_3d
+        mesh_store = {
+            "metrics": mesh_data.get("metrics", {}),
+            "params_hash": _mesh_params_hash(params),
+        }
+        return img_src, png_src, fig_3d, mesh_store
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in generate_graphics: {e}")
-        return dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 
 @callback(
@@ -804,41 +847,48 @@ def download_2d_snapshot(
 @callback(
     Output("calc-output", "children"),
     [
-        Input("shape-dropdown", "value"),
-        Input("profile-dropdown", "value"),
-        Input("modified-switch", "value"),
-        Input("input-w", "value"),
-        Input("input-l", "value"),
-        Input("input-re", "value"),
-        Input("input-rs", "value"),
-        Input("input-dc", "value"),
-        Input("input-rc-min", "value"),
-        Input("input-rc-maj", "value"),
-        Input("input-land", "value"),
-        Input("input-hb", "value"),
-        Input("input-tt", "value"),
-        Input("input-bev-d", "value"),
-        Input("input-bev-a", "value"),
-        Input("input-r-edge", "value"),
-        Input("input-blend-r", "value"),
-        Input("input-r-maj-maj", "value"),
-        Input("input-r-maj-min", "value"),
-        Input("input-r-min-maj", "value"),
-        Input("input-r-min-min", "value"),
-        Input("bisect-type", "value"),
-        Input("input-b-width", "value"),
-        Input("input-b-depth", "value"),
-        Input("input-b-angle", "value"),
-        Input("input-b-ri", "value"),
-        Input("bisect-cruciform", "value"),
-        Input("bisect-double-sided", "value"),
+        Input("mesh-data-store", "data"),
         Input("input-density", "value"),
         Input("input-tip-force-steel", "value"),
         Input("lang-store", "data"),
     ],
+    [
+        State("shape-dropdown", "value"),
+        State("profile-dropdown", "value"),
+        State("modified-switch", "value"),
+        State("input-w", "value"),
+        State("input-l", "value"),
+        State("input-re", "value"),
+        State("input-rs", "value"),
+        State("input-dc", "value"),
+        State("input-rc-min", "value"),
+        State("input-rc-maj", "value"),
+        State("input-land", "value"),
+        State("input-hb", "value"),
+        State("input-tt", "value"),
+        State("input-bev-d", "value"),
+        State("input-bev-a", "value"),
+        State("input-r-edge", "value"),
+        State("input-blend-r", "value"),
+        State("input-r-maj-maj", "value"),
+        State("input-r-maj-min", "value"),
+        State("input-r-min-maj", "value"),
+        State("input-r-min-min", "value"),
+        State("bisect-type", "value"),
+        State("input-b-width", "value"),
+        State("input-b-depth", "value"),
+        State("input-b-angle", "value"),
+        State("input-b-ri", "value"),
+        State("bisect-cruciform", "value"),
+        State("bisect-double-sided", "value"),
+    ],
     prevent_initial_call=False,
 )
 def update_calc_panel_live(
+    mesh_store,
+    density,
+    tip_force_steel,
+    lang,
     shape,
     profile,
     is_mod,
@@ -867,9 +917,6 @@ def update_calc_panel_live(
     b_ri,
     b_cruciform,
     b_double_sided,
-    density,
-    tip_force_steel,
-    lang,
 ):
     if w is None or dc is None or profile is None:
         return html.Div("Please enter valid dimensions", className="text-danger")
@@ -915,8 +962,20 @@ def update_calc_panel_live(
             if tip_force["supported"] and tip_force["selected_force"] is not None
             else "N/A"
         )
-        mesh_data = generate_mesh(params)
-        return _build_calc_html(mesh_data["metrics"], density, tip_force_value, lang)
+        current_hash = _mesh_params_hash(params)
+        metrics = None
+        if (
+            isinstance(mesh_store, dict)
+            and mesh_store.get("params_hash") == current_hash
+            and isinstance(mesh_store.get("metrics"), dict)
+        ):
+            metrics = mesh_store["metrics"]
+
+        if metrics is None:
+            mesh_data = generate_mesh(params)
+            metrics = mesh_data["metrics"]
+
+        return _build_calc_html(metrics, density, tip_force_value, lang)
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in update_calc_output: {e}")
         return html.Div(
