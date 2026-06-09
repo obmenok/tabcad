@@ -676,6 +676,7 @@ def create_model_panel():
                     dcc.Store(id="viewer-mode-store", data="2d"),
                     dcc.Store(id="drawing-2d-shaded", data=False),
                     dcc.Store(id="drawing-2d-png-src"),
+                    dcc.Store(id="mesh-data-store"),
                     dcc.Store(id="plotly-view-preset", data="isometric"),
                     dcc.Store(id="plotly-show-edges", data=False),
                     dcc.Store(id="plotly-show-bbox", data=False),
