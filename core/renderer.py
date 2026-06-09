@@ -49,26 +49,93 @@ ISO_PDF_STYLE = {
     "pointer_shelf_length": 10.0,       # Length of horizontal shelf for pointer/radius dimensions
 }
 
-GEOM_THICK_LINE = 1.2
-GEOM_MEDIUM_LINE = 0.8
-GEOM_THIN_LINE = 0.6
-# Global state (set in render_tablet based on selected style)
-DIM_LINE_WIDTH = WEB_STYLE["dim_line_width"]
-C_TEXT = WEB_STYLE["text_color"]
-EXT_LINE_WIDTH = ISO_PDF_STYLE["ext_line_width"]
-TEXT_FONT_SIZE = ISO_PDF_STYLE["text_font_size"]
-TEXT_GAP_FROM_DIM_LINE = ISO_PDF_STYLE["text_gap_from_dim_line"]
-TEXT_BBOX_PAD = ISO_PDF_STYLE["text_bbox_pad"]
-EXT_LINE_GAP_FROM_FEATURE = ISO_PDF_STYLE["ext_line_gap_from_feature"]
-EXT_LINE_OVERRUN = ISO_PDF_STYLE["ext_line_overrun"]
-OUTSIDE_TEXT_DIST = ISO_PDF_STYLE["outside_text_dist"]
-OUTSIDE_TEXT_OFFSET_RATIO = ISO_PDF_STYLE["outside_text_offset_ratio"]
-POINTER_SHELF_LENGTH = ISO_PDF_STYLE["pointer_shelf_length"]
-ARROW_LENGTH = ISO_PDF_STYLE["arrow_length"]
-ARROW_WIDTH = ISO_PDF_STYLE["arrow_width"]
-ISO_PDF_ACTIVE = False
-PDF_SCALE_RATIO = 1.0
+DEFAULT_GEOM_THICK_LINE = 1.2
+DEFAULT_GEOM_MEDIUM_LINE = 0.8
+DEFAULT_GEOM_THIN_LINE = 0.6
 PDF_FONT_PROPERTIES = None
+
+
+class RenderStyle:
+    """Per-call style context for 2D rendering."""
+
+    __slots__ = (
+        "is_pdf",
+        "pdf_scale_ratio",
+        "dim_line_width",
+        "ext_line_width",
+        "text_color",
+        "text_font_size",
+        "text_gap_from_dim_line",
+        "text_bbox_pad",
+        "ext_line_gap_from_feature",
+        "ext_line_overrun",
+        "outside_text_dist",
+        "outside_text_offset_ratio",
+        "pointer_shelf_length",
+        "arrow_length",
+        "arrow_width",
+        "geom_thick_line",
+        "geom_medium_line",
+        "geom_thin_line",
+    )
+
+    def __init__(self, params):
+        style_name = str(params.get("render_2d_style", "web")).lower()
+        self.is_pdf = style_name == "iso_pdf"
+
+        if self.is_pdf:
+            style = ISO_PDF_STYLE
+            pdf_scale_ratio = float(params.get("render_2d_pdf_scale_ratio", 1.0) or 1.0)
+            if pdf_scale_ratio <= 0:
+                pdf_scale_ratio = 1.0
+
+            bounds = params.get("_render_2d_bounds")
+            if bounds:
+                view_w = bounds["view_xmax"] - bounds["view_xmin"]
+            else:
+                w_val = float(params["W"])
+                l_val = float(params["L"])
+                view_w = max(w_val, l_val) * 1.5 + 80.0
+
+            lw_scale = 254.0 / (view_w * pdf_scale_ratio)
+            pdf_dim_font_size = params.get("pdf_2d_dim_font_size", 8)
+
+            self.pdf_scale_ratio = pdf_scale_ratio
+            self.dim_line_width = style["dim_line_width"] * lw_scale
+            self.ext_line_width = style["ext_line_width"] * lw_scale
+            self.text_color = style["text_color"]
+            self.text_font_size = (pdf_dim_font_size * 254.0) / (view_w * pdf_scale_ratio)
+            self.text_gap_from_dim_line = style["text_gap_from_dim_line"] / pdf_scale_ratio
+            self.text_bbox_pad = style["text_bbox_pad"]
+            self.ext_line_gap_from_feature = style["ext_line_gap_from_feature"]
+            self.ext_line_overrun = style["ext_line_overrun"] / pdf_scale_ratio
+            self.outside_text_dist = style["outside_text_dist"] / pdf_scale_ratio
+            self.outside_text_offset_ratio = style["outside_text_offset_ratio"]
+            self.pointer_shelf_length = style["pointer_shelf_length"] / pdf_scale_ratio
+            self.arrow_length = 4.0 / pdf_scale_ratio
+            self.arrow_width = 1.2 / pdf_scale_ratio
+            self.geom_thick_line = DEFAULT_GEOM_THICK_LINE * lw_scale
+            self.geom_medium_line = DEFAULT_GEOM_MEDIUM_LINE * lw_scale
+            self.geom_thin_line = DEFAULT_GEOM_THIN_LINE * lw_scale
+        else:
+            style = WEB_STYLE
+            self.pdf_scale_ratio = 1.0
+            self.dim_line_width = style["dim_line_width"]
+            self.ext_line_width = ISO_PDF_STYLE["ext_line_width"]
+            self.text_color = params.get("web_2d_dim_color", style["text_color"])
+            self.text_font_size = 9
+            self.text_gap_from_dim_line = ISO_PDF_STYLE["text_gap_from_dim_line"]
+            self.text_bbox_pad = ISO_PDF_STYLE["text_bbox_pad"]
+            self.ext_line_gap_from_feature = ISO_PDF_STYLE["ext_line_gap_from_feature"]
+            self.ext_line_overrun = ISO_PDF_STYLE["ext_line_overrun"]
+            self.outside_text_dist = ISO_PDF_STYLE["outside_text_dist"]
+            self.outside_text_offset_ratio = ISO_PDF_STYLE["outside_text_offset_ratio"]
+            self.pointer_shelf_length = ISO_PDF_STYLE["pointer_shelf_length"]
+            self.arrow_length = ISO_PDF_STYLE["arrow_length"]
+            self.arrow_width = ISO_PDF_STYLE["arrow_width"]
+            self.geom_thick_line = DEFAULT_GEOM_THICK_LINE
+            self.geom_medium_line = DEFAULT_GEOM_MEDIUM_LINE
+            self.geom_thin_line = DEFAULT_GEOM_THIN_LINE
 
 # Load osifont for ISO PDF drawings
 _OSIFONT_PATH = os.path.join("assets", "osifont.ttf")
@@ -192,9 +259,9 @@ def _safe_unit(vx, vy):
     return vx / dist, vy / dist
 
 
-def _format_dim_text(text):
+def _format_dim_text(text, render_style):
     """Format dimension text for ISO PDF: add prefixes, format numbers."""
-    if not ISO_PDF_ACTIVE:
+    if not render_style.is_pdf:
         return text
     raw = str(text or "")
     
@@ -226,37 +293,37 @@ def _format_dim_text(text):
     return f"{prefix}{out}" if prefix else out
 
 
-def _extension_segment(p0x, p0y, p1x, p1y):
+def _extension_segment(p0x, p0y, p1x, p1y, render_style):
     ux, uy = _safe_unit(p1x - p0x, p1y - p0y)
-    sx = p0x + ux * EXT_LINE_GAP_FROM_FEATURE
-    sy = p0y + uy * EXT_LINE_GAP_FROM_FEATURE
-    ex = p1x + ux * EXT_LINE_OVERRUN
-    ey = p1y + uy * EXT_LINE_OVERRUN
+    sx = p0x + ux * render_style.ext_line_gap_from_feature
+    sy = p0y + uy * render_style.ext_line_gap_from_feature
+    ex = p1x + ux * render_style.ext_line_overrun
+    ey = p1y + uy * render_style.ext_line_overrun
     return sx, sy, ex, ey
 
 
-def _dim_text_kwargs():
-    if not ISO_PDF_ACTIVE:
+def _dim_text_kwargs(render_style):
+    if not render_style.is_pdf:
         return {"fontsize": 9}
     
-    kwargs = {"fontsize": TEXT_FONT_SIZE}
+    kwargs = {"fontsize": render_style.text_font_size}
     if PDF_FONT_PROPERTIES is not None:
         kwargs["fontproperties"] = PDF_FONT_PROPERTIES
     return kwargs
 
 
-def _draw_arrowhead(ax, tip_x, tip_y, out_x, out_y, length=None, width=None):
+def _draw_arrowhead(ax, tip_x, tip_y, out_x, out_y, render_style, length=None, width=None):
     """
     Draw arrowhead as a filled triangle.
     Arrow orientation is computed from tip -> outer point vector.
     tip_x, tip_y: position of arrow tip (touches extension line or profile)
     out_x, out_y: point in direction arrow points (away from tip)
-    length, width: arrow dimensions (default from global ARROW_LENGTH, ARROW_WIDTH)
+    length, width: arrow dimensions (default from render_style)
     """
     if length is None:
-        length = ARROW_LENGTH
+        length = render_style.arrow_length
     if width is None:
-        width = ARROW_WIDTH
+        width = render_style.arrow_width
     
     ux, uy = _safe_unit(out_x - tip_x, out_y - tip_y)
     if abs(ux) < 1e-12 and abs(uy) < 1e-12:
@@ -286,35 +353,35 @@ def _draw_arrowhead(ax, tip_x, tip_y, out_x, out_y, length=None, width=None):
     )
 
 
-def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, offset=(0, 0)):
+def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, render_style, offset=(0, 0)):
     """Draw internal dimension (arrows inside extension lines)."""
     
-    if ISO_PDF_ACTIVE:
+    if render_style.is_pdf:
         PAPER_OFFSET_MULT = 2.5
-        dx = (dx * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
-        dy = (dy * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
+        dx = (dx * PAPER_OFFSET_MULT) / render_style.pdf_scale_ratio
+        dy = (dy * PAPER_OFFSET_MULT) / render_style.pdf_scale_ratio
 
-    text = _format_dim_text(text)
+    text = _format_dim_text(text, render_style)
     ex1, ey1 = px1 + dx, py1 + dy
     ex2, ey2 = px2 + dx, py2 + dy
     
-    if not ISO_PDF_ACTIVE:
+    if not render_style.is_pdf:
         # Original web style - uses matplotlib annotate
         sgx = np.sign(dx) if dx != 0 else 0
         sgy = np.sign(dy) if dy != 0 else 0
-        ax.plot([px1, ex1 + sgx * 0.5], [py1, ey1 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
-        ax.plot([px2, ex2 + sgx * 0.5], [py2, ey2 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
+        ax.plot([px1, ex1 + sgx * 0.5], [py1, ey1 + sgy * 0.5], "k-", lw=render_style.dim_line_width)
+        ax.plot([px2, ex2 + sgx * 0.5], [py2, ey2 + sgy * 0.5], "k-", lw=render_style.dim_line_width)
         ax.annotate(
             "",
             xy=(ex1, ey1),
             xytext=(ex2, ey2),
-            arrowprops=dict(arrowstyle="<|-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+            arrowprops=dict(arrowstyle="<|-|>,head_length=1,head_width=0.175", color="black", lw=render_style.dim_line_width, mutation_scale=10.0),
         )
         ax.text(
             (ex1 + ex2) / 2 + offset[0],
             (ey1 + ey2) / 2 + offset[1],
             text,
-            color=C_TEXT,
+            color=render_style.text_color,
             ha="center",
             va="center",
             bbox=dict(facecolor="#ffffff", edgecolor="none", pad=1),
@@ -324,10 +391,10 @@ def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, offset=(0, 0)):
 
     # ISO PDF style - arrows touch extension lines exactly
     # Draw extension lines
-    s1x, s1y, e1x, e1y = _extension_segment(px1, py1, ex1, ey1)
-    s2x, s2y, e2x, e2y = _extension_segment(px2, py2, ex2, ey2)
-    ax.plot([s1x, e1x], [s1y, e1y], "k-", lw=EXT_LINE_WIDTH)
-    ax.plot([s2x, e2x], [s2y, e2y], "k-", lw=EXT_LINE_WIDTH)
+    s1x, s1y, e1x, e1y = _extension_segment(px1, py1, ex1, ey1, render_style)
+    s2x, s2y, e2x, e2y = _extension_segment(px2, py2, ex2, ey2, render_style)
+    ax.plot([s1x, e1x], [s1y, e1y], "k-", lw=render_style.ext_line_width)
+    ax.plot([s2x, e2x], [s2y, e2y], "k-", lw=render_style.ext_line_width)
 
     # Compute direction vector
     vec_x, vec_y = ex2 - ex1, ey2 - ey1
@@ -337,48 +404,48 @@ def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, offset=(0, 0)):
     ux, uy = vec_x / dist, vec_y / dist
     
     # Draw dimension line (stops before arrow tips)
-    ax.plot([ex1 + ux * ARROW_LENGTH, ex2 - ux * ARROW_LENGTH], 
-            [ey1 + uy * ARROW_LENGTH, ey2 - uy * ARROW_LENGTH], "k-", lw=DIM_LINE_WIDTH)
+    ax.plot([ex1 + ux * render_style.arrow_length, ex2 - ux * render_style.arrow_length],
+            [ey1 + uy * render_style.arrow_length, ey2 - uy * render_style.arrow_length], "k-", lw=render_style.dim_line_width)
     
     # Draw arrowheads with tips at extension line positions
-    _draw_arrowhead(ax, ex1, ey1, ex1 + ux * ARROW_LENGTH, ey1 + uy * ARROW_LENGTH)
-    _draw_arrowhead(ax, ex2, ey2, ex2 - ux * ARROW_LENGTH, ey2 - uy * ARROW_LENGTH)
+    _draw_arrowhead(ax, ex1, ey1, ex1 + ux * render_style.arrow_length, ey1 + uy * render_style.arrow_length, render_style)
+    _draw_arrowhead(ax, ex2, ey2, ex2 - ux * render_style.arrow_length, ey2 - uy * render_style.arrow_length, render_style)
     
     # Determine if vertical dimension (for text rotation per ISO 129)
     is_vertical = abs(ey2 - ey1) > abs(ex2 - ex1)
     
-    # Text position - use TEXT_GAP_FROM_DIM_LINE for consistent spacing
+    # Text position - use render_style.text_gap_from_dim_line for consistent spacing
     tx = (ex1 + ex2) / 2
     ty = (ey1 + ey2) / 2
     
     if is_vertical:
         # Vertical dimension: text rotated 90° counter-clockwise, positioned left of dimension line
-        tx = min(ex1, ex2) - TEXT_GAP_FROM_DIM_LINE
-        ax.text(tx, ty, text, color=C_TEXT, ha="right", va="center", rotation=90, **_dim_text_kwargs())
+        tx = min(ex1, ex2) - render_style.text_gap_from_dim_line
+        ax.text(tx, ty, text, color=render_style.text_color, ha="right", va="center", rotation=90, **_dim_text_kwargs(render_style))
     else:
         # Horizontal dimension: text above dimension line
-        ty += TEXT_GAP_FROM_DIM_LINE
-        ax.text(tx, ty, text, color=C_TEXT, ha="center", va="bottom", **_dim_text_kwargs())
+        ty += render_style.text_gap_from_dim_line
+        ax.text(tx, ty, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style))
 
 
-def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text):
+def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text, render_style):
     """Draw external dimension (arrows outside extension lines)."""
     
-    if ISO_PDF_ACTIVE:
+    if render_style.is_pdf:
         PAPER_OFFSET_MULT = 2.5
-        dx = (dx * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
-        dy = (dy * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
+        dx = (dx * PAPER_OFFSET_MULT) / render_style.pdf_scale_ratio
+        dy = (dy * PAPER_OFFSET_MULT) / render_style.pdf_scale_ratio
 
-    text = _format_dim_text(text)
+    text = _format_dim_text(text, render_style)
     ex1, ey1 = px1 + dx, py1 + dy
     ex2, ey2 = px2 + dx, py2 + dy
     
-    if not ISO_PDF_ACTIVE:
+    if not render_style.is_pdf:
         # Original web style - uses matplotlib annotate
         sgx = np.sign(dx) if dx != 0 else 0
         sgy = np.sign(dy) if dy != 0 else 0
-        ax.plot([px1, ex1 + sgx * 0.5], [py1, ey1 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
-        ax.plot([px2, ex2 + sgx * 0.5], [py2, ey2 + sgy * 0.5], "k-", lw=DIM_LINE_WIDTH)
+        ax.plot([px1, ex1 + sgx * 0.5], [py1, ey1 + sgy * 0.5], "k-", lw=render_style.dim_line_width)
+        ax.plot([px2, ex2 + sgx * 0.5], [py2, ey2 + sgy * 0.5], "k-", lw=render_style.dim_line_width)
         vec_x, vec_y = ex2 - ex1, ey2 - ey1
         dist = np.sqrt(vec_x**2 + vec_y**2)
         if dist == 0:
@@ -388,19 +455,19 @@ def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text):
             "",
             xy=(ex1, ey1),
             xytext=(ex1 - ux * 3, ey1 - uy * 3),
-            arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+            arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=render_style.dim_line_width, mutation_scale=10.0),
         )
         ax.annotate(
             "",
             xy=(ex2, ey2),
             xytext=(ex2 + ux * 3, ey2 + uy * 3),
-            arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+            arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=render_style.dim_line_width, mutation_scale=10.0),
         )
         ax.text(
             ex2 + ux * 5,
             ey2 + uy * 5,
             text,
-            color=C_TEXT,
+            color=render_style.text_color,
             ha="center",
             va="center",
             bbox=dict(facecolor="#ffffff", edgecolor="none", pad=1),
@@ -410,10 +477,10 @@ def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text):
 
     # ISO PDF style - arrows touch extension lines exactly
     # Draw extension lines
-    s1x, s1y, e1x, e1y = _extension_segment(px1, py1, ex1, ey1)
-    s2x, s2y, e2x, e2y = _extension_segment(px2, py2, ex2, ey2)
-    ax.plot([s1x, e1x], [s1y, e1y], "k-", lw=EXT_LINE_WIDTH, solid_capstyle="butt")
-    ax.plot([s2x, e2x], [s2y, e2y], "k-", lw=EXT_LINE_WIDTH, solid_capstyle="butt")
+    s1x, s1y, e1x, e1y = _extension_segment(px1, py1, ex1, ey1, render_style)
+    s2x, s2y, e2x, e2y = _extension_segment(px2, py2, ex2, ey2, render_style)
+    ax.plot([s1x, e1x], [s1y, e1y], "k-", lw=render_style.ext_line_width, solid_capstyle="butt")
+    ax.plot([s2x, e2x], [s2y, e2y], "k-", lw=render_style.ext_line_width, solid_capstyle="butt")
     
     # Compute direction vector
     vec_x, vec_y = ex2 - ex1, ey2 - ey1
@@ -424,51 +491,51 @@ def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text):
     
     # Extension beyond arrow tips (tail length)
     # Right tail is longer to support text
-    line_extra_left = ARROW_LENGTH + EXT_LINE_OVERRUN if ISO_PDF_ACTIVE else 2.0
-    line_extra_right = OUTSIDE_TEXT_DIST
+    line_extra_left = render_style.arrow_length + render_style.ext_line_overrun
+    line_extra_right = render_style.outside_text_dist
     
     # Draw dimension line (extends beyond arrow tips)
     ax.plot([ex1 - ux * line_extra_left, ex2 + ux * line_extra_right], 
-            [ey1 - uy * line_extra_left, ey2 + uy * line_extra_right], "k-", lw=DIM_LINE_WIDTH, solid_capstyle="butt")
+            [ey1 - uy * line_extra_left, ey2 + uy * line_extra_right], "k-", lw=render_style.dim_line_width, solid_capstyle="butt")
     
     # Draw arrowheads with tips at extension line positions (pointing outward)
-    _draw_arrowhead(ax, ex1, ey1, ex1 - ux * ARROW_LENGTH, ey1 - uy * ARROW_LENGTH)
-    _draw_arrowhead(ax, ex2, ey2, ex2 + ux * ARROW_LENGTH, ey2 + uy * ARROW_LENGTH)
+    _draw_arrowhead(ax, ex1, ey1, ex1 - ux * render_style.arrow_length, ey1 - uy * render_style.arrow_length, render_style)
+    _draw_arrowhead(ax, ex2, ey2, ex2 + ux * render_style.arrow_length, ey2 + uy * render_style.arrow_length, render_style)
     
     # Position text
     if abs(ex2 - ex1) >= abs(ey2 - ey1):
         # Horizontal dimension
-        tx = max(ex1, ex2) + OUTSIDE_TEXT_DIST * OUTSIDE_TEXT_OFFSET_RATIO
-        ty = max(ey1, ey2) + TEXT_GAP_FROM_DIM_LINE
-        ax.text(tx, ty, text, color=C_TEXT, ha="center", va="bottom", **_dim_text_kwargs())
+        tx = max(ex1, ex2) + render_style.outside_text_dist * render_style.outside_text_offset_ratio
+        ty = max(ey1, ey2) + render_style.text_gap_from_dim_line
+        ax.text(tx, ty, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style))
     else:
         # Vertical dimension: text rotated 90° counter-clockwise
-        tx = min(ex1, ex2) - TEXT_GAP_FROM_DIM_LINE
+        tx = min(ex1, ex2) - render_style.text_gap_from_dim_line
         ty = (ey1 + ey2) / 2
-        ax.text(tx, ty, text, color=C_TEXT, ha="right", va="center", rotation=90, **_dim_text_kwargs())
+        ax.text(tx, ty, text, color=render_style.text_color, ha="right", va="center", rotation=90, **_dim_text_kwargs(render_style))
 
 
-def draw_pointer(ax, p_target, p_text, text):
+def draw_pointer(ax, p_target, p_text, text, render_style):
     """Draw radius/pointer dimension. Arrow tip touches the profile."""
-    text = _format_dim_text(text)
+    text = _format_dim_text(text, render_style)
     tx, ty = p_text
     px, py = p_target
     
-    if ISO_PDF_ACTIVE:
+    if render_style.is_pdf:
         PAPER_OFFSET_MULT = 2.5
         dx = tx - px
         dy = ty - py
-        tx = px + (dx * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
-        ty = py + (dy * PAPER_OFFSET_MULT) / PDF_SCALE_RATIO
+        tx = px + (dx * PAPER_OFFSET_MULT) / render_style.pdf_scale_ratio
+        ty = py + (dy * PAPER_OFFSET_MULT) / render_style.pdf_scale_ratio
 
-    if not ISO_PDF_ACTIVE:
+    if not render_style.is_pdf:
         # Original web style - uses matplotlib annotate
         ax.annotate(
             text,
             xy=p_target,
             xytext=(tx, ty),
-            arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
-            color=C_TEXT,
+            arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=render_style.dim_line_width, mutation_scale=10.0),
+            color=render_style.text_color,
             ha="center",
             va="center",
             bbox=dict(facecolor="#ffffff", edgecolor="none", pad=0.5),
@@ -486,16 +553,16 @@ def draw_pointer(ax, p_target, p_text, text):
     ux, uy = vec_x / dist, vec_y / dist
 
     # Draw leader line (stops before arrow)
-    ax.plot([tx, px - ux * ARROW_LENGTH], [ty, py - uy * ARROW_LENGTH], "k-", lw=DIM_LINE_WIDTH)
+    ax.plot([tx, px - ux * render_style.arrow_length], [ty, py - uy * render_style.arrow_length], "k-", lw=render_style.dim_line_width)
     
     # Draw arrowhead with tip at target (touching profile)
-    _draw_arrowhead(ax, px, py, px - ux * ARROW_LENGTH, py - uy * ARROW_LENGTH)
+    _draw_arrowhead(ax, px, py, px - ux * render_style.arrow_length, py - uy * render_style.arrow_length, render_style)
     
     # Draw text shelf and text
     side = 1.0 if tx >= px else -1.0
-    shelf_end_x = tx + side * POINTER_SHELF_LENGTH
-    ax.plot([tx, shelf_end_x], [ty, ty], "k-", lw=DIM_LINE_WIDTH)
-    ax.text((tx + shelf_end_x) / 2, ty + TEXT_GAP_FROM_DIM_LINE, text, color=C_TEXT, ha="center", va="bottom", **_dim_text_kwargs())
+    shelf_end_x = tx + side * render_style.pointer_shelf_length
+    ax.plot([tx, shelf_end_x], [ty, ty], "k-", lw=render_style.dim_line_width)
+    ax.text((tx + shelf_end_x) / 2, ty + render_style.text_gap_from_dim_line, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style))
 
 
 def get_circle_contour(radius, density=300):
@@ -610,69 +677,11 @@ def apply_1d_groove(x_1d, z_surf, cfg, edge_rad):
 
 
 def render_tablet(mesh_data, params, dpi=120, output_format=None):
-    global DIM_LINE_WIDTH, C_TEXT
-    global EXT_LINE_WIDTH, TEXT_FONT_SIZE, TEXT_GAP_FROM_DIM_LINE
-    global TEXT_BBOX_PAD, EXT_LINE_GAP_FROM_FEATURE, EXT_LINE_OVERRUN, OUTSIDE_TEXT_DIST
-    global OUTSIDE_TEXT_OFFSET_RATIO, POINTER_SHELF_LENGTH, ARROW_LENGTH, ARROW_WIDTH, ISO_PDF_ACTIVE, PDF_SCALE_RATIO, GEOM_THICK_LINE, GEOM_MEDIUM_LINE, GEOM_THIN_LINE
-    
-    style_name = str(params.get("render_2d_style", "web")).lower()
-    ISO_PDF_ACTIVE = style_name == "iso_pdf"
-    
-    if ISO_PDF_ACTIVE:
-        style = ISO_PDF_STYLE
-        DIM_LINE_WIDTH = style["dim_line_width"]
-        GEOM_THICK_LINE = 1.2
-        GEOM_MEDIUM_LINE = 0.8
-        GEOM_THIN_LINE = 0.6
-        EXT_LINE_WIDTH = style["ext_line_width"]
-        C_TEXT = style["text_color"]
-        pdf_scale_ratio = float(params.get("render_2d_pdf_scale_ratio", 1.0) or 1.0)
-        if pdf_scale_ratio <= 0:
-            pdf_scale_ratio = 1.0
-            
-        PDF_SCALE_RATIO = pdf_scale_ratio
-        # Keep text size visually fixed in PDF even when geometry is scaled in placement.
-        pdf_dim_font_size = params.get("pdf_2d_dim_font_size", 8)
-        
-        bounds = params.get("_render_2d_bounds")
-        if bounds:
-            view_w = bounds["view_xmax"] - bounds["view_xmin"]
-        else:
-            w_val = float(params["W"])
-            l_val = float(params["L"])
-            view_w = max(w_val, l_val) * 1.5 + 80.0
-            
-        TEXT_FONT_SIZE = (pdf_dim_font_size * 254.0) / (view_w * pdf_scale_ratio)
-        
-        # Scale line widths (in points) to be constant physical size on paper
-        lw_scale = 254.0 / (view_w * pdf_scale_ratio)
-        DIM_LINE_WIDTH = style["dim_line_width"] * lw_scale
-        EXT_LINE_WIDTH = style["ext_line_width"] * lw_scale
-        GEOM_THICK_LINE = 1.2 * lw_scale
-        GEOM_MEDIUM_LINE = 0.8 * lw_scale
-        GEOM_THIN_LINE = 0.6 * lw_scale
-        
-        TEXT_GAP_FROM_DIM_LINE = style["text_gap_from_dim_line"] / pdf_scale_ratio
-        TEXT_BBOX_PAD = style["text_bbox_pad"]
-        EXT_LINE_GAP_FROM_FEATURE = style["ext_line_gap_from_feature"]
-        # Scale the overrun (tail past the dimension line) so it remains constant physical size
-        EXT_LINE_OVERRUN = style["ext_line_overrun"] / pdf_scale_ratio
-        # To keep the outside text tail length consistent on paper
-        OUTSIDE_TEXT_DIST = style["outside_text_dist"] / pdf_scale_ratio
-        OUTSIDE_TEXT_OFFSET_RATIO = style["outside_text_offset_ratio"]
-        POINTER_SHELF_LENGTH = style["pointer_shelf_length"] / pdf_scale_ratio
-        # To keep arrows a constant physical size on paper (matching the 4:1 look):
-        # Target physical length = 4.0 mm, target physical width = 1.2 mm
-        ARROW_LENGTH = 4.0 / pdf_scale_ratio
-        ARROW_WIDTH = 1.2 / pdf_scale_ratio
+    render_style = RenderStyle(params)
+
+    if render_style.is_pdf:
         poly_fill_color = params.get("pdf_2d_fill_color", "#dec9bd")
     else:
-        style = WEB_STYLE
-        DIM_LINE_WIDTH = style["dim_line_width"]
-        GEOM_THICK_LINE = 1.2
-        GEOM_MEDIUM_LINE = 0.8
-        GEOM_THIN_LINE = 0.6
-        C_TEXT = params.get("web_2d_dim_color", style["text_color"])
         poly_fill_color = params.get("web_2d_fill_color", "#dec9bd")
 
     base_fill_rgb = to_rgb(poly_fill_color)
@@ -684,7 +693,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     tt = cfg.Tt
     profile = cfg.profile
     
-    if ISO_PDF_ACTIVE:
+    if render_style.is_pdf:
         render_2d_shaded = bool(params.get("pdf_2d_shaded", True))
     else:
         render_2d_shaded = bool(params.get("render_2d_shaded", False))
@@ -705,7 +714,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     ax.axis("off")
 
     cx_top, cy_top = 0, 0
-    gap = 15.0 if not ISO_PDF_ACTIVE else 40.0 / PDF_SCALE_RATIO
+    gap = 15.0 if not render_style.is_pdf else 40.0 / render_style.pdf_scale_ratio
     cx_side, cy_side = -(w_val / 2 + tt / 2 + gap), 0
     cx_front, cy_front = 0, -(l_val / 2 + tt / 2 + gap)
     l_flat = max(0.0, l_val - w_val)
@@ -716,11 +725,11 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         x_out, y_out = get_circle_contour(w_val / 2)
         if render_2d_shaded:
             _draw_shaded_polygon(ax, x_out + cx_top, y_out + cy_top, base_rgb=base_fill_rgb, alpha=0.95)
-        ax.plot(x_out + cx_top, y_out + cy_top, "k-", linewidth=GEOM_THICK_LINE)
+        ax.plot(x_out + cx_top, y_out + cy_top, "k-", linewidth=render_style.geom_thick_line)
         r_c = max(0.01, w_val / 2 - land)
         if land > 0:
             x_in, y_in = get_circle_contour(r_c)
-            ax.plot(x_in + cx_top, y_in + cy_top, "k-", linewidth=GEOM_THIN_LINE)
+            ax.plot(x_in + cx_top, y_in + cy_top, "k-", linewidth=render_style.geom_thin_line)
         if profile == "ffre":
             r_edge = cfg.R_edge
             dx_curve = np.sqrt(max(0.0, r_edge**2 - (r_edge - dc) ** 2))
@@ -729,7 +738,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                 x_flat, y_flat = get_circle_contour(flat_rad)
                 if render_2d_shaded:
                     _draw_solid_polygon(ax, x_flat + cx_top, y_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
-                ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=GEOM_THIN_LINE)
+                ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=render_style.geom_thin_line)
         elif profile == "ffbe":
             r_blend = max(0.0, min(cfg.Blend_R, dc))
             alpha_rad = np.radians(cfg.Bev_A)
@@ -743,16 +752,16 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                         x_flat, y_flat = get_circle_contour(flat_rad)
                         if render_2d_shaded:
                             _draw_solid_polygon(ax, x_flat + cx_top, y_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
-                        ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=GEOM_THIN_LINE)
-        draw_ext(ax, cx_top - w_val / 2, cy_top + w_val / 2, cx_top - w_val / 2, cy_top - w_val / 2, -4.5, 0, f"{w_val:g}\nDiameter")
+                        ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=render_style.geom_thin_line)
+        draw_ext(ax, cx_top - w_val / 2, cy_top + w_val / 2, cx_top - w_val / 2, cy_top - w_val / 2, -4.5, 0, f"{w_val:g}\nDiameter", render_style)
     elif shape == "capsule" and not is_modified:
         x_out, y_out = get_capsule_contour(l_val, w_val)
         if render_2d_shaded:
             _draw_shaded_polygon(ax, y_out + cx_top, x_out + cy_top, base_rgb=base_fill_rgb, alpha=0.95)
-        ax.plot(y_out + cx_top, x_out + cy_top, "k-", linewidth=GEOM_THICK_LINE)
+        ax.plot(y_out + cx_top, x_out + cy_top, "k-", linewidth=render_style.geom_thick_line)
         if land > 0:
             x_in, y_in = get_capsule_contour(max(0.1, l_val - 2 * land), max(0.1, w_val - 2 * land))
-            ax.plot(y_in + cx_top, x_in + cy_top, "k-", linewidth=GEOM_THIN_LINE)
+            ax.plot(y_in + cx_top, x_in + cy_top, "k-", linewidth=render_style.geom_thin_line)
         if profile == "ffre":
             r_c = max(0.01, w_val / 2 - land)
             r_edge = max(0.0, cfg.R_edge)
@@ -764,7 +773,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                 x_flat, y_flat = get_capsule_contour(flat_l, flat_w)
                 if render_2d_shaded:
                     _draw_solid_polygon(ax, y_flat + cx_top, x_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
-                ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=GEOM_THIN_LINE)
+                ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=render_style.geom_thin_line)
         elif profile == "ffbe":
             r_c = max(0.01, w_val / 2 - land)
             r_blend = max(0.0, min(cfg.Blend_R, dc))
@@ -781,17 +790,17 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                         x_flat, y_flat = get_capsule_contour(flat_l, flat_w)
                         if render_2d_shaded:
                             _draw_solid_polygon(ax, y_flat + cx_top, x_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
-                        ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=GEOM_THIN_LINE)
-        draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, f"{w_val:g}\nMinor Axis")
-        draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, f"{l_val:g}\nMajor Axis")
+                        ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=render_style.geom_thin_line)
+        draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, f"{w_val:g}\nMinor Axis", render_style)
+        draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, f"{l_val:g}\nMajor Axis", render_style)
     else:
         x_out, y_out = get_oval_contour(l_val, w_val, re, rs)
         if render_2d_shaded:
             _draw_shaded_polygon(ax, y_out + cx_top, x_out + cy_top, base_rgb=base_fill_rgb, alpha=0.95)
-        ax.plot(y_out + cx_top, x_out + cy_top, "k-", linewidth=GEOM_THICK_LINE)
+        ax.plot(y_out + cx_top, x_out + cy_top, "k-", linewidth=render_style.geom_thick_line)
         if land > 0 and re > land and rs > land:
             x_in, y_in = get_oval_contour(l_val - 2 * land, w_val - 2 * land, re - land, rs - land)
-            ax.plot(y_in + cx_top, x_in + cy_top, "k-", linewidth=GEOM_THIN_LINE)
+            ax.plot(y_in + cx_top, x_in + cy_top, "k-", linewidth=render_style.geom_thin_line)
         l_c_oval = max(0.001, l_val / 2 - land)
         w_c_oval = max(0.001, w_val / 2 - land)
         if profile == "ffre":
@@ -809,7 +818,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                     if render_2d_shaded:
                         _draw_solid_polygon(ax, y_flat_cont + cx_top, x_flat_cont + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
                     # Source uses solid contour for this line.
-                    ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=GEOM_THIN_LINE)
+                    ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=render_style.geom_thin_line)
                     oval_ref_flat_side = 2 * l_flat_half
                     oval_ref_flat_front = 2 * w_flat_half
         elif profile == "ffbe":
@@ -832,15 +841,15 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                             if render_2d_shaded:
                                 _draw_solid_polygon(ax, y_flat_cont + cx_top, x_flat_cont + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
                             # Source uses solid contour for this line.
-                            ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=GEOM_THIN_LINE)
+                            ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=render_style.geom_thin_line)
                             oval_ref_flat_side = 2 * l_flat_half
                             oval_ref_flat_front = 2 * w_flat_half
-        draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, f"{w_val:g}\nMinor Axis")
-        draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, f"{l_val:g}\nMajor Axis")
-        draw_pointer(ax, (cx_top + w_val / 2, cy_top), (cx_top + w_val / 2 + 4, cy_top - l_val / 4), f"{rs:g}\nSide Radius")
+        draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, f"{w_val:g}\nMinor Axis", render_style)
+        draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, f"{l_val:g}\nMajor Axis", render_style)
+        draw_pointer(ax, (cx_top + w_val / 2, cy_top), (cx_top + w_val / 2 + 4, cy_top - l_val / 4), f"{rs:g}\nSide Radius", render_style)
         pt_x = re * np.sin(np.pi / 4)
         pt_y = -(l_val / 2 - re) - re * np.cos(np.pi / 4)
-        draw_pointer(ax, (cx_top + pt_x, cy_top + pt_y), (cx_top + pt_x + 4, cy_top + pt_y - 4), f"{re:g}\nEnd Radius")
+        draw_pointer(ax, (cx_top + pt_x, cy_top + pt_y), (cx_top + pt_x + 4, cy_top + pt_y - 4), f"{re:g}\nEnd Radius", render_style)
 
     if b_type != "none" and b_depth > 0:
         z, z_groove, mask_cup = mesh_data["Z"], mesh_data["Z_groove"], mesh_data["mask_cup"]
@@ -870,11 +879,11 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         z_diff_masked = np.where(mask_cup, z - z_groove, np.nan)
         z_groove_masked = np.where(mask_cup, z_groove, np.nan)
         if shape == "round":
-            ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, z_diff_masked, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
-            ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, z_groove_masked, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
+            ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, z_diff_masked, levels=[0], colors="k", linewidths=render_style.geom_thin_line)
+            ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, z_groove_masked, levels=[0], colors="k", linewidths=render_style.geom_thin_line)
         else:
-            ax.contour(mesh_data["Y"] + cx_top, mesh_data["X"] + cy_top, z_diff_masked, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
-            ax.contour(mesh_data["Y"] + cx_top, mesh_data["X"] + cy_top, z_groove_masked, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
+            ax.contour(mesh_data["Y"] + cx_top, mesh_data["X"] + cy_top, z_diff_masked, levels=[0], colors="k", linewidths=render_style.geom_thin_line)
+            ax.contour(mesh_data["Y"] + cx_top, mesh_data["X"] + cy_top, z_groove_masked, levels=[0], colors="k", linewidths=render_style.geom_thin_line)
 
         x_ti = b_ri * np.sin(np.radians(b_angle / 2.0))
         if x_ti > 0.005:
@@ -886,10 +895,10 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                 vis_mask = np.where(mask_cup, vis >= 0, False)
 
                 ti_field_y = np.where(vis_mask, np.abs(mesh_data["Y"]) - x_ti, np.nan)
-                ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, ti_field_y, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
+                ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, ti_field_y, levels=[0], colors="k", linewidths=render_style.geom_thin_line)
                 if b_cruciform:
                     ti_field_x = np.where(vis_mask, np.abs(mesh_data["X"]) - x_ti, np.nan)
-                    ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, ti_field_x, levels=[0], colors="k", linewidths=GEOM_THIN_LINE)
+                    ax.contour(mesh_data["X"] + cx_top, mesh_data["Y"] + cy_top, ti_field_x, levels=[0], colors="k", linewidths=render_style.geom_thin_line)
             else:
                 idx_x = np.argmin(np.abs(x_grid - x_ti))
                 cond = (z - z_groove)[:, idx_x]
@@ -908,8 +917,8 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                         c0, c1 = cond[i_max], cond[i_max + 1]
                         if c0 != c1:
                             y_end = y_grid[i_max] - c0 * (y_grid[i_max + 1] - y_grid[i_max]) / (c1 - c0)
-                    ax.plot([y_start + cx_top, y_end + cx_top], [x_ti + cy_top, x_ti + cy_top], "k-", lw=GEOM_THIN_LINE)
-                    ax.plot([y_start + cx_top, y_end + cx_top], [-x_ti + cy_top, -x_ti + cy_top], "k-", lw=GEOM_THIN_LINE)
+                    ax.plot([y_start + cx_top, y_end + cx_top], [x_ti + cy_top, x_ti + cy_top], "k-", lw=render_style.geom_thin_line)
+                    ax.plot([y_start + cx_top, y_end + cx_top], [-x_ti + cy_top, -x_ti + cy_top], "k-", lw=render_style.geom_thin_line)
 
     capsule_r_flat = None
 
@@ -959,16 +968,16 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
             alpha=0.95,
             rotate_90=True,
         )
-    ax.plot(t_prof + cx_side, l_prof + cy_side, "k-", linewidth=GEOM_THICK_LINE)
-    ax.plot([-hb / 2 + cx_side, -hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=GEOM_THICK_LINE)
-    ax.plot([hb / 2 + cx_side, hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=GEOM_THICK_LINE)
+    ax.plot(t_prof + cx_side, l_prof + cy_side, "k-", linewidth=render_style.geom_thick_line)
+    ax.plot([-hb / 2 + cx_side, -hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=render_style.geom_thick_line)
+    ax.plot([hb / 2 + cx_side, hb / 2 + cx_side], [-l_side / 2 + cy_side, l_side / 2 + cy_side], "k-", linewidth=render_style.geom_thick_line)
     cup_depth_dy = 4.0
     bevel_depth_dy = 2.0
     # For all CBE forms in PDF:
     # - keep Bevel Depth at the previously raised level,
     # - lift Cup Depth by additional +2 mm from that level.
     # draw_ext_outside in PDF converts dy to physical shift as dy * 2.5 mm.
-    if ISO_PDF_ACTIVE and profile == "cbe":
+    if render_style.is_pdf and profile == "cbe":
         cup_depth_dy += 2.8
         bevel_depth_dy += 2.0
 
@@ -981,6 +990,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         0,
         cup_depth_dy,
         f"{dc:g}\nCup Depth",
+        render_style,
     )
     if profile == "cbe":
         bev_d = cfg.Bev_D
@@ -994,8 +1004,9 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                 0,
                 bevel_depth_dy,
                 f"{bev_d:g}\nBevel Depth",
+                render_style,
             )
-    draw_ext_outside(ax, cx_side - hb / 2, cy_side - l_side / 2, cx_side + hb / 2, cy_side - l_side / 2, 0, -4, f"{hb:g}\nBelly Band")
+    draw_ext_outside(ax, cx_side - hb / 2, cy_side - l_side / 2, cx_side + hb / 2, cy_side - l_side / 2, 0, -4, f"{hb:g}\nBelly Band", render_style)
     if shape == "capsule" and l_flat > 0:
         ref_flat_side = l_flat
         if profile == "ffre":
@@ -1015,7 +1026,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                     d_inset_caps = (dc - r_blend_caps) / tan_caps + r_blend_caps / sin_caps
                     capsule_r_flat = max(0.0, r_c_caps - d_inset_caps)
                     ref_flat_side = l_flat + 2 * capsule_r_flat
-        draw_ext(ax, cx_side + hb / 2 + dc, cy_side + ref_flat_side / 2, cx_side + hb / 2 + dc, cy_side - ref_flat_side / 2, 4.5, 0, f"{ref_flat_side:g}\nRef. Flat")
+        draw_ext(ax, cx_side + hb / 2 + dc, cy_side + ref_flat_side / 2, cx_side + hb / 2 + dc, cy_side - ref_flat_side / 2, 4.5, 0, f"{ref_flat_side:g}\nRef. Flat", render_style)
     if shape == "oval" and profile in ("ffre", "ffbe") and oval_ref_flat_side is not None and oval_ref_flat_side > 0:
         draw_ext(
             ax,
@@ -1026,6 +1037,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
             4.5,
             0,
             f"{oval_ref_flat_side:.3f}\nRef. Flat",
+            render_style,
         )
 
     if shape == "oval" and profile not in ("compound", "modified_oval", "ffbe", "ffre"):
@@ -1033,24 +1045,24 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         p_idx = np.argmin(np.abs(x_maj - (-l_side / 4)))
         pt_surf = z_up_maj[p_idx] + hb / 2
         pt_len = x_maj[p_idx]
-        draw_pointer(ax, (pt_surf + cx_side, pt_len + cy_side), (pt_surf + cx_side + 4, pt_len + cy_side - l_side / 4), f"{rc_maj:g}\nCup Radius\nMajor")
+        draw_pointer(ax, (pt_surf + cx_side, pt_len + cy_side), (pt_surf + cx_side + 4, pt_len + cy_side - l_side / 4), f"{rc_maj:g}\nCup Radius\nMajor", render_style)
     elif shape == "oval" and profile in ("modified_oval", "compound"):
         r_maj_maj = cfg.R_maj_maj
         r_maj_min = cfg.R_maj_min
         l_c = max(0.001, l_val / 2 - land)
         # Use shorter leader for PDF, longer for web
-        leader_offset = 4 if ISO_PDF_ACTIVE else 7
+        leader_offset = 4 if render_style.is_pdf else 7
         x_maj_pt = l_c * 0.30
         z_maj_pt = get_compound_profile(np.array([x_maj_pt]), r_maj_maj, r_maj_min, dc, l_c)[0]
         target_maj = (cx_side + hb / 2 + z_maj_pt, cy_side + x_maj_pt)
         text_maj = (cx_side + hb / 2 + z_maj_pt + leader_offset, cy_side + x_maj_pt + 2)
-        draw_pointer(ax, target_maj, text_maj, f"{r_maj_maj:g}\nMajor Major\nRadius")
+        draw_pointer(ax, target_maj, text_maj, f"{r_maj_maj:g}\nMajor Major\nRadius", render_style)
 
         x_min_pt = l_c * 0.85
         z_min_pt = get_compound_profile(np.array([x_min_pt]), r_maj_maj, r_maj_min, dc, l_c)[0]
         target_min = (cx_side + hb / 2 + z_min_pt, cy_side - x_min_pt)
         text_min = (cx_side + hb / 2 + z_min_pt + leader_offset, cy_side - x_min_pt + 2.5)
-        draw_pointer(ax, target_min, text_min, f"{r_maj_min:g}\nMajor Minor\nRadius")
+        draw_pointer(ax, target_min, text_min, f"{r_maj_min:g}\nMajor Minor\nRadius", render_style)
 
     span_front = max(0.001, w_val / 2 - land)
     y_min_cup = np.linspace(-span_front, span_front, 400)
@@ -1083,10 +1095,10 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     )
     if render_2d_shaded:
         _draw_shaded_polygon(ax, w_prof + cx_front, t_front + cy_front, base_rgb=base_fill_rgb, alpha=0.95)
-    ax.plot(w_prof + cx_front, t_front + cy_front, "k-", linewidth=GEOM_THICK_LINE)
-    ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [hb / 2 + cy_front, hb / 2 + cy_front], "k-", linewidth=GEOM_THICK_LINE)
-    ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [-hb / 2 + cy_front, -hb / 2 + cy_front], "k-", linewidth=GEOM_THICK_LINE)
-    draw_ext(ax, cx_front - w_val / 2, cy_front - tt / 2, cx_front - w_val / 2, cy_front + tt / 2, -4.5, 0, f"{tt:g}\nThickness")
+    ax.plot(w_prof + cx_front, t_front + cy_front, "k-", linewidth=render_style.geom_thick_line)
+    ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [hb / 2 + cy_front, hb / 2 + cy_front], "k-", linewidth=render_style.geom_thick_line)
+    ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [-hb / 2 + cy_front, -hb / 2 + cy_front], "k-", linewidth=render_style.geom_thick_line)
+    draw_ext(ax, cx_front - w_val / 2, cy_front - tt / 2, cx_front - w_val / 2, cy_front + tt / 2, -4.5, 0, f"{tt:g}\nThickness", render_style)
 
     if b_type != "none" and b_depth > 0:
         if b_type == "standard":
@@ -1098,34 +1110,34 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         else:
             z_bottom_line = z_up_min - b_depth
         valid = (z_bottom_line > 0) & (z_bottom_line < z_up_min)
-        ax.plot(y_min_cup[valid] + cx_front, z_bottom_line[valid] + hb / 2 + cy_front, "k--", lw=GEOM_THIN_LINE)
+        ax.plot(y_min_cup[valid] + cx_front, z_bottom_line[valid] + hb / 2 + cy_front, "k--", lw=render_style.geom_thin_line)
         if b_double_sided:
-            ax.plot(y_min_cup[valid] + cx_front, -(z_bottom_line[valid] + hb / 2) + cy_front, "k--", lw=GEOM_THIN_LINE)
+            ax.plot(y_min_cup[valid] + cx_front, -(z_bottom_line[valid] + hb / 2) + cy_front, "k--", lw=render_style.geom_thin_line)
 
     if land > 0:
         l_land_coord = span_front
         
-        if not ISO_PDF_ACTIVE:
+        if not render_style.is_pdf:
             # Original web style
-            ax.plot([cx_front + l_land_coord, cx_front + l_land_coord], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=DIM_LINE_WIDTH)
-            ax.plot([cx_front + w_val / 2, cx_front + w_val / 2], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=DIM_LINE_WIDTH)
+            ax.plot([cx_front + l_land_coord, cx_front + l_land_coord], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=render_style.dim_line_width)
+            ax.plot([cx_front + w_val / 2, cx_front + w_val / 2], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=render_style.dim_line_width)
             ax.annotate(
                 "",
                 xy=(cx_front + l_land_coord, cy_front + tt / 2 + 2),
                 xytext=(cx_front + l_land_coord - 2.5, cy_front + tt / 2 + 2),
-                arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+                arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=render_style.dim_line_width, mutation_scale=10.0),
             )
             ax.annotate(
                 "",
                 xy=(cx_front + w_val / 2, cy_front + tt / 2 + 2),
                 xytext=(cx_front + w_val / 2 + 2.5, cy_front + tt / 2 + 2),
-                arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=DIM_LINE_WIDTH, mutation_scale=10.0),
+                arrowprops=dict(arrowstyle="-|>,head_length=1,head_width=0.175", color="black", lw=render_style.dim_line_width, mutation_scale=10.0),
             )
             ax.text(
                 cx_front + w_val / 2 + 4.2,
                 cy_front + tt / 2 + 2,
                 f"{land:g}\nBld. Land",
-                color=C_TEXT,
+                color=render_style.text_color,
                 ha="center",
                 va="center",
                 bbox=dict(facecolor="#ffffff", edgecolor="none", pad=0.5),
@@ -1136,35 +1148,35 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
 
             # Apply same paper offset scaling to Land dimension
             land_dy = 3.0
-            if ISO_PDF_ACTIVE:
-                land_dy = (land_dy * 2.5) / PDF_SCALE_RATIO
+            if render_style.is_pdf:
+                land_dy = (land_dy * 2.5) / render_style.pdf_scale_ratio
 
-            ax.plot([cx_front + l_land_coord, cx_front + l_land_coord], [cy_front + tt / 2, cy_front + tt / 2 + land_dy + 0.5 / PDF_SCALE_RATIO], "k-", lw=EXT_LINE_WIDTH)
-            ax.plot([cx_front + w_val / 2, cx_front + w_val / 2], [cy_front + tt / 2, cy_front + tt / 2 + land_dy + 0.5 / PDF_SCALE_RATIO], "k-", lw=EXT_LINE_WIDTH)
+            ax.plot([cx_front + l_land_coord, cx_front + l_land_coord], [cy_front + tt / 2, cy_front + tt / 2 + land_dy + 0.5 / render_style.pdf_scale_ratio], "k-", lw=render_style.ext_line_width)
+            ax.plot([cx_front + w_val / 2, cx_front + w_val / 2], [cy_front + tt / 2, cy_front + tt / 2 + land_dy + 0.5 / render_style.pdf_scale_ratio], "k-", lw=render_style.ext_line_width)
 
             y_dim = cy_front + tt / 2 + land_dy
             x_left = cx_front + l_land_coord
             x_right = cx_front + w_val / 2
             
             # Tail lengths (right tail longer for text support)
-            tail_left = ARROW_LENGTH + EXT_LINE_OVERRUN if ISO_PDF_ACTIVE else 2.0
-            tail_right = OUTSIDE_TEXT_DIST
+            tail_left = render_style.arrow_length + render_style.ext_line_overrun if render_style.is_pdf else 2.0
+            tail_right = render_style.outside_text_dist
             
             # Dimension line with tails
-            ax.plot([x_left - tail_left, x_right + tail_right], [y_dim, y_dim], "k-", lw=DIM_LINE_WIDTH)
+            ax.plot([x_left - tail_left, x_right + tail_right], [y_dim, y_dim], "k-", lw=render_style.dim_line_width)
             
             # Arrows pointing outward
-            _draw_arrowhead(ax, x_left, y_dim, x_left - ARROW_LENGTH, y_dim)
-            _draw_arrowhead(ax, x_right, y_dim, x_right + ARROW_LENGTH, y_dim)
+            _draw_arrowhead(ax, x_left, y_dim, x_left - render_style.arrow_length, y_dim, render_style)
+            _draw_arrowhead(ax, x_right, y_dim, x_right + render_style.arrow_length, y_dim, render_style)
             
             ax.text(
-                cx_front + w_val / 2 + OUTSIDE_TEXT_DIST * OUTSIDE_TEXT_OFFSET_RATIO,
-                y_dim + TEXT_GAP_FROM_DIM_LINE,
-                _format_dim_text(f"{land:g}"),
-                color=C_TEXT,
+                cx_front + w_val / 2 + render_style.outside_text_dist * render_style.outside_text_offset_ratio,
+                y_dim + render_style.text_gap_from_dim_line,
+                _format_dim_text(f"{land:g}", render_style),
+                color=render_style.text_color,
                 ha="center",
                 va="bottom",
-                **_dim_text_kwargs(),
+                **_dim_text_kwargs(render_style),
             )
 
     if profile in ("cbe", "ffbe"):
@@ -1172,43 +1184,43 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         pt_x = cx_front + span_front
         pt_y = cy_front + hb / 2
         
-        if ISO_PDF_ACTIVE:
-            ext_len = max(w_val / 5.0, 8.0 / PDF_SCALE_RATIO)
+        if render_style.is_pdf:
+            ext_len = max(w_val / 5.0, 8.0 / render_style.pdf_scale_ratio)
         else:
             ext_len = w_val / 4.0
             
         # Horizontal guide to the right.
-        ax.plot([pt_x, pt_x + ext_len], [pt_y, pt_y], "k-", lw=DIM_LINE_WIDTH)
+        ax.plot([pt_x, pt_x + ext_len], [pt_y, pt_y], "k-", lw=render_style.dim_line_width)
         # Bevel guide down-right.
         dx = ext_len * np.cos(alpha_rad)
         dy = -ext_len * np.sin(alpha_rad)
-        ax.plot([pt_x, pt_x + dx], [pt_y, pt_y + dy], "k-", lw=DIM_LINE_WIDTH)
+        ax.plot([pt_x, pt_x + dx], [pt_y, pt_y + dy], "k-", lw=render_style.dim_line_width)
         
         # Angle arc.
-        if ISO_PDF_ACTIVE:
-            arc_r = 6.0 / PDF_SCALE_RATIO
-            text_offset = 3.0 / PDF_SCALE_RATIO
+        if render_style.is_pdf:
+            arc_r = 6.0 / render_style.pdf_scale_ratio
+            text_offset = 3.0 / render_style.pdf_scale_ratio
         else:
             arc_r = min(3.0, ext_len * 0.8)
             text_offset = 1.2
             
         t_arc = np.linspace(-alpha_rad, 0, 20)
-        ax.plot(pt_x + arc_r * np.cos(t_arc), pt_y + arc_r * np.sin(t_arc), "k-", lw=DIM_LINE_WIDTH)
+        ax.plot(pt_x + arc_r * np.cos(t_arc), pt_y + arc_r * np.sin(t_arc), "k-", lw=render_style.dim_line_width)
         mid_ang = -alpha_rad / 2.0
         ax.text(
             pt_x + (arc_r + text_offset) * np.cos(mid_ang),
             pt_y + (arc_r + text_offset) * np.sin(mid_ang),
             f"{bev_a:g}\N{DEGREE SIGN}",
-            color=C_TEXT,
+            color=render_style.text_color,
             ha="center",
             va="center",
-            bbox=dict(facecolor="#ffffff", edgecolor="none", pad=TEXT_BBOX_PAD),
-            **_dim_text_kwargs(),
+            bbox=dict(facecolor="#ffffff", edgecolor="none", pad=render_style.text_bbox_pad),
+            **_dim_text_kwargs(render_style),
         )
 
     if profile == "modified_oval" and shape == "oval":
         rc_min = cfg.Rc_min
-        draw_pointer(ax, (cx_front, cy_front + tt / 2), (cx_front - w_val / 4, cy_front + tt / 2 + 4), f"{rc_min:g}\nCup Radius\nMinor")
+        draw_pointer(ax, (cx_front, cy_front + tt / 2), (cx_front - w_val / 4, cy_front + tt / 2 + 4), f"{rc_min:g}\nCup Radius\nMinor", render_style)
     elif profile == "compound" and shape == "oval":
         r_min_maj = cfg.R_min_maj
         r_min_min = cfg.R_min_min
@@ -1216,23 +1228,23 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         z_min_maj_pt = get_compound_profile(np.array([x_min_maj_pt]), r_min_maj, r_min_min, dc, span_front)[0]
         targ_front_maj = (cx_front + x_min_maj_pt, cy_front + hb / 2 + z_min_maj_pt)
         txt_front_maj = (cx_front + x_min_maj_pt + 1.0, cy_front + hb / 2 + z_min_maj_pt + 4.5)
-        draw_pointer(ax, targ_front_maj, txt_front_maj, f"{r_min_maj:g}\nMinor Major\nRadius")
+        draw_pointer(ax, targ_front_maj, txt_front_maj, f"{r_min_maj:g}\nMinor Major\nRadius", render_style)
 
         x_min_min_pt = span_front * 0.80
         z_min_min_pt = get_compound_profile(np.array([x_min_min_pt]), r_min_maj, r_min_min, dc, span_front)[0]
         targ_front_min = (cx_front - x_min_min_pt, cy_front + hb / 2 + z_min_min_pt)
         txt_front_min = (cx_front - x_min_min_pt - 2.5, cy_front + hb / 2 + z_min_min_pt + 4.5)
-        draw_pointer(ax, targ_front_min, txt_front_min, f"{r_min_min:g}\nMinor Minor\nRadius")
+        draw_pointer(ax, targ_front_min, txt_front_min, f"{r_min_min:g}\nMinor Minor\nRadius", render_style)
     elif profile in ("compound",) and shape == "round":
         r_maj_maj = cfg.R_maj_maj
         r_maj_min = cfg.R_maj_min
         x_min_pt = span_front * 0.8
         z_min_pt = get_compound_profile(np.array([x_min_pt]), r_maj_maj, r_maj_min, dc, span_front)[0]
-        draw_pointer(ax, (cx_front - x_min_pt, cy_front + hb / 2 + z_min_pt), (cx_front - x_min_pt - w_val / 6, cy_front + hb / 2 + z_min_pt + 5), f"{r_maj_min:g}\nMinor Radius")
+        draw_pointer(ax, (cx_front - x_min_pt, cy_front + hb / 2 + z_min_pt), (cx_front - x_min_pt - w_val / 6, cy_front + hb / 2 + z_min_pt + 5), f"{r_maj_min:g}\nMinor Radius", render_style)
         if shape == "round":
             x_maj_pt = span_front * 0.2
             z_maj_pt = get_compound_profile(np.array([x_maj_pt]), r_maj_maj, r_maj_min, dc, span_front)[0]
-            draw_pointer(ax, (cx_front + x_maj_pt, cy_front + hb / 2 + z_maj_pt), (cx_front + x_maj_pt + 0.5, cy_front + hb / 2 + z_maj_pt + 5), f"{r_maj_maj:g}\nMajor Radius")
+            draw_pointer(ax, (cx_front + x_maj_pt, cy_front + hb / 2 + z_maj_pt), (cx_front + x_maj_pt + 0.5, cy_front + hb / 2 + z_maj_pt + 5), f"{r_maj_maj:g}\nMajor Radius", render_style)
     elif profile == "ffbe":
         r_blend = max(0.0, min(cfg.Blend_R, dc))
         alpha_rad = np.radians(cfg.Bev_A)
@@ -1253,6 +1265,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                             0,
                             -3,
                             f"{2 * round_r_flat:.3f}\nRef. Flat",
+                            render_style,
                         )
                 w_target_val = -(span_front - d_inset + (r_blend * sin_a) / 2.0)
                 z_min_pt = get_1d_z_engine(np.array([abs(w_target_val)]), params, span_front, dc)[0]
@@ -1261,6 +1274,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                     (cx_front + w_target_val, cy_front + hb / 2 + z_min_pt),
                     (cx_front + w_target_val - w_val / 4.5, cy_front + hb / 2 + z_min_pt + 4),
                     f"{r_blend:g}\nBlend Radius",
+                    render_style,
                 )
     elif profile == "ffre":
         r_c = span_front
@@ -1277,6 +1291,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                     0,
                     -3,
                     f"{2 * round_r_flat:.3f}\nRef. Flat",
+                    render_style,
                 )
         if shape == "capsule":
             capsule_r_flat = max(0.0, r_c - dx_curve)
@@ -1290,6 +1305,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                     0,
                     -3,
                     f"{2 * capsule_r_flat:.3f}\nRef. Flat",
+                    render_style,
                 )
         w_target_val = -(r_c - dx_curve * 0.5)
         z_min_pt = get_1d_z_engine(np.array([abs(w_target_val)]), params, span_front, dc)[0]
@@ -1298,6 +1314,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
             (cx_front + w_target_val, cy_front + hb / 2 + z_min_pt),
             (cx_front + w_target_val - w_val / 4.5, cy_front + hb / 2 + z_min_pt + 4),
             f"{r_edge:g}\nRadius",
+            render_style,
         )
     if shape == "oval" and profile in ("ffre", "ffbe") and oval_ref_flat_front is not None and oval_ref_flat_front > 0:
         draw_ext_outside(
@@ -1309,6 +1326,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
             0,
             -3,
             f"{oval_ref_flat_front:.3f}\nRef. Flat",
+            render_style,
         )
     if profile == "ffbe" and shape == "capsule":
         if capsule_r_flat is None:
@@ -1331,10 +1349,11 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                 0,
                 -3,
                 f"{2 * capsule_r_flat:.3f}\nRef. Flat",
+                render_style,
             )
     if profile in ("concave", "cbe"):
         rc_min = cfg.Rc_min
-        draw_pointer(ax, (cx_front, cy_front + hb / 2 + dc), (cx_front - w_val / 4, cy_front + hb / 2 + dc + 4), f"{rc_min:g}\nCup Radius")
+        draw_pointer(ax, (cx_front, cy_front + hb / 2 + dc), (cx_front - w_val / 4, cy_front + hb / 2 + dc + 4), f"{rc_min:g}\nCup Radius", render_style)
 
     def _compute_annotated_data_bounds():
         """Bounds in data units using geometry + dimension texts."""
