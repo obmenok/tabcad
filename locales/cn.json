@@ -81,6 +81,7 @@
   "presets": {
     "title": "保存的预设",
     "select": "选择预设...",
+    "load": "加载",
     "save": "保存",
     "save_as": "另存为",
     "delete": "删除",

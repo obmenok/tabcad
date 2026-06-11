@@ -1,80 +1,272 @@
-import sqlite3
+from __future__ import annotations
+
+import hashlib
+import hmac
 import json
 import os
+import re
+import sqlite3
+from datetime import datetime
 
-DB_PATH = "presets.db"
+DEFAULT_DB_PATH = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "presets.db")
+)
+DB_PATH = os.path.normpath(os.environ.get("TABCAD_DB_PATH", DEFAULT_DB_PATH))
 
-def init_db():
-    """Создает таблицу, если она еще не существует."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
+TOKEN_SECRET = os.environ.get("TABCAD_TOKEN_SECRET", "")
+DEFAULT_PRESET_LIMIT = int(os.environ.get("TABCAD_DEFAULT_PRESET_LIMIT", "50"))
+ADMIN_PRESET_LIMIT = int(os.environ.get("TABCAD_ADMIN_PRESET_LIMIT", "1000000"))
+MAX_PRESET_JSON_BYTES = int(os.environ.get("TABCAD_MAX_PRESET_JSON_BYTES", "100000"))
+
+_TOKEN_RE = re.compile(r"^[A-Z0-9]{5}(?:-[A-Z0-9]{5}){3}$")
+
+
+def normalize_token(token: str | None) -> str | None:
+    """Нормализует код доступа для сравнения и хранения."""
+    if not token:
+        return None
+    value = token.strip().upper().replace(" ", "")
+    return value if _TOKEN_RE.fullmatch(value) else None
+
+
+ADMIN_TOKENS = {
+    token
+    for token in (
+        normalize_token(raw_token)
+        for raw_token in os.environ.get("TABCAD_ADMIN_TOKENS", "").split(",")
+    )
+    if token
+}
+
+
+def is_admin_token(token: str | None) -> bool:
+    """Проверяет, является ли код доступа админским."""
+    normalized = normalize_token(token)
+    return bool(normalized and normalized in ADMIN_TOKENS)
+
+
+def _hash_token(token: str) -> str:
+    """Возвращает необратимый хэш токена; секрет можно задать через env."""
+    normalized = normalize_token(token)
+    if not normalized:
+        raise ValueError("Invalid access token format")
+    payload = normalized.encode("utf-8")
+    if TOKEN_SECRET:
+        digest = hmac.new(TOKEN_SECRET.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+        return f"hmac-sha256:{digest}"
+    return f"sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def _table_columns(conn: sqlite3.Connection, table_name: str) -> set[str]:
+    rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    return {row[1] for row in rows}
+
+
+def _table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    row = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (table_name,),
+    ).fetchone()
+    return row is not None
+
+
+def _create_current_schema(conn: sqlite3.Connection):
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            token_hash TEXT UNIQUE NOT NULL,
+            preset_limit INTEGER NOT NULL DEFAULT 50,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_used_at TIMESTAMP
+        )
+    """)
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS presets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
             parameters TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, name)
         )
-    ''')
-    conn.commit()
-    conn.close()
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_presets_user_name
+        ON presets(user_id, name COLLATE NOCASE)
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS rate_limit_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            action TEXT NOT NULL,
+            identity TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+        )
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_rate_limit_events_lookup
+        ON rate_limit_events(action, identity, created_at)
+    """)
 
-def save_preset(name: str, parameters: dict):
-    """
-    Сохраняет или перезаписывает пресет.
-    parameters - словарь со всеми значениями из интерфейса.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    params_json = json.dumps(parameters)
-    
-    # Используем REPLACE, чтобы перезаписывать пресет, если имя уже существует
-    cursor.execute('''
-        INSERT OR REPLACE INTO presets (id, name, parameters)
-        VALUES ((SELECT id FROM presets WHERE name = ?), ?, ?)
-    ''', (name, name, params_json))
-    
-    conn.commit()
-    conn.close()
 
-def load_preset(name: str) -> dict:
-    """Загружает пресет по имени. Возвращает словарь параметров."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT parameters FROM presets WHERE name = ?', (name,))
-    row = cursor.fetchone()
-    conn.close()
-    
-    if row:
-        return json.loads(row[0])
-    return None
+def _migrate_legacy_presets(conn: sqlite3.Connection):
+    if not _table_exists(conn, "presets"):
+        return
+    columns = _table_columns(conn, "presets")
+    if "user_id" in columns:
+        return
 
-def get_all_preset_names() -> list:
-    """Возвращает список имен всех сохраненных пресетов (отсортированных по имени)."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT name FROM presets ORDER BY name COLLATE NOCASE ASC')
-    rows = cursor.fetchall()
-    conn.close()
-    
+    suffix = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    legacy_name = f"presets_legacy_{suffix}"
+    conn.execute(f"ALTER TABLE presets RENAME TO {legacy_name}")
+
+
+def init_db():
+    """Создаёт или мигрирует таблицы авторизации и пресетов."""
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        _migrate_legacy_presets(conn)
+        _create_current_schema(conn)
+
+
+def register_or_get_user(token: str | None) -> int | None:
+    """Возвращает user_id для валидного кода доступа, создавая запись при первом входе."""
+    normalized = normalize_token(token)
+    if not normalized:
+        return None
+    token_hash = _hash_token(normalized)
+    preset_limit = ADMIN_PRESET_LIMIT if is_admin_token(normalized) else DEFAULT_PRESET_LIMIT
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        row = conn.execute(
+            "SELECT id FROM users WHERE token_hash = ?",
+            (token_hash,),
+        ).fetchone()
+        if row:
+            conn.execute(
+                """
+                UPDATE users
+                SET last_used_at = CURRENT_TIMESTAMP,
+                    preset_limit = MAX(preset_limit, ?)
+                WHERE id = ?
+                """,
+                (preset_limit, row[0]),
+            )
+            return row[0]
+
+        cursor = conn.execute(
+            """
+            INSERT INTO users (token_hash, preset_limit, last_used_at)
+            VALUES (?, ?, CURRENT_TIMESTAMP)
+            """,
+            (token_hash, preset_limit),
+        )
+        return cursor.lastrowid
+
+
+def token_exists(token: str | None) -> bool:
+    """Проверяет, есть ли уже такой код доступа в базе."""
+    normalized = normalize_token(token)
+    if not normalized:
+        return False
+    token_hash = _hash_token(normalized)
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT 1 FROM users WHERE token_hash = ?",
+            (token_hash,),
+        ).fetchone()
+    return row is not None
+
+
+def get_preset_limit(user_id: int) -> int:
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT preset_limit FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+    return int(row[0]) if row else DEFAULT_PRESET_LIMIT
+
+
+def save_preset(user_id: int, name: str, parameters: dict):
+    """Сохраняет или перезаписывает пресет конкретного пользователя."""
+    params_json = json.dumps(parameters, ensure_ascii=False)
+    if len(params_json.encode("utf-8")) > MAX_PRESET_JSON_BYTES:
+        raise ValueError("Preset is too large")
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("""
+            INSERT INTO presets (user_id, name, parameters, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id, name) DO UPDATE SET
+                parameters = excluded.parameters,
+                updated_at = CURRENT_TIMESTAMP
+        """, (user_id, name, params_json))
+
+
+def load_preset(user_id: int, name: str) -> dict | None:
+    """Загружает пресет пользователя по имени."""
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT parameters FROM presets WHERE user_id = ? AND name = ?",
+            (user_id, name),
+        ).fetchone()
+    return json.loads(row[0]) if row else None
+
+
+def get_all_preset_names(user_id: int) -> list:
+    """Возвращает список имён сохранённых пресетов пользователя."""
+    with sqlite3.connect(DB_PATH) as conn:
+        rows = conn.execute(
+            "SELECT name FROM presets WHERE user_id = ? ORDER BY name COLLATE NOCASE ASC",
+            (user_id,),
+        ).fetchall()
     return [row[0] for row in rows]
 
-def get_preset_names_starting_with(base_name: str) -> list:
-    """Возвращает список имен пресетов, начинающихся с заданного префикса."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT name FROM presets WHERE name LIKE ? ORDER BY name COLLATE NOCASE ASC', (f"{base_name}%",))
-    rows = cursor.fetchall()
-    conn.close()
+
+def get_preset_names_starting_with(user_id: int, base_name: str) -> list:
+    """Возвращает имена пресетов пользователя, начинающиеся с заданного префикса."""
+    with sqlite3.connect(DB_PATH) as conn:
+        rows = conn.execute(
+            """
+            SELECT name FROM presets
+            WHERE user_id = ? AND name LIKE ?
+            ORDER BY name COLLATE NOCASE ASC
+            """,
+            (user_id, f"{base_name}%"),
+        ).fetchall()
     return [row[0] for row in rows]
 
-def delete_preset(name: str):
-    """Удаляет пресет по имени."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM presets WHERE name = ?', (name,))
-    conn.commit()
-    conn.close()
 
-# Инициализируем БД при импорте модуля
+def preset_exists(user_id: int, name: str) -> bool:
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT 1 FROM presets WHERE user_id = ? AND name = ?",
+            (user_id, name),
+        ).fetchone()
+    return row is not None
+
+
+def count_presets(user_id: int) -> int:
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM presets WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+    return int(row[0]) if row else 0
+
+
+def delete_preset(user_id: int, name: str):
+    """Удаляет пресет пользователя по имени."""
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "DELETE FROM presets WHERE user_id = ? AND name = ?",
+            (user_id, name),
+        )
+
+
+# Инициализируем БД при импорте модуля.
 init_db()

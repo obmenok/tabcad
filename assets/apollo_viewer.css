@@ -130,7 +130,7 @@
 /* Presets button group: allow wrapping to prevent overflow */
 .preset-btn-group {
   display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   width: 100%;
 }
 
@@ -692,6 +692,107 @@
   transform: none !important;
   transition: none !important;
   box-shadow: none !important;
+}
+
+.outline-soft-btn.preset-modal-btn {
+  font-size: 14px !important;
+}
+
+.auth-panel {
+  opacity: 0.92;
+}
+
+.auth-status-bar {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 8px;
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+}
+
+.auth-status-dot {
+  font-size: 8px;
+  margin-right: 6px;
+}
+
+.auth-token-badge {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-change-btn.btn.btn-link {
+  padding: 0 0 0 8px !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+}
+
+.auth-signin-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.auth-token-input.form-control {
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: normal;
+  text-transform: uppercase;
+}
+
+.auth-generated-token {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  text-align: center;
+  background: #f8f7f2;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+}
+
+.auth-token-value {
+  font-family: inherit;
+  font-size: 16px;
+  letter-spacing: normal;
+}
+
+.auth-token-part + .auth-token-part::before {
+  content: "-";
+  margin: 0 0.35em;
+  color: #6c757d;
+}
+
+.auth-copy-clipboard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid #9aa0a6;
+  border-radius: 6px;
+  color: #495057;
+  background-color: #ffffff;
+  font-size: 14px;
+  line-height: 28px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.auth-copy-clipboard:hover,
+.auth-copy-clipboard:focus {
+  background-color: #e9ecef;
+  color: #495057;
+  text-decoration: none;
 }
 
 /* Preset modal: remove header/body/footer dividers */

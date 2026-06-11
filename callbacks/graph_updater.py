@@ -20,6 +20,8 @@ from core.pdf_generator import (
     ISO_SCALE_FACTORS,
 )
 from core.defaults import BASE_DEFAULTS, PROFILE_DEFAULTS, BISECT_DEFAULTS, SHAPE_SPECIFIC
+from core import db
+from core.rate_limiter import check_export_rate_limit
 
 logger = logging.getLogger("gunicorn.error")
 try:
@@ -143,6 +145,7 @@ def _pick_iso_scale_from_bounds(bounds, zone_w_mm, zone_h_mm, geom_w=0, geom_h=0
         State("input-density", "value"),
         State("input-tip-force-steel", "value"),
         State("app-settings-store", "data"),
+        State("user-token-store", "data"),
     ],
     prevent_initial_call=True,
 )
@@ -179,8 +182,20 @@ def export_pdf_callback(
     density,
     tip_force_steel,
     app_settings,
+    user_token,
 ):
     if not n_clicks:
+        return dash.no_update
+    user_id = db.register_or_get_user(user_token)
+    if not user_id:
+        return dash.no_update
+    rate_limit = check_export_rate_limit("pdf", user_token)
+    if not rate_limit.allowed:
+        logger.warning(
+            "PDF export rate-limited: reason=%s retry_after=%ss",
+            rate_limit.reason,
+            rate_limit.retry_after_seconds,
+        )
         return dash.no_update
 
     try:
@@ -1052,8 +1067,17 @@ def export_stl_callback(
     b_ri,
     b_cruciform,
     b_double_sided,
+    user_token,
 ):
     if n_clicks is None:
+        return dash.no_update
+    rate_limit = check_export_rate_limit("stl", user_token)
+    if not rate_limit.allowed:
+        logger.warning(
+            "STL export rate-limited: reason=%s retry_after=%ss",
+            rate_limit.reason,
+            rate_limit.retry_after_seconds,
+        )
         return dash.no_update
 
     try:

@@ -81,6 +81,7 @@
   "presets": {
     "title": "Saved Presets",
     "select": "Select preset...",
+    "load": "Load",
     "save": "Save",
     "save_as": "Save As",
     "delete": "Delete",

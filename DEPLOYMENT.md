@@ -23,6 +23,29 @@ This document describes how TabletCAD is deployed to the external server hosting
 - Internal app port: `8050`
 - Dash is launched through `gunicorn`.
 
+## Environment Variables
+
+Optional runtime settings for access codes and export rate limits:
+
+```bash
+TABCAD_TOKEN_SECRET="replace-with-long-random-secret"
+TABCAD_DB_PATH="/app/data/presets.db"
+TABCAD_ADMIN_TOKENS="ABCDE-12345-FGHIJ-67890"
+TABCAD_DEFAULT_PRESET_LIMIT=50
+TABCAD_ADMIN_PRESET_LIMIT=1000000
+TABCAD_PDF_LIMIT_PER_HOUR=10
+TABCAD_PDF_COOLDOWN_SECONDS=20
+TABCAD_STL_LIMIT_PER_HOUR=20
+TABCAD_STL_COOLDOWN_SECONDS=10
+```
+
+`TABCAD_ADMIN_TOKENS` is a comma-separated list of access codes that bypass
+PDF/STL rate limits and receive the admin preset limit.
+
+`TABCAD_DB_PATH` should point to a persistent Docker volume/bind mount. Do not
+store production presets only inside the container filesystem, because
+`docker compose down && docker compose up -d --build` recreates the container.
+
 ## DNS
 
 Required DNS records:

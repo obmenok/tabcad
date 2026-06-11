@@ -69,6 +69,7 @@ from callbacks import ui_updater
 from callbacks import graph_updater
 from callbacks import plotly_ui
 from callbacks import presets
+from callbacks import auth
 from callbacks import constraints_viewer
 from callbacks import i18n_callbacks
 from callbacks import settings_callbacks

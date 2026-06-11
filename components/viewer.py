@@ -1,5 +1,6 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
+from components.auth import auth_modal, auth_status_panel, auth_stores
 from core.defaults import DEFAULT_APP_SETTINGS
 
 
@@ -213,6 +214,7 @@ def create_info_panel():
         [
             html.Div(
                 [
+                    auth_status_panel(),
                     html.Div(
                         "Saved Presets",
                         id="presets-title",
@@ -234,12 +236,38 @@ def create_info_panel():
                     ),
                     dbc.ButtonGroup(
                         [
-                            dbc.Button("Save", id="preset-save-btn", color="light", class_name="plotly-toolbar-btn"),
-                            dbc.Button("Save As", id="preset-save-as-btn", color="light", class_name="plotly-toolbar-btn"),
-                            dbc.Button("Delete", id="preset-delete-btn", color="light", class_name="plotly-toolbar-btn"),
+                            dbc.Button(
+                                "Load",
+                                id="preset-load-btn",
+                                color="light",
+                                class_name="plotly-toolbar-btn",
+                            ),
+                            dbc.Button(
+                                "Save",
+                                id="preset-save-btn",
+                                color="light",
+                                class_name="plotly-toolbar-btn",
+                            ),
+                            dbc.Button(
+                                "Save As",
+                                id="preset-save-as-btn",
+                                color="light",
+                                class_name="plotly-toolbar-btn",
+                            ),
+                            dbc.Button(
+                                "Delete",
+                                id="preset-delete-btn",
+                                color="light",
+                                class_name="plotly-toolbar-btn",
+                            ),
                         ],
                         size="sm",
                         className="plotly-toolbar-group preset-btn-group segmented-btn-group",
+                    ),
+                    html.Div(
+                        id="preset-limit-msg",
+                        className="text-secondary mt-1",
+                        style={"fontSize": "0.75rem"},
                     ),
                 ],
                 className="mb-3",
@@ -263,6 +291,8 @@ def create_info_panel():
         [
             info_block,
             preset_modal,
+            auth_modal(),
+            *auth_stores(),
         ],
         className="h-100",
         style={"overflow": "visible"},
