@@ -22,7 +22,7 @@ CLEANUP_INTERVAL_SECONDS = int(os.environ.get("TABCAD_CLEANUP_INTERVAL_SECONDS",
 MAX_PRESET_JSON_BYTES = int(os.environ.get("TABCAD_MAX_PRESET_JSON_BYTES", "100000"))
 
 _TOKEN_RE = re.compile(r"^[A-Z0-9]{5}(?:-[A-Z0-9]{5}){3}$")
-_last_cleanup_ts = 0.0
+
 
 
 def normalize_token(token: str | None) -> str | None:
@@ -111,6 +111,12 @@ def _create_current_schema(conn: sqlite3.Connection):
         CREATE INDEX IF NOT EXISTS idx_rate_limit_events_lookup
         ON rate_limit_events(action, identity, created_at)
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS kv_store (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
 
 
 def _migrate_legacy_presets(conn: sqlite3.Connection):
@@ -127,7 +133,6 @@ def _migrate_legacy_presets(conn: sqlite3.Connection):
 
 def init_db():
     """Создаёт или мигрирует таблицы авторизации и пресетов."""
-    global _last_cleanup_ts
     db_dir = os.path.dirname(DB_PATH)
     if db_dir:
         os.makedirs(db_dir, exist_ok=True)
@@ -136,7 +141,6 @@ def init_db():
         _migrate_legacy_presets(conn)
         _create_current_schema(conn)
         cleanup_empty_users(conn=conn)
-    _last_cleanup_ts = time.time()
 
 
 def cleanup_empty_users(
@@ -171,11 +175,17 @@ def cleanup_empty_users(
 
 def maybe_cleanup_empty_users() -> int:
     """Запускает автоочистку не чаще заданного интервала в текущем процессе."""
-    global _last_cleanup_ts
-    now = time.time()
-    if now - _last_cleanup_ts < CLEANUP_INTERVAL_SECONDS:
-        return 0
-    _last_cleanup_ts = now
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT value FROM kv_store WHERE key = 'last_cleanup_ts'"
+        ).fetchone()
+        last_ts = float(row[0]) if row else 0.0
+        if time.time() - last_ts < CLEANUP_INTERVAL_SECONDS:
+            return 0
+        conn.execute(
+            "INSERT OR REPLACE INTO kv_store (key, value) VALUES ('last_cleanup_ts', ?)",
+            (str(time.time()),)
+        )
     return cleanup_empty_users()
 
 
