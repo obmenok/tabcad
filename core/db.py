@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sqlite3
+import time
 from datetime import datetime
 
 DEFAULT_DB_PATH = os.path.normpath(
@@ -16,9 +17,12 @@ DB_PATH = os.path.normpath(os.environ.get("TABCAD_DB_PATH", DEFAULT_DB_PATH))
 TOKEN_SECRET = os.environ.get("TABCAD_TOKEN_SECRET", "")
 DEFAULT_PRESET_LIMIT = int(os.environ.get("TABCAD_DEFAULT_PRESET_LIMIT", "50"))
 ADMIN_PRESET_LIMIT = int(os.environ.get("TABCAD_ADMIN_PRESET_LIMIT", "1000000"))
+EMPTY_USER_RETENTION_DAYS = int(os.environ.get("TABCAD_EMPTY_USER_RETENTION_DAYS", "30"))
+CLEANUP_INTERVAL_SECONDS = int(os.environ.get("TABCAD_CLEANUP_INTERVAL_SECONDS", "86400"))
 MAX_PRESET_JSON_BYTES = int(os.environ.get("TABCAD_MAX_PRESET_JSON_BYTES", "100000"))
 
 _TOKEN_RE = re.compile(r"^[A-Z0-9]{5}(?:-[A-Z0-9]{5}){3}$")
+_last_cleanup_ts = 0.0
 
 
 def normalize_token(token: str | None) -> str | None:
@@ -123,6 +127,7 @@ def _migrate_legacy_presets(conn: sqlite3.Connection):
 
 def init_db():
     """Создаёт или мигрирует таблицы авторизации и пресетов."""
+    global _last_cleanup_ts
     db_dir = os.path.dirname(DB_PATH)
     if db_dir:
         os.makedirs(db_dir, exist_ok=True)
@@ -130,10 +135,53 @@ def init_db():
         conn.execute("PRAGMA foreign_keys = ON")
         _migrate_legacy_presets(conn)
         _create_current_schema(conn)
+        cleanup_empty_users(conn=conn)
+    _last_cleanup_ts = time.time()
+
+
+def cleanup_empty_users(
+    retention_days: int | None = None,
+    conn: sqlite3.Connection | None = None,
+) -> int:
+    """Удаляет старых пользователей без пресетов."""
+    days = EMPTY_USER_RETENTION_DAYS if retention_days is None else retention_days
+    if days < 0:
+        return 0
+
+    query = """
+        DELETE FROM users
+        WHERE created_at < datetime('now', ?)
+          AND (last_used_at IS NULL OR last_used_at < datetime('now', ?))
+          AND NOT EXISTS (
+              SELECT 1 FROM presets
+              WHERE presets.user_id = users.id
+          )
+    """
+    cutoff = f"-{days} days"
+
+    if conn is not None:
+        cursor = conn.execute(query, (cutoff, cutoff))
+        return cursor.rowcount if cursor.rowcount is not None else 0
+
+    with sqlite3.connect(DB_PATH) as cleanup_conn:
+        cleanup_conn.execute("PRAGMA foreign_keys = ON")
+        cursor = cleanup_conn.execute(query, (cutoff, cutoff))
+        return cursor.rowcount if cursor.rowcount is not None else 0
+
+
+def maybe_cleanup_empty_users() -> int:
+    """Запускает автоочистку не чаще заданного интервала в текущем процессе."""
+    global _last_cleanup_ts
+    now = time.time()
+    if now - _last_cleanup_ts < CLEANUP_INTERVAL_SECONDS:
+        return 0
+    _last_cleanup_ts = now
+    return cleanup_empty_users()
 
 
 def register_or_get_user(token: str | None) -> int | None:
     """Возвращает user_id для валидного кода доступа, создавая запись при первом входе."""
+    maybe_cleanup_empty_users()
     normalized = normalize_token(token)
     if not normalized:
         return None

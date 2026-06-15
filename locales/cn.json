@@ -155,5 +155,32 @@
     "diffuse": "漫反射:",
     "specular": "高光:",
     "roughness": "粗糙度:"
+  },
+  "viewer": {
+    "view": "视图",
+    "view_2d": "2D 视图",
+    "view_3d": "3D 视图",
+    "front": "前视图",
+    "back": "后视图",
+    "left": "左视图",
+    "right": "右视图",
+    "top": "顶视图",
+    "bottom": "底视图",
+    "isometric": "等轴测",
+    "shaded": "阴影",
+    "fullscreen": "全屏",
+    "download_png": "下载 PNG",
+    "download_svg": "下载 SVG",
+    "download_stl": "下载 STL",
+    "edge": "边线",
+    "boundary_box": "边界框",
+    "fill_color": "填充颜色:",
+    "dimension_color": "尺寸颜色:",
+    "model_color": "模型颜色:",
+    "ambient": "环境光:",
+    "diffuse": "漫反射:",
+    "specular": "高光:",
+    "roughness": "粗糙度:",
+    "feedback": "发送反馈: "
   }
 }

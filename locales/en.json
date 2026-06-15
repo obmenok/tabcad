@@ -155,5 +155,32 @@
     "diffuse": "Diffuse:",
     "specular": "Specular:",
     "roughness": "Roughness:"
+  },
+  "viewer": {
+    "view": "View",
+    "view_2d": "2D View",
+    "view_3d": "3D View",
+    "front": "Front",
+    "back": "Back",
+    "left": "Left",
+    "right": "Right",
+    "top": "Top",
+    "bottom": "Bottom",
+    "isometric": "Isometric",
+    "shaded": "Shading",
+    "fullscreen": "Full screen",
+    "download_png": "Download PNG",
+    "download_svg": "Download SVG",
+    "download_stl": "Download STL",
+    "edge": "Edges",
+    "boundary_box": "Boundary box",
+    "fill_color": "Fill Color:",
+    "dimension_color": "Dimension Color:",
+    "model_color": "Model Color:",
+    "ambient": "Ambient:",
+    "diffuse": "Diffuse:",
+    "specular": "Specular:",
+    "roughness": "Roughness:",
+    "feedback": "Send Feedback: "
   }
 }

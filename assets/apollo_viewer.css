@@ -8,7 +8,7 @@
 
 .apollo-icon {
   font-family: "ApolloViewerFonts", sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -296,6 +296,7 @@
   text-transform: none !important;
   color: #495057 !important;
   opacity: 1 !important;
+  font-size: 14px !important;
 }
 
 .plotly-toolbar-group .dropdown-item .apollo-icon {
@@ -698,6 +699,26 @@
   font-size: 14px !important;
 }
 
+.feedback-mail-row {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.feedback-mail-link {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  color: #495057;
+  text-decoration: none;
+}
+
+.feedback-mail-link:hover,
+.feedback-mail-link:focus {
+  color: #158cba;
+  text-decoration: underline;
+}
+
 .auth-panel {
   opacity: 0.92;
 }
@@ -846,6 +867,7 @@
 }
 
 /* Match scoring switch label font to Edit button text */
+#div-modified-switch .form-check-label,
 #div-bisect-cruciform .form-check-label,
 #div-bisect-double-sided .form-check-label {
   font-size: 14px !important;

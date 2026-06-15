@@ -148,6 +148,7 @@ dash.clientside_callback(
         Output("viewer-diffuse-label", "children"),
         Output("viewer-specular-label", "children"),
         Output("viewer-roughness-label", "children"),
+        Output("feedback-label", "children"),
     ],
     Input("lang-store", "data")
 )
@@ -265,4 +266,5 @@ def update_texts(lang):
         t("viewer.diffuse", lang),
         t("viewer.specular", lang),
         t("viewer.roughness", lang),
+        t("viewer.feedback", lang),
     )

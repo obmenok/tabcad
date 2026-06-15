@@ -151,6 +151,17 @@ def _settings_preview_panel():
                 color="secondary",
                 className="outline-soft-btn preset-modal-btn w-100",
             ),
+            html.Div(
+                [
+                    html.Span("Send Feedback: ", id="feedback-label"),
+                    html.A(
+                        "bs26@ya.ru",
+                        href="mailto:bs26@ya.ru?subject=TabletCAD%20Feedback",
+                        className="feedback-mail-link",
+                    ),
+                ],
+                className="feedback-mail-row",
+            ),
             dcc.Download(id="download-pdf"),
         ],
         className="settings-preview-block",
@@ -394,7 +405,7 @@ def create_model_panel():
                                             ),
                                             color="light",
                                             className="plotly-toolbar-btn",
-                                            toggle_style={"minWidth": "104px"},
+                                            toggle_style={"minWidth": "104px", "fontSize": "14px"},
                                             children=[
                                                 dbc.DropdownMenuItem(
                                                     html.Span(

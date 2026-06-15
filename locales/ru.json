@@ -155,5 +155,32 @@
     "diffuse": "Рассеивание:",
     "specular": "Блик:",
     "roughness": "Шероховатость:"
+  },
+  "viewer": {
+    "view": "Вид",
+    "view_2d": "2D вид",
+    "view_3d": "3D вид",
+    "front": "Спереди",
+    "back": "Сзади",
+    "left": "Слева",
+    "right": "Справа",
+    "top": "Сверху",
+    "bottom": "Снизу",
+    "isometric": "Изометрия",
+    "shaded": "Затенение",
+    "fullscreen": "На весь экран",
+    "download_png": "Скачать PNG",
+    "download_svg": "Скачать SVG",
+    "download_stl": "Скачать STL",
+    "edge": "Ребра",
+    "boundary_box": "Габаритная рамка",
+    "fill_color": "Цвет заливки:",
+    "dimension_color": "Цвет размеров:",
+    "model_color": "Цвет модели:",
+    "ambient": "Фоновый свет:",
+    "diffuse": "Рассеивание:",
+    "specular": "Блик:",
+    "roughness": "Шероховатость:",
+    "feedback": "Отправить отзыв: "
   }
 }
