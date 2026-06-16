@@ -199,6 +199,7 @@
     "blend_radius": "过渡半径",
     "radius": "半径",
     "ref_flat": "平面",
-    "angle": "角度"
+    "angle": "角度",
+    "land": "平边"
   }
 }

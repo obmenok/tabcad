@@ -54,6 +54,16 @@ DEFAULT_GEOM_MEDIUM_LINE = 0.8
 DEFAULT_GEOM_THIN_LINE = 0.6
 PDF_FONT_PROPERTIES = None
 
+# Load osifont for ISO PDF drawings
+_OSIFONT_PATH = os.path.join("assets", "osifont.ttf")
+if os.path.exists(_OSIFONT_PATH):
+    try:
+        font_manager.fontManager.addfont(_OSIFONT_PATH)
+        PDF_FONT_PROPERTIES = font_manager.FontProperties(fname=_OSIFONT_PATH)
+    except Exception as e:
+        print(f"Warning: Failed to load osifont: {e}")
+        PDF_FONT_PROPERTIES = None
+
 
 class RenderStyle:
     """Per-call style context for 2D rendering."""
@@ -136,16 +146,6 @@ class RenderStyle:
             self.geom_thick_line = DEFAULT_GEOM_THICK_LINE
             self.geom_medium_line = DEFAULT_GEOM_MEDIUM_LINE
             self.geom_thin_line = DEFAULT_GEOM_THIN_LINE
-
-# Load osifont for ISO PDF drawings
-_OSIFONT_PATH = os.path.join("assets", "osifont.ttf")
-if os.path.exists(_OSIFONT_PATH):
-    try:
-        font_manager.fontManager.addfont(_OSIFONT_PATH)
-        PDF_FONT_PROPERTIES = font_manager.FontProperties(fname=_OSIFONT_PATH)
-    except Exception as e:
-        print(f"Warning: Failed to load osifont: {e}")
-        PDF_FONT_PROPERTIES = None
 
 
 _REQUIRED_PARAM_KEYS = [
@@ -323,8 +323,11 @@ def _extension_segment(p0x, p0y, p1x, p1y, render_style):
     return sx, sy, ex, ey
 
 
-def _dim_text_kwargs(render_style):
+def _dim_text_kwargs(render_style, lang="en", cn_font=None):
     if not render_style.is_pdf:
+        # Use Chinese font for CN language if available
+        if lang == "cn" and cn_font is not None:
+            return {"fontsize": 9, "fontproperties": cn_font}
         return {"fontsize": 9}
     
     kwargs = {"fontsize": render_style.text_font_size}
@@ -374,7 +377,7 @@ def _draw_arrowhead(ax, tip_x, tip_y, out_x, out_y, render_style, length=None, w
     )
 
 
-def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, render_style, offset=(0, 0)):
+def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, render_style, offset=(0, 0), cn_font=None):
     """Draw internal dimension (arrows inside extension lines)."""
     
     if render_style.is_pdf:
@@ -387,7 +390,6 @@ def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, render_style, offset=(0, 0)):
     ex2, ey2 = px2 + dx, py2 + dy
     
     if not render_style.is_pdf:
-        # Original web style - uses matplotlib annotate
         sgx = np.sign(dx) if dx != 0 else 0
         sgy = np.sign(dy) if dy != 0 else 0
         ax.plot([px1, ex1 + sgx * 0.5], [py1, ey1 + sgy * 0.5], "k-", lw=render_style.dim_line_width)
@@ -407,6 +409,7 @@ def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, render_style, offset=(0, 0)):
             va="center",
             bbox=dict(facecolor="#ffffff", edgecolor="none", pad=1),
             fontsize=9,
+            fontproperties=cn_font
         )
         return
 
@@ -440,16 +443,13 @@ def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, render_style, offset=(0, 0)):
     ty = (ey1 + ey2) / 2
     
     if is_vertical:
-        # Vertical dimension: text rotated 90° counter-clockwise, positioned left of dimension line
-        tx = min(ex1, ex2) - render_style.text_gap_from_dim_line
-        ax.text(tx, ty, text, color=render_style.text_color, ha="right", va="center", rotation=90, **_dim_text_kwargs(render_style))
+        ax.text(tx, ty, text, color=render_style.text_color, ha="right", va="center", rotation=90, **_dim_text_kwargs(render_style, "en", cn_font))
     else:
-        # Horizontal dimension: text above dimension line
         ty += render_style.text_gap_from_dim_line
-        ax.text(tx, ty, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style))
+        ax.text(tx, ty, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style, "en", cn_font))
 
 
-def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text, render_style):
+def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text, render_style, cn_font=None):
     """Draw external dimension (arrows outside extension lines)."""
     
     if render_style.is_pdf:
@@ -523,20 +523,17 @@ def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text, render_style):
     _draw_arrowhead(ax, ex1, ey1, ex1 - ux * render_style.arrow_length, ey1 - uy * render_style.arrow_length, render_style)
     _draw_arrowhead(ax, ex2, ey2, ex2 + ux * render_style.arrow_length, ey2 + uy * render_style.arrow_length, render_style)
     
-    # Position text
     if abs(ex2 - ex1) >= abs(ey2 - ey1):
-        # Horizontal dimension
         tx = max(ex1, ex2) + render_style.outside_text_dist * render_style.outside_text_offset_ratio
         ty = max(ey1, ey2) + render_style.text_gap_from_dim_line
         ax.text(tx, ty, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style))
     else:
-        # Vertical dimension: text rotated 90° counter-clockwise
         tx = min(ex1, ex2) - render_style.text_gap_from_dim_line
         ty = (ey1 + ey2) / 2
         ax.text(tx, ty, text, color=render_style.text_color, ha="right", va="center", rotation=90, **_dim_text_kwargs(render_style))
 
 
-def draw_pointer(ax, p_target, p_text, text, render_style):
+def draw_pointer(ax, p_target, p_text, text, render_style, cn_font=None):
     """Draw radius/pointer dimension. Arrow tip touches the profile."""
     text = _format_dim_text(text, render_style)
     tx, ty = p_text
@@ -550,7 +547,6 @@ def draw_pointer(ax, p_target, p_text, text, render_style):
         ty = py + (dy * PAPER_OFFSET_MULT) / render_style.pdf_scale_ratio
 
     if not render_style.is_pdf:
-        # Original web style - uses matplotlib annotate
         ax.annotate(
             text,
             xy=p_target,
@@ -579,7 +575,6 @@ def draw_pointer(ax, p_target, p_text, text, render_style):
     # Draw arrowhead with tip at target (touching profile)
     _draw_arrowhead(ax, px, py, px - ux * render_style.arrow_length, py - uy * render_style.arrow_length, render_style)
     
-    # Draw text shelf and text
     side = 1.0 if tx >= px else -1.0
     shelf_end_x = tx + side * render_style.pointer_shelf_length
     ax.plot([tx, shelf_end_x], [ty, ty], "k-", lw=render_style.dim_line_width)
@@ -710,6 +705,41 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
     """
     from core.i18n import t
     
+    # Configure Chinese font if needed
+    cn_font = None
+    if lang == "cn":
+        # Try to load Chinese font from assets folder
+        cn_font_candidates = [
+            os.path.join("assets", "NotoSansSC-Regular.ttf"),
+            os.path.join("assets", "simhei.ttf"),
+            os.path.join("assets", "SimHei.ttf"),
+        ]
+        for font_path in cn_font_candidates:
+            if os.path.exists(font_path):
+                try:
+                    font_manager.fontManager.addfont(font_path)
+                    cn_font = font_manager.FontProperties(fname=font_path)
+                    break
+                except Exception:
+                    continue
+        
+        if cn_font is None:
+            # Try system Chinese fonts as fallback
+            for font_name in ["Microsoft YaHei", "SimHei", "SimSun"]:
+                try:
+                    test_font = font_manager.FontProperties(family=font_name)
+                    test_path = font_manager.findfont(test_font)
+                    if test_path:
+                        cn_font = font_manager.FontProperties(fname=test_path)
+                        break
+                except Exception:
+                    continue
+        
+        if cn_font is not None:
+            # Set font globally for this figure
+            plt.rcParams['font.sans-serif'] = [cn_font.get_name()] + plt.rcParams['font.sans-serif']
+            plt.rcParams['axes.unicode_minus'] = False
+    
     render_style = RenderStyle(params)
 
     if render_style.is_pdf:
@@ -786,7 +816,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
                         if render_2d_shaded:
                             _draw_solid_polygon(ax, x_flat + cx_top, y_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
                         ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=render_style.geom_thin_line)
-        draw_ext(ax, cx_top - w_val / 2, cy_top + w_val / 2, cx_top - w_val / 2, cy_top - w_val / 2, -4.5, 0, _get_dim_label("diameter", lang, w_val), render_style)
+        draw_ext(ax, cx_top - w_val / 2, cy_top + w_val / 2, cx_top - w_val / 2, cy_top - w_val / 2, -4.5, 0, _get_dim_label("diameter", lang, w_val), render_style, cn_font=None)
     elif shape == "capsule" and not is_modified:
         x_out, y_out = get_capsule_contour(l_val, w_val)
         if render_2d_shaded:
@@ -1013,6 +1043,10 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
     if render_style.is_pdf and profile == "cbe":
         cup_depth_dy += 2.8
         bevel_depth_dy += 2.0
+    elif profile == "cbe":
+        # Web style: lift Cup Depth to avoid overlap with two-line Russian text
+        cup_depth_dy += 2.0
+        bevel_depth_dy += 1.0
 
     draw_ext_outside(
         ax,
@@ -1059,7 +1093,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
                     d_inset_caps = (dc - r_blend_caps) / tan_caps + r_blend_caps / sin_caps
                     capsule_r_flat = max(0.0, r_c_caps - d_inset_caps)
                     ref_flat_side = l_flat + 2 * capsule_r_flat
-        draw_ext(ax, cx_side + hb / 2 + dc, cy_side + ref_flat_side / 2, cx_side + hb / 2 + dc, cy_side - ref_flat_side / 2, 4.5, 0, f"{ref_flat_side:g}\nRef. Flat", render_style)
+        draw_ext(ax, cx_side + hb / 2 + dc, cy_side + ref_flat_side / 2, cx_side + hb / 2 + dc, cy_side - ref_flat_side / 2, 4.5, 0, _get_dim_label("ref_flat", lang, ref_flat_side), render_style)
     if shape == "oval" and profile in ("ffre", "ffbe") and oval_ref_flat_side is not None and oval_ref_flat_side > 0:
         draw_ext(
             ax,
@@ -1069,7 +1103,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
             cy_side - oval_ref_flat_side / 2,
             4.5,
             0,
-            f"{oval_ref_flat_side:.3f}\nRef. Flat",
+            _get_dim_label("ref_flat", lang, oval_ref_flat_side),
             render_style,
         )
 
@@ -1089,13 +1123,13 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
         z_maj_pt = get_compound_profile(np.array([x_maj_pt]), r_maj_maj, r_maj_min, dc, l_c)[0]
         target_maj = (cx_side + hb / 2 + z_maj_pt, cy_side + x_maj_pt)
         text_maj = (cx_side + hb / 2 + z_maj_pt + leader_offset, cy_side + x_maj_pt + 2)
-        draw_pointer(ax, target_maj, text_maj, f"{r_maj_maj:g}\nMajor Major\nRadius", render_style)
+        draw_pointer(ax, target_maj, text_maj, _get_dim_label("major_major_radius", lang, r_maj_maj), render_style)
 
         x_min_pt = l_c * 0.85
         z_min_pt = get_compound_profile(np.array([x_min_pt]), r_maj_maj, r_maj_min, dc, l_c)[0]
         target_min = (cx_side + hb / 2 + z_min_pt, cy_side - x_min_pt)
         text_min = (cx_side + hb / 2 + z_min_pt + leader_offset, cy_side - x_min_pt + 2.5)
-        draw_pointer(ax, target_min, text_min, f"{r_maj_min:g}\nMajor Minor\nRadius", render_style)
+        draw_pointer(ax, target_min, text_min, _get_dim_label("major_minor_radius", lang, r_maj_min), render_style)
 
     span_front = max(0.001, w_val / 2 - land)
     y_min_cup = np.linspace(-span_front, span_front, 400)
@@ -1169,7 +1203,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
             ax.text(
                 cx_front + w_val / 2 + 4.2,
                 cy_front + tt / 2 + 2,
-                f"{land:g}\nBld. Land",
+                _get_dim_label("land", lang, land),
                 color=render_style.text_color,
                 ha="center",
                 va="center",
