@@ -15,6 +15,7 @@ def auth_status_panel():
         [
             html.Div(
                 "Access Code",
+                id="auth-status-title",
                 className="fw-bold text-secondary mb-2",
                 style={"fontSize": "1rem"},
             ),
@@ -53,6 +54,7 @@ def auth_modal():
                     html.P(
                         "Use an access code to save presets and generate PDF files. "
                         "No email or personal data is required.",
+                        id="auth-modal-desc",
                         className="text-secondary mb-0",
                         style={"fontSize": "14px"},
                     ),
@@ -100,6 +102,7 @@ def auth_modal():
                             ),
                             html.P(
                                 "Save this code — it cannot be recovered later.",
+                                id="auth-modal-warning",
                                 className="text-secondary mb-0",
                                 style={"fontSize": "14px"},
                             ),

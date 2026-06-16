@@ -62,6 +62,21 @@
     "generate": "生成图纸",
     "export_pdf": "生成 PDF"
   },
+  "auth": {
+    "title": "访问代码",
+    "not_signed_in": "未登录",
+    "sign_in_create": "登录 / 创建",
+    "change": "更改",
+    "desc": "使用访问代码保存预设并生成PDF文件。不需要电子邮件或个人数据。",
+    "sign_in": "登录",
+    "create_new": "创建新代码",
+    "warning": "请保存此代码 — 以后无法恢复。",
+    "continue": "继续",
+    "error_invalid_format": "请输入有效格式的代码 ABCDE-12345-FGHIJ-67890。",
+    "error_not_found": "找不到代码。请检查或创建一个新代码。",
+    "sign_in_to_export": "登录以导出PDF",
+    "copy": "复制"
+  },
   "calc": {
     "title": "计算",
     "die_hole_sa": "模孔表面积",
@@ -79,7 +94,7 @@
     "close": "关闭"
   },
   "presets": {
-    "title": "保存的预设",
+    "title": "已存预设",
     "select": "选择预设...",
     "load": "加载",
     "save": "保存",
@@ -87,7 +102,12 @@
     "delete": "删除",
     "modal_title": "预设另存为",
     "placeholder": "输入预设名称...",
-    "cancel": "取消"
+    "cancel": "取消",
+    "sign_in_to_save": "登录以保存和加载预设。",
+    "usage": "已使用预设: {count} / {limit}",
+    "limit_reached": "已达到预设限制。",
+    "no_user": "登录以使用预设",
+    "empty": "未保存任何预设"
   },
   "units": {
     "mm2": "mm²",

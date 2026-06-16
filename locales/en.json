@@ -62,6 +62,21 @@
     "generate": "Generate Drawing",
     "export_pdf": "Generate PDF"
   },
+  "auth": {
+    "title": "Access Code",
+    "not_signed_in": "Not signed in",
+    "sign_in_create": "Sign in / Create",
+    "change": "Change",
+    "desc": "Use an access code to save presets and generate PDF files. No email or personal data is required.",
+    "sign_in": "Sign in",
+    "create_new": "Create new code",
+    "warning": "Save this code — it cannot be recovered later.",
+    "continue": "Continue",
+    "error_invalid_format": "Enter a valid code in the format ABCDE-12345-FGHIJ-67890.",
+    "error_not_found": "Code not found. Check it or create a new one.",
+    "sign_in_to_export": "Sign in to export PDF",
+    "copy": "Copy"
+  },
   "calc": {
     "title": "Calculations",
     "die_hole_sa": "Die Hole SA",
@@ -87,7 +102,12 @@
     "delete": "Delete",
     "modal_title": "Save Preset As",
     "placeholder": "Enter preset name...",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "sign_in_to_save": "Sign in to save and load presets.",
+    "usage": "{count} / {limit} presets used",
+    "limit_reached": "Preset limit reached.",
+    "no_user": "Sign in to use presets",
+    "empty": "No presets saved"
   },
   "units": {
     "mm2": "mm²",

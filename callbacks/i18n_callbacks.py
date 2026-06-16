@@ -149,6 +149,14 @@ dash.clientside_callback(
         Output("viewer-specular-label", "children"),
         Output("viewer-roughness-label", "children"),
         Output("feedback-label", "children"),
+        Output("auth-status-title", "children"),
+        Output("auth-modal-title", "children"),
+        Output("auth-modal-desc", "children"),
+        Output("auth-signin-btn", "children"),
+        Output("auth-generate-btn", "children"),
+        Output("auth-modal-warning", "children"),
+        Output("auth-continue-btn", "children"),
+        Output("auth-clipboard", "children"),
     ],
     Input("lang-store", "data")
 )
@@ -267,4 +275,12 @@ def update_texts(lang):
         t("viewer.specular", lang),
         t("viewer.roughness", lang),
         t("viewer.feedback", lang),
+        t("auth.title", lang),
+        t("auth.title", lang),
+        t("auth.desc", lang),
+        t("auth.sign_in", lang),
+        t("auth.create_new", lang),
+        t("auth.warning", lang),
+        t("auth.continue", lang),
+        t("auth.copy", lang),
     )

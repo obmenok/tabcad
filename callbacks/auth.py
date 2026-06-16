@@ -4,6 +4,7 @@ import dash
 from dash import Input, Output, State, callback, ctx, html
 
 from core import db
+from core.i18n import t
 
 _TOKEN_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
@@ -36,9 +37,10 @@ def _token_display(token: str):
     Input("auth-continue-btn", "n_clicks"),
     State("auth-token-input", "value"),
     State("pending-token-store", "data"),
+    Input("lang-store", "data"),
     prevent_initial_call=True,
 )
-def handle_auth(n_open, n_generate, n_signin, n_continue, input_token, pending_token):
+def handle_auth(n_open, n_generate, n_signin, n_continue, input_token, pending_token, lang):
     triggered = ctx.triggered_id
 
     if triggered == "auth-open-btn":
@@ -51,13 +53,9 @@ def handle_auth(n_open, n_generate, n_signin, n_continue, input_token, pending_t
     if triggered == "auth-signin-btn":
         normalized = db.normalize_token(input_token)
         if not normalized:
-            return True, dash.no_update, dash.no_update, dash.no_update, dash.no_update, (
-                "Enter a valid code in the format ABCDE-12345-FGHIJ-67890."
-            )
+            return True, dash.no_update, dash.no_update, dash.no_update, dash.no_update, t("auth.error_invalid_format", lang)
         if not db.token_exists(normalized):
-            return True, dash.no_update, dash.no_update, dash.no_update, dash.no_update, (
-                "Code not found. Check it or create a new one."
-            )
+            return True, dash.no_update, dash.no_update, dash.no_update, dash.no_update, t("auth.error_not_found", lang)
         return False, dash.no_update, {"display": "none"}, None, normalized, ""
 
     if triggered == "auth-continue-btn":
@@ -82,22 +80,23 @@ def resolve_user_id(token):
     Output("auth-status-dot", "style"),
     Output("auth-open-btn", "children"),
     Input("user-token-store", "data"),
+    Input("lang-store", "data"),
     prevent_initial_call=False,
 )
-def update_auth_badge(token):
+def update_auth_badge(token, lang):
     normalized = db.normalize_token(token)
     if not normalized:
         return (
-            "Not signed in",
+            t("auth.not_signed_in", lang),
             {"color": "#aaa", "fontSize": "8px", "marginRight": "6px"},
-            "Sign in / Create",
+            t("auth.sign_in_create", lang),
         )
 
     short = f"{normalized[:11]}…"
     return (
         short,
         {"color": "#28b62c", "fontSize": "8px", "marginRight": "6px"},
-        "Change",
+        t("auth.change", lang),
     )
 
 
@@ -120,9 +119,10 @@ def update_clipboard_content(pending_token, current_token):
     Output("preset-save-as-btn", "disabled"),
     Output("preset-delete-btn", "disabled"),
     Input("user-id-store", "data"),
+    Input("lang-store", "data"),
     prevent_initial_call=False,
 )
-def toggle_auth_controls(user_id):
+def toggle_auth_controls(user_id, lang):
     locked = not bool(user_id)
-    title = "Sign in to export PDF" if locked else ""
+    title = t("auth.sign_in_to_export", lang) if locked else ""
     return locked, title, locked, locked, locked, locked, locked
