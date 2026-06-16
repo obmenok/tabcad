@@ -875,6 +875,16 @@
   line-height: 1.2 !important;
 }
 
+/* Cup Profile row: reserve height to prevent layout shift when Modified switch appears */
+#label-cup-title {
+  min-height: 24px !important;
+}
+
+#cup-profile-row {
+  min-height: 24px !important;
+  height: 24px !important;
+}
+
 #label-shape-title,
 #label-cup-title,
 #label-scoring-title {

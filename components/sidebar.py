@@ -239,6 +239,7 @@ def create_sidebar():
                     id="div-modified-switch",
                 ),
             ],
+            id="cup-profile-row",
             className="mb-1",
             style={"display": "flex", "alignItems": "center", "justifyContent": "space-between"},
         ),
