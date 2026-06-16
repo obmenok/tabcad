@@ -558,8 +558,9 @@ def _build_calc_html(metrics, density, tip_force_value=None, lang="en"):
         Input("input-b-ri", "value"),
         Input("bisect-cruciform", "value"),
         Input("bisect-double-sided", "value"),
+        Input("lang-store", "data"),
     ],
-    Input("app-settings-store", "data"),
+    State("app-settings-store", "data"),
     prevent_initial_call=True,
 )
 def generate_graphics(
@@ -597,6 +598,7 @@ def generate_graphics(
     b_ri,
     b_cruciform,
     b_double_sided,
+    lang,
     app_settings,
 ):
     if w is None or dc is None or profile is None:
@@ -668,7 +670,7 @@ def generate_graphics(
 
         if render_2d_active:
             t_svg_start = time.perf_counter()
-            img_src = render_tablet(mesh_data, params)
+            img_src = render_tablet(mesh_data, params, lang=lang or "en")
             png_src = None
             print(
                 f"generate_graphics render_2d_svg: {(time.perf_counter() - t_svg_start):.3f}s",

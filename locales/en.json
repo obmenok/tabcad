@@ -175,6 +175,30 @@
     "diffuse": "Diffuse:",
     "specular": "Specular:",
     "roughness": "Roughness:",
-    "feedback": "Send Feedback: "
+    "feedback": "Send feedback: "
+  },
+  "dim2d": {
+    "diameter": "Diameter",
+    "minor_axis": "Minor Axis",
+    "major_axis": "Major Axis",
+    "side_radius": "Side Radius",
+    "end_radius": "End Radius",
+    "cup_depth": "Cup Depth",
+    "bevel_depth": "Bevel Depth",
+    "tablet_thickness": "Tablet Thickness",
+    "belly_band": "Belly Band",
+    "flat_face_width": "Flat Face Width",
+    "shoulder_height": "Shoulder Height",
+    "cup_radius": "Cup Radius",
+    "cup_radius_minor": "Cup Radius Minor",
+    "cup_radius_major": "Cup Radius Major",
+    "major_major_radius": "Major Major Radius",
+    "major_minor_radius": "Major Minor Radius",
+    "minor_major_radius": "Minor Major Radius",
+    "minor_minor_radius": "Minor Minor Radius",
+    "blend_radius": "Blend Radius",
+    "radius": "Radius",
+    "ref_flat": "Ref. Flat",
+    "angle": "Angle"
   }
 }

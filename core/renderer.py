@@ -293,6 +293,27 @@ def _format_dim_text(text, render_style):
     return f"{prefix}{out}" if prefix else out
 
 
+def _get_dim_label(key, lang, value=None):
+    """
+    Get translated dimension label for 2D drawing.
+    
+    Args:
+        key: Translation key from dim2d.*
+        lang: Language code
+        value: Numeric value to prepend (optional)
+    
+    Returns:
+        Formatted label string
+    """
+    from core.i18n import t
+    label = t(f"dim2d.{key}", lang)
+    if value is not None:
+        # Format value: remove trailing zeros, use comma for decimals
+        val_str = f"{value:g}".replace(".", ",")
+        return f"{val_str}\n{label}"
+    return label
+    
+
 def _extension_segment(p0x, p0y, p1x, p1y, render_style):
     ux, uy = _safe_unit(p1x - p0x, p1y - p0y)
     sx = p0x + ux * render_style.ext_line_gap_from_feature
@@ -676,7 +697,19 @@ def apply_1d_groove(x_1d, z_surf, cfg, edge_rad):
     return np.minimum(z_surf, z_g)
 
 
-def render_tablet(mesh_data, params, dpi=120, output_format=None):
+def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
+    """
+    Render 2D tablet drawing.
+    
+    Args:
+        mesh_data: Mesh data from generate_mesh()
+        params: Parameters dict
+        dpi: DPI for raster output
+        output_format: 'png' or 'svg'
+        lang: Language code for dimension labels ('en', 'ru', 'cn')
+    """
+    from core.i18n import t
+    
     render_style = RenderStyle(params)
 
     if render_style.is_pdf:
@@ -753,7 +786,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                         if render_2d_shaded:
                             _draw_solid_polygon(ax, x_flat + cx_top, y_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
                         ax.plot(x_flat + cx_top, y_flat + cy_top, "k--", linewidth=render_style.geom_thin_line)
-        draw_ext(ax, cx_top - w_val / 2, cy_top + w_val / 2, cx_top - w_val / 2, cy_top - w_val / 2, -4.5, 0, f"{w_val:g}\nDiameter", render_style)
+        draw_ext(ax, cx_top - w_val / 2, cy_top + w_val / 2, cx_top - w_val / 2, cy_top - w_val / 2, -4.5, 0, _get_dim_label("diameter", lang, w_val), render_style)
     elif shape == "capsule" and not is_modified:
         x_out, y_out = get_capsule_contour(l_val, w_val)
         if render_2d_shaded:
@@ -791,8 +824,8 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                         if render_2d_shaded:
                             _draw_solid_polygon(ax, y_flat + cx_top, x_flat + cy_top, color=poly_fill_color, alpha=0.97, zorder=0.36)
                         ax.plot(y_flat + cx_top, x_flat + cy_top, "k--", linewidth=render_style.geom_thin_line)
-        draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, f"{w_val:g}\nMinor Axis", render_style)
-        draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, f"{l_val:g}\nMajor Axis", render_style)
+        draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, _get_dim_label("minor_axis", lang, w_val), render_style)
+        draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, _get_dim_label("major_axis", lang, l_val), render_style)
     else:
         x_out, y_out = get_oval_contour(l_val, w_val, re, rs)
         if render_2d_shaded:
@@ -844,12 +877,12 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                             ax.plot(y_flat_cont + cx_top, x_flat_cont + cy_top, "k-", linewidth=render_style.geom_thin_line)
                             oval_ref_flat_side = 2 * l_flat_half
                             oval_ref_flat_front = 2 * w_flat_half
-        draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, f"{w_val:g}\nMinor Axis", render_style)
-        draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, f"{l_val:g}\nMajor Axis", render_style)
-        draw_pointer(ax, (cx_top + w_val / 2, cy_top), (cx_top + w_val / 2 + 4, cy_top - l_val / 4), f"{rs:g}\nSide Radius", render_style)
+        draw_ext(ax, cx_top - w_val / 2, cy_top + l_val / 2, cx_top + w_val / 2, cy_top + l_val / 2, 0, 4, _get_dim_label("minor_axis", lang, w_val), render_style)
+        draw_ext(ax, cx_top - w_val / 2, cy_top - l_val / 2, cx_top - w_val / 2, cy_top + l_val / 2, -4.5, 0, _get_dim_label("major_axis", lang, l_val), render_style)
+        draw_pointer(ax, (cx_top + w_val / 2, cy_top), (cx_top + w_val / 2 + 4, cy_top - l_val / 4), _get_dim_label("side_radius", lang, rs), render_style)
         pt_x = re * np.sin(np.pi / 4)
         pt_y = -(l_val / 2 - re) - re * np.cos(np.pi / 4)
-        draw_pointer(ax, (cx_top + pt_x, cy_top + pt_y), (cx_top + pt_x + 4, cy_top + pt_y - 4), f"{re:g}\nEnd Radius", render_style)
+        draw_pointer(ax, (cx_top + pt_x, cy_top + pt_y), (cx_top + pt_x + 4, cy_top + pt_y - 4), _get_dim_label("end_radius", lang, re), render_style)
 
     if b_type != "none" and b_depth > 0:
         z, z_groove, mask_cup = mesh_data["Z"], mesh_data["Z_groove"], mesh_data["mask_cup"]
@@ -989,7 +1022,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         cy_side + l_side / 2,
         0,
         cup_depth_dy,
-        f"{dc:g}\nCup Depth",
+        _get_dim_label("cup_depth", lang, dc),
         render_style,
     )
     if profile == "cbe":
@@ -1003,10 +1036,10 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                 cy_side + l_side / 2,
                 0,
                 bevel_depth_dy,
-                f"{bev_d:g}\nBevel Depth",
+                _get_dim_label("bevel_depth", lang, bev_d),
                 render_style,
             )
-    draw_ext_outside(ax, cx_side - hb / 2, cy_side - l_side / 2, cx_side + hb / 2, cy_side - l_side / 2, 0, -4, f"{hb:g}\nBelly Band", render_style)
+    draw_ext_outside(ax, cx_side - hb / 2, cy_side - l_side / 2, cx_side + hb / 2, cy_side - l_side / 2, 0, -4, _get_dim_label("belly_band", lang, hb), render_style)
     if shape == "capsule" and l_flat > 0:
         ref_flat_side = l_flat
         if profile == "ffre":
@@ -1045,7 +1078,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         p_idx = np.argmin(np.abs(x_maj - (-l_side / 4)))
         pt_surf = z_up_maj[p_idx] + hb / 2
         pt_len = x_maj[p_idx]
-        draw_pointer(ax, (pt_surf + cx_side, pt_len + cy_side), (pt_surf + cx_side + 4, pt_len + cy_side - l_side / 4), f"{rc_maj:g}\nCup Radius\nMajor", render_style)
+        draw_pointer(ax, (pt_surf + cx_side, pt_len + cy_side), (pt_surf + cx_side + 4, pt_len + cy_side - l_side / 4), _get_dim_label("cup_radius_major", lang, rc_maj), render_style)
     elif shape == "oval" and profile in ("modified_oval", "compound"):
         r_maj_maj = cfg.R_maj_maj
         r_maj_min = cfg.R_maj_min
@@ -1098,7 +1131,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
     ax.plot(w_prof + cx_front, t_front + cy_front, "k-", linewidth=render_style.geom_thick_line)
     ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [hb / 2 + cy_front, hb / 2 + cy_front], "k-", linewidth=render_style.geom_thick_line)
     ax.plot([-w_val / 2 + cx_front, w_val / 2 + cx_front], [-hb / 2 + cy_front, -hb / 2 + cy_front], "k-", linewidth=render_style.geom_thick_line)
-    draw_ext(ax, cx_front - w_val / 2, cy_front - tt / 2, cx_front - w_val / 2, cy_front + tt / 2, -4.5, 0, f"{tt:g}\nThickness", render_style)
+    draw_ext(ax, cx_front - w_val / 2, cy_front - tt / 2, cx_front - w_val / 2, cy_front + tt / 2, -4.5, 0, _get_dim_label("tablet_thickness", lang, tt), render_style)
 
     if b_type != "none" and b_depth > 0:
         if b_type == "standard":
@@ -1220,7 +1253,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
 
     if profile == "modified_oval" and shape == "oval":
         rc_min = cfg.Rc_min
-        draw_pointer(ax, (cx_front, cy_front + tt / 2), (cx_front - w_val / 4, cy_front + tt / 2 + 4), f"{rc_min:g}\nCup Radius\nMinor", render_style)
+        draw_pointer(ax, (cx_front, cy_front + tt / 2), (cx_front - w_val / 4, cy_front + tt / 2 + 4), _get_dim_label("cup_radius_minor", lang, rc_min), render_style)
     elif profile == "compound" and shape == "oval":
         r_min_maj = cfg.R_min_maj
         r_min_min = cfg.R_min_min
@@ -1228,23 +1261,23 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
         z_min_maj_pt = get_compound_profile(np.array([x_min_maj_pt]), r_min_maj, r_min_min, dc, span_front)[0]
         targ_front_maj = (cx_front + x_min_maj_pt, cy_front + hb / 2 + z_min_maj_pt)
         txt_front_maj = (cx_front + x_min_maj_pt + 1.0, cy_front + hb / 2 + z_min_maj_pt + 4.5)
-        draw_pointer(ax, targ_front_maj, txt_front_maj, f"{r_min_maj:g}\nMinor Major\nRadius", render_style)
+        draw_pointer(ax, targ_front_maj, txt_front_maj, _get_dim_label("minor_major_radius", lang, r_min_maj), render_style)
 
         x_min_min_pt = span_front * 0.80
         z_min_min_pt = get_compound_profile(np.array([x_min_min_pt]), r_min_maj, r_min_min, dc, span_front)[0]
         targ_front_min = (cx_front - x_min_min_pt, cy_front + hb / 2 + z_min_min_pt)
         txt_front_min = (cx_front - x_min_min_pt - 2.5, cy_front + hb / 2 + z_min_min_pt + 4.5)
-        draw_pointer(ax, targ_front_min, txt_front_min, f"{r_min_min:g}\nMinor Minor\nRadius", render_style)
+        draw_pointer(ax, targ_front_min, txt_front_min, _get_dim_label("minor_minor_radius", lang, r_min_min), render_style)
     elif profile in ("compound",) and shape == "round":
         r_maj_maj = cfg.R_maj_maj
         r_maj_min = cfg.R_maj_min
         x_min_pt = span_front * 0.8
         z_min_pt = get_compound_profile(np.array([x_min_pt]), r_maj_maj, r_maj_min, dc, span_front)[0]
-        draw_pointer(ax, (cx_front - x_min_pt, cy_front + hb / 2 + z_min_pt), (cx_front - x_min_pt - w_val / 6, cy_front + hb / 2 + z_min_pt + 5), f"{r_maj_min:g}\nMinor Radius", render_style)
+        draw_pointer(ax, (cx_front - x_min_pt, cy_front + hb / 2 + z_min_pt), (cx_front - x_min_pt - w_val / 6, cy_front + hb / 2 + z_min_pt + 5), _get_dim_label("major_minor_radius", lang, r_maj_min), render_style)
         if shape == "round":
             x_maj_pt = span_front * 0.2
             z_maj_pt = get_compound_profile(np.array([x_maj_pt]), r_maj_maj, r_maj_min, dc, span_front)[0]
-            draw_pointer(ax, (cx_front + x_maj_pt, cy_front + hb / 2 + z_maj_pt), (cx_front + x_maj_pt + 0.5, cy_front + hb / 2 + z_maj_pt + 5), f"{r_maj_maj:g}\nMajor Radius", render_style)
+            draw_pointer(ax, (cx_front + x_maj_pt, cy_front + hb / 2 + z_maj_pt), (cx_front + x_maj_pt + 0.5, cy_front + hb / 2 + z_maj_pt + 5), _get_dim_label("major_major_radius", lang, r_maj_maj), render_style)
     elif profile == "ffbe":
         r_blend = max(0.0, min(cfg.Blend_R, dc))
         alpha_rad = np.radians(cfg.Bev_A)
@@ -1264,7 +1297,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                             cy_front - hb / 2 - dc,
                             0,
                             -3,
-                            f"{2 * round_r_flat:.3f}\nRef. Flat",
+                            _get_dim_label("ref_flat", lang, 2 * round_r_flat),
                             render_style,
                         )
                 w_target_val = -(span_front - d_inset + (r_blend * sin_a) / 2.0)
@@ -1273,7 +1306,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                     ax,
                     (cx_front + w_target_val, cy_front + hb / 2 + z_min_pt),
                     (cx_front + w_target_val - w_val / 4.5, cy_front + hb / 2 + z_min_pt + 4),
-                    f"{r_blend:g}\nBlend Radius",
+                    _get_dim_label("blend_radius", lang, r_blend),
                     render_style,
                 )
     elif profile == "ffre":
@@ -1290,7 +1323,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                     cy_front - hb / 2 - dc,
                     0,
                     -3,
-                    f"{2 * round_r_flat:.3f}\nRef. Flat",
+                    _get_dim_label("ref_flat", lang, 2 * round_r_flat),
                     render_style,
                 )
         if shape == "capsule":
@@ -1304,7 +1337,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                     cy_front - hb / 2 - dc,
                     0,
                     -3,
-                    f"{2 * capsule_r_flat:.3f}\nRef. Flat",
+                    _get_dim_label("ref_flat", lang, 2 * capsule_r_flat),
                     render_style,
                 )
         w_target_val = -(r_c - dx_curve * 0.5)
@@ -1313,7 +1346,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
             ax,
             (cx_front + w_target_val, cy_front + hb / 2 + z_min_pt),
             (cx_front + w_target_val - w_val / 4.5, cy_front + hb / 2 + z_min_pt + 4),
-            f"{r_edge:g}\nRadius",
+            _get_dim_label("radius", lang, r_edge),
             render_style,
         )
     if shape == "oval" and profile in ("ffre", "ffbe") and oval_ref_flat_front is not None and oval_ref_flat_front > 0:
@@ -1325,7 +1358,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
             cy_front - hb / 2 - dc,
             0,
             -3,
-            f"{oval_ref_flat_front:.3f}\nRef. Flat",
+            _get_dim_label("ref_flat", lang, oval_ref_flat_front),
             render_style,
         )
     if profile == "ffbe" and shape == "capsule":
@@ -1348,12 +1381,12 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None):
                 cy_front - hb / 2 - dc,
                 0,
                 -3,
-                f"{2 * capsule_r_flat:.3f}\nRef. Flat",
+                _get_dim_label("ref_flat", lang, 2 * capsule_r_flat),
                 render_style,
             )
     if profile in ("concave", "cbe"):
         rc_min = cfg.Rc_min
-        draw_pointer(ax, (cx_front, cy_front + hb / 2 + dc), (cx_front - w_val / 4, cy_front + hb / 2 + dc + 4), f"{rc_min:g}\nCup Radius", render_style)
+        draw_pointer(ax, (cx_front, cy_front + hb / 2 + dc), (cx_front - w_val / 4, cy_front + hb / 2 + dc + 4), _get_dim_label("cup_radius", lang, rc_min), render_style)
 
     def _compute_annotated_data_bounds():
         """Bounds in data units using geometry + dimension texts."""

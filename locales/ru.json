@@ -176,5 +176,29 @@
     "specular": "Блик:",
     "roughness": "Шероховатость:",
     "feedback": "Отправить отзыв: "
+  },
+  "dim2d": {
+    "diameter": "Диаметр",
+    "minor_axis": "Малая ось",
+    "major_axis": "Большая ось",
+    "side_radius": "Боковой радиус",
+    "end_radius": "Торцевой радиус",
+    "cup_depth": "Глубина профиля",
+    "bevel_depth": "Глубина фаски",
+    "tablet_thickness": "Толщина таблетки",
+    "belly_band": "Высота цилиндра",
+    "flat_face_width": "Ширина плоской грани",
+    "shoulder_height": "Высота плеча",
+    "cup_radius": "Радиус профиля",
+    "cup_radius_minor": "Малый радиус профиля",
+    "cup_radius_major": "Большой радиус профиля",
+    "major_major_radius": "Продольный большой радиус",
+    "major_minor_radius": "Продольный малый радиус",
+    "minor_major_radius": "Поперечный большой радиус",
+    "minor_minor_radius": "Поперечный малый радиус",
+    "blend_radius": "Радиус скругления",
+    "radius": "Радиус",
+    "ref_flat": "Плоская грань",
+    "angle": "Угол"
   }
 }

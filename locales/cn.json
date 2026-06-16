@@ -176,5 +176,29 @@
     "specular": "高光:",
     "roughness": "粗糙度:",
     "feedback": "发送反馈: "
+  },
+  "dim2d": {
+    "diameter": "直径",
+    "minor_axis": "短轴",
+    "major_axis": "长轴",
+    "side_radius": "侧面半径",
+    "end_radius": "端部半径",
+    "cup_depth": "型腔深度",
+    "bevel_depth": "倒角深度",
+    "tablet_thickness": "片剂厚度",
+    "belly_band": "圆柱带高度",
+    "flat_face_width": "平面宽度",
+    "shoulder_height": "肩部高度",
+    "cup_radius": "型腔半径",
+    "cup_radius_minor": "小杯半径",
+    "cup_radius_major": "大杯半径",
+    "major_major_radius": "长轴大半径",
+    "major_minor_radius": "长轴小半径",
+    "minor_major_radius": "短轴大半径",
+    "minor_minor_radius": "短轴小半径",
+    "blend_radius": "过渡半径",
+    "radius": "半径",
+    "ref_flat": "平面",
+    "angle": "角度"
   }
 }
