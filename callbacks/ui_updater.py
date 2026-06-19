@@ -50,7 +50,7 @@ def update_shape_selection(round_clicks, capsule_clicks, oval_clicks):
         if new_shape == shape:
             return f"{base} active"
         return base
-        
+
     # Дефолтные значения для сброса
     w = BASE_DEFAULTS["W"]
     l = BASE_DEFAULTS["L"]
@@ -64,14 +64,14 @@ def update_shape_selection(round_clicks, capsule_clicks, oval_clicks):
     tt = BASE_DEFAULTS["tt"]
     density = BASE_DEFAULTS["density"]
     weight = None # Пересчитается автоматически
-    
-    # Мы ставим is_loading=True, чтобы не сработали другие колбэки во время сброса, 
+
+    # Мы ставим is_loading=True, чтобы не сработали другие колбэки во время сброса,
     # а потом система сама его скинет.
     return (
-        new_shape, 
+        new_shape,
         "concave",
-        get_class("round"), 
-        get_class("capsule"), 
+        get_class("round"),
+        get_class("capsule"),
         get_class("oval"),
         w, l, re, rs, dc, rc_min, rc_maj, land, hb, tt, density, weight,
         True
@@ -392,6 +392,10 @@ def toggle_bisect_edit_fields(b_type, is_open):
         Output("label-input-w", "children"),
         Output("label-input-rc-min", "children"),
         Output("label-input-rc-maj", "children"),
+        Output("label-input-r-maj-maj", "children"),
+        Output("label-input-r-maj-min", "children"),
+        Output("label-input-r-min-maj", "children"),
+        Output("label-input-r-min-min", "children"),
         Output("div-input-l", "style"),
         Output("div-input-re", "style"),
         Output("div-input-rs", "style"),
@@ -419,8 +423,27 @@ def update_ui_visibility(shape, profile, lang):
     reveal_style = {"opacity": "1", "transition": "opacity 0.1s"}
 
     label_w = t("dim.w", lang)
+    # Default labels for non-Oval shapes
     label_rc_min = t("dim.rc_min", lang)
     label_rc_maj = t("dim.rc_maj", lang)
+
+    # Default labels for radius fields (Round Compound)
+    label_r_maj_maj = t("dim.r_maj_maj", lang)
+    label_r_maj_min = t("dim.r_maj_min", lang)
+    label_r_min_maj = t("dim.r_min_maj", lang)
+    label_r_min_min = t("dim.r_min_min", lang)
+
+    # Oval-specific labels for cup radii.
+    if shape == "oval":
+        label_rc_min = t("dim.oval_rc_min", lang)
+        label_rc_maj = t("dim.oval_rc_maj", lang)
+        if profile in ("modified_oval", "compound"):
+            label_r_maj_maj = t("dim.oval_r_maj_maj", lang)
+            label_r_maj_min = t("dim.oval_r_maj_min", lang)
+            if profile == "compound":
+                label_r_min_maj = t("dim.oval_r_min_maj", lang)
+                label_r_min_min = t("dim.oval_r_min_min", lang)
+
     vis_l = show
     vis_re = hide
     vis_rs = hide
@@ -500,6 +523,10 @@ def update_ui_visibility(shape, profile, lang):
         label_w,
         label_rc_min,
         label_rc_maj,
+        label_r_maj_maj,
+        label_r_maj_min,
+        label_r_min_maj,
+        label_r_min_min,
         vis_l,
         vis_re,
         vis_rs,
@@ -539,7 +566,7 @@ def lock_radii_inputs(shape, is_modified):
 def clamp_main_axes_non_negative(w, l, is_loading):
     if is_loading:
         return dash.no_update, dash.no_update
-        
+
     trigger = ctx.triggered_id
     out_w = dash.no_update
     out_l = dash.no_update
@@ -588,7 +615,7 @@ def clamp_main_axes_non_negative(w, l, is_loading):
 def sync_end_side_radii(shape, is_modified, profile, w, l, land, dc, r_edge, blend_r, bev_a, re, rs, is_loading):
     if is_loading:
         return dash.no_update, dash.no_update
-        
+
     if w is None or l is None:
         return dash.no_update, dash.no_update
 
@@ -734,7 +761,7 @@ def sync_bisect_logic(
 ):
     if is_loading:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
-        
+
     trigger = ctx.triggered_id
     if dc is None or w is None or profile is None:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
@@ -806,7 +833,7 @@ def sync_bisect_logic(
         Input("input-land", "value"),
     ],
     [
-        State("is-loading-preset", "data"), 
+        State("is-loading-preset", "data"),
         State("shape-dropdown", "value"),
         State("profile-dropdown", "value"),
         State("input-bev-d", "value"),
@@ -821,7 +848,7 @@ def sync_bisect_logic(
 def sync_physical_params(hb, tt, dc, w, land, is_loading, shape, profile, bev_d, bev_a, r_edge, blend_r, r_mm, r_mn):
     if is_loading:
         return dash.no_update, dash.no_update
-        
+
     trigger = ctx.triggered_id
     if any(v is None for v in [hb, tt, dc, w]):
         return dash.no_update, dash.no_update
@@ -986,7 +1013,7 @@ def sync_weight_density_with_volume(
 ):
     if is_loading:
         return dash.no_update, dash.no_update, dash.no_update
-        
+
     w_val = BASE_DEFAULTS["W"] if w is None else max(0.1, w)
     dc_val = BASE_DEFAULTS["dc"] if dc is None else max(0.0, dc)
 
@@ -1007,7 +1034,7 @@ def sync_weight_density_with_volume(
         expected_weight = density_val * vol_now
 
         trig = ctx.triggered_id
-        
+
         if calc_constant == "weight":
             if trig == "input-tt":
                 if vol_now > 1e-9 and weight is not None:
@@ -1019,7 +1046,7 @@ def sync_weight_density_with_volume(
                     hb_new = max(0.01, (target_vol - fixed_vol) / die_hole_sa)
                     tt_new = hb_new + 2.0 * dc_val
                     return round(tt_new, 4), dash.no_update, dash.no_update
-        
+
         elif calc_constant == "thickness":
             if trig == "input-weight":
                 if vol_now > 1e-9 and weight is not None:
@@ -1027,7 +1054,7 @@ def sync_weight_density_with_volume(
                     return dash.no_update, dash.no_update, round(new_density, 4)
             else:
                 return dash.no_update, round(expected_weight, 2), dash.no_update
-                
+
         else: # density
             if trig == "input-weight" and weight is not None and die_hole_sa > 1e-9:
                 target_weight = max(0.0, float(weight))
@@ -1040,9 +1067,9 @@ def sync_weight_density_with_volume(
                 actual_vol = die_hole_sa * hb_new + fixed_vol
                 actual_weight = density_val * actual_vol
                 return round(tt_new, 4), round(actual_weight, 2), dash.no_update
-            
+
             return dash.no_update, round(expected_weight, 2), dash.no_update
-            
+
         return dash.no_update, dash.no_update, dash.no_update
     except (ValueError, ZeroDivisionError, OverflowError) as e:
         print(f"Error in sync_weight_density_with_volume: {e}")
@@ -1179,8 +1206,8 @@ def _clamp_to_step_range(value, lo, hi, step=0.01):
 
 @callback(
     [
-        Output("input-rc-min", "value", allow_duplicate=True), 
-        Output("input-rc-maj", "value", allow_duplicate=True), 
+        Output("input-rc-min", "value", allow_duplicate=True),
+        Output("input-rc-maj", "value", allow_duplicate=True),
         Output("input-dc", "value", allow_duplicate=True),
         Output("input-w", "value", allow_duplicate=True),
         Output("input-r-maj-maj", "value", allow_duplicate=True),
@@ -1219,7 +1246,7 @@ def _clamp_to_step_range(value, lo, hi, step=0.01):
 def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edge, r_maj_maj, r_maj_min, bev_d, bev_a, dc, rc_min, rc_maj, is_loading, w_s, dc_s, rc_min_s, rc_maj_s, r_mm_s, r_mn_s, bev_a_s):
     if is_loading:
         return [dash.no_update] * 7
-        
+
     trig = ctx.triggered_id
 
     # --- ГЛОБАЛЬНЫЕ ПРАВИЛА ВАЛИДАЦИИ ---
@@ -1262,7 +1289,7 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
     if is_round_concave or is_capsule_concave or is_oval_concave:
         if dc_f > concave_span:
             dc_f = _clamp_to_step_range(concave_span, 0.01, concave_span, step=0.01)
-        
+
         if trig == "input-rc-min" and rc_min is not None:
             if rc_min < concave_span:
                 rc_min = round(float(np.ceil(concave_span / 0.01) * 0.01), 4)
@@ -1275,7 +1302,7 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
         dc_max_tan, rc_min_tan = _round_cbe_tangent_limits(concave_span, b_d, bev_a_f)
         if dc_max_tan is not None and dc_f > dc_max_tan:
             dc_f = _clamp_to_step_range(dc_max_tan, 0.01, dc_max_tan, step=0.01)
-        
+
         if trig == "input-rc-min" and rc_min is not None and rc_min_tan is not None:
             if rc_min < rc_min_tan:
                 rc_min = round(float(np.ceil(rc_min_tan / 0.01) * 0.01), 4)
@@ -1296,7 +1323,7 @@ def sync_cup_radii_depth(shape, profile, is_modified, w, l, land, blend_r, r_edg
         dc_max_ffre = _ffre_dc_max_from_r_edge(concave_span, r_edge_val)
         if dc_max_ffre is not None and dc_f > dc_max_ffre:
             dc_f = _clamp_to_step_range(dc_max_ffre, 0.01, dc_max_ffre, step=0.01)
-            
+
     if profile == "ffbe":
         blend_r_val = blend_r if blend_r is not None else PROFILE_DEFAULTS["ffbe"]["blend_r"]
         dc_max_ffbe = _ffbe_dc_max_from_ref_flat(concave_span, blend_r_val, bev_a_f)

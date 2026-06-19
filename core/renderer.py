@@ -28,21 +28,21 @@ ISO_PDF_STYLE = {
     # Line widths (matplotlib points, 1 pt ≈ 0.35 mm)
     "dim_line_width": 0.5,        # Dimension line thickness
     "ext_line_width": 0.5,        # Extension line thickness
-    
+
     # Text settings
     "text_color": "#000000",      # Dimension text color
     "text_font_size": 8,          # Dimension text size in points
     "text_gap_from_dim_line": 0.4, # Distance from text to dimension line
     "text_bbox_pad": 0.2,         # Padding around text background box
-    
+
     # Extension line settings
     "ext_line_gap_from_feature": 0.0,  # Gap between feature edge and extension line start
     "ext_line_overrun": 1.0,      # How far extension line extends past dimension line
-    
+
     # Arrow settings (data units)
     "arrow_length": 1.0,           # Arrow head length
     "arrow_width": 0.3,            # Arrow head width
-    
+
     # Text positioning
     "outside_text_dist": 11.0,          # Length of right tail for external dimensions
     "outside_text_offset_ratio": 0.7,   # Text position as fraction of outside_text_dist
@@ -87,11 +87,15 @@ class RenderStyle:
         "geom_thick_line",
         "geom_medium_line",
         "geom_thin_line",
+        "lang",
+        "font_properties",
     )
 
-    def __init__(self, params):
+    def __init__(self, params, lang=None, font_properties=None):
         style_name = str(params.get("render_2d_style", "web")).lower()
         self.is_pdf = style_name == "iso_pdf"
+        self.lang = str(lang or "en")
+        self.font_properties = font_properties
 
         if self.is_pdf:
             style = ISO_PDF_STYLE
@@ -264,14 +268,14 @@ def _format_dim_text(text, render_style):
     if not render_style.is_pdf:
         return text
     raw = str(text or "")
-    
+
     # Determine prefix based on text content
     prefix = ""
     if "Diameter" in raw:
         prefix = "\u2300"  # Diameter sign ⌀
     elif "Radius" in raw:
         prefix = "R"
-    
+
     # Extract numeric value
     m = re.search(r"[-+]?\d+(?:[.,]\d+)?", raw)
     if not m:
@@ -281,14 +285,14 @@ def _format_dim_text(text, render_style):
         val = float(token)
     except ValueError:
         return raw
-    
+
     # Format number: 2 decimal places, remove trailing zeros
     out = f"{val:.2f}".rstrip("0").rstrip(".").replace(".", ",")
-    
+
     # Add degree sign if present in original
     if "°" in raw:
         out += "°"
-    
+
     # Return with prefix
     return f"{prefix}{out}" if prefix else out
 
@@ -296,12 +300,12 @@ def _format_dim_text(text, render_style):
 def _get_dim_label(key, lang, value=None):
     """
     Get translated dimension label for 2D drawing.
-    
+
     Args:
         key: Translation key from dim2d.*
         lang: Language code
         value: Numeric value to prepend (optional)
-    
+
     Returns:
         Formatted label string
     """
@@ -312,7 +316,45 @@ def _get_dim_label(key, lang, value=None):
         val_str = f"{value:g}".replace(".", ",")
         return f"{val_str}\n{label}"
     return label
-    
+
+
+def _get_ref_flat_label(shape, profile, is_modified, lang, value=None):
+    """
+    Get translated Ref. Flat label with conditional logic for Capsule+Concave/CBE.
+
+    Args:
+        shape: Shape type ('round', 'capsule', 'oval')
+        profile: Profile type
+        is_modified: Modified shape flag
+        lang: Language code
+        value: Numeric value to prepend (optional)
+
+    Returns:
+        Formatted label string with asterisk superscript
+    """
+    from core.i18n import t
+
+    # Capsule (including modified) + Concave/CBE uses "Edge Length"
+    is_capsule_concave_cbe = (
+        shape == "capsule"
+        and profile in ("concave", "cbe")
+    )
+
+    if is_capsule_concave_cbe:
+        label = t("dim2d.edge_length", lang)
+    else:
+        label = t("dim2d.ref_flat", lang)
+
+    if value is not None:
+        # Format: 3 decimal places, remove trailing zeros, add asterisk superscript
+        # Using Unicode superscript asterisk (U+02DA) or regular asterisk
+        val_formatted = f"{value:.3f}".rstrip("0").rstrip(".")
+        val_formatted = val_formatted.replace(".", ",")
+        # Use superscript asterisk (˚) or regular asterisk (*)
+        val_str = f"{val_formatted}*"
+        return f"{val_str}\n{label}"
+    return label
+
 
 def _extension_segment(p0x, p0y, p1x, p1y, render_style):
     ux, uy = _safe_unit(p1x - p0x, p1y - p0y)
@@ -323,15 +365,18 @@ def _extension_segment(p0x, p0y, p1x, p1y, render_style):
     return sx, sy, ex, ey
 
 
-def _dim_text_kwargs(render_style, lang="en", cn_font=None):
+def _dim_text_kwargs(render_style, lang=None, cn_font=None):
+    lang = lang or getattr(render_style, "lang", "en")
+    font_properties = cn_font or getattr(render_style, "font_properties", None)
     if not render_style.is_pdf:
-        # Use Chinese font for CN language if available
-        if lang == "cn" and cn_font is not None:
-            return {"fontsize": 9, "fontproperties": cn_font}
+        if lang == "cn" and font_properties is not None:
+            return {"fontsize": 9, "fontproperties": font_properties}
         return {"fontsize": 9}
-    
+
     kwargs = {"fontsize": render_style.text_font_size}
-    if PDF_FONT_PROPERTIES is not None:
+    if lang == "cn" and font_properties is not None:
+        kwargs["fontproperties"] = font_properties
+    elif PDF_FONT_PROPERTIES is not None:
         kwargs["fontproperties"] = PDF_FONT_PROPERTIES
     return kwargs
 
@@ -348,7 +393,7 @@ def _draw_arrowhead(ax, tip_x, tip_y, out_x, out_y, render_style, length=None, w
         length = render_style.arrow_length
     if width is None:
         width = render_style.arrow_width
-    
+
     ux, uy = _safe_unit(out_x - tip_x, out_y - tip_y)
     if abs(ux) < 1e-12 and abs(uy) < 1e-12:
         return
@@ -379,7 +424,7 @@ def _draw_arrowhead(ax, tip_x, tip_y, out_x, out_y, render_style, length=None, w
 
 def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, render_style, offset=(0, 0), cn_font=None):
     """Draw internal dimension (arrows inside extension lines)."""
-    
+
     if render_style.is_pdf:
         PAPER_OFFSET_MULT = 2.5
         dx = (dx * PAPER_OFFSET_MULT) / render_style.pdf_scale_ratio
@@ -388,7 +433,7 @@ def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, render_style, offset=(0, 0), 
     text = _format_dim_text(text, render_style)
     ex1, ey1 = px1 + dx, py1 + dy
     ex2, ey2 = px2 + dx, py2 + dy
-    
+
     if not render_style.is_pdf:
         sgx = np.sign(dx) if dx != 0 else 0
         sgy = np.sign(dy) if dy != 0 else 0
@@ -409,7 +454,7 @@ def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, render_style, offset=(0, 0), 
             va="center",
             bbox=dict(facecolor="#ffffff", edgecolor="none", pad=1),
             fontsize=9,
-            fontproperties=cn_font
+            fontproperties=cn_font or getattr(render_style, "font_properties", None)
         )
         return
 
@@ -426,32 +471,32 @@ def draw_ext(ax, px1, py1, px2, py2, dx, dy, text, render_style, offset=(0, 0), 
     if dist <= 1e-12:
         return
     ux, uy = vec_x / dist, vec_y / dist
-    
+
     # Draw dimension line (stops before arrow tips)
     ax.plot([ex1 + ux * render_style.arrow_length, ex2 - ux * render_style.arrow_length],
             [ey1 + uy * render_style.arrow_length, ey2 - uy * render_style.arrow_length], "k-", lw=render_style.dim_line_width)
-    
+
     # Draw arrowheads with tips at extension line positions
     _draw_arrowhead(ax, ex1, ey1, ex1 + ux * render_style.arrow_length, ey1 + uy * render_style.arrow_length, render_style)
     _draw_arrowhead(ax, ex2, ey2, ex2 - ux * render_style.arrow_length, ey2 - uy * render_style.arrow_length, render_style)
-    
+
     # Determine if vertical dimension (for text rotation per ISO 129)
     is_vertical = abs(ey2 - ey1) > abs(ex2 - ex1)
-    
+
     # Text position - use render_style.text_gap_from_dim_line for consistent spacing
     tx = (ex1 + ex2) / 2
     ty = (ey1 + ey2) / 2
-    
+
     if is_vertical:
-        ax.text(tx, ty, text, color=render_style.text_color, ha="right", va="center", rotation=90, **_dim_text_kwargs(render_style, "en", cn_font))
+        ax.text(tx, ty, text, color=render_style.text_color, ha="right", va="center", rotation=90, **_dim_text_kwargs(render_style, cn_font=cn_font))
     else:
         ty += render_style.text_gap_from_dim_line
-        ax.text(tx, ty, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style, "en", cn_font))
+        ax.text(tx, ty, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style, cn_font=cn_font))
 
 
 def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text, render_style, cn_font=None):
     """Draw external dimension (arrows outside extension lines)."""
-    
+
     if render_style.is_pdf:
         PAPER_OFFSET_MULT = 2.5
         dx = (dx * PAPER_OFFSET_MULT) / render_style.pdf_scale_ratio
@@ -460,7 +505,7 @@ def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text, render_style, cn_font
     text = _format_dim_text(text, render_style)
     ex1, ey1 = px1 + dx, py1 + dy
     ex2, ey2 = px2 + dx, py2 + dy
-    
+
     if not render_style.is_pdf:
         # Original web style - uses matplotlib annotate
         sgx = np.sign(dx) if dx != 0 else 0
@@ -493,6 +538,7 @@ def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text, render_style, cn_font
             va="center",
             bbox=dict(facecolor="#ffffff", edgecolor="none", pad=1),
             fontsize=9,
+            fontproperties=cn_font or getattr(render_style, "font_properties", None),
         )
         return
 
@@ -502,35 +548,35 @@ def draw_ext_outside(ax, px1, py1, px2, py2, dx, dy, text, render_style, cn_font
     s2x, s2y, e2x, e2y = _extension_segment(px2, py2, ex2, ey2, render_style)
     ax.plot([s1x, e1x], [s1y, e1y], "k-", lw=render_style.ext_line_width, solid_capstyle="butt")
     ax.plot([s2x, e2x], [s2y, e2y], "k-", lw=render_style.ext_line_width, solid_capstyle="butt")
-    
+
     # Compute direction vector
     vec_x, vec_y = ex2 - ex1, ey2 - ey1
     dist = np.hypot(vec_x, vec_y)
     if dist <= 1e-12:
         return
     ux, uy = vec_x / dist, vec_y / dist
-    
+
     # Extension beyond arrow tips (tail length)
     # Right tail is longer to support text
     line_extra_left = render_style.arrow_length + render_style.ext_line_overrun
     line_extra_right = render_style.outside_text_dist
-    
+
     # Draw dimension line (extends beyond arrow tips)
-    ax.plot([ex1 - ux * line_extra_left, ex2 + ux * line_extra_right], 
+    ax.plot([ex1 - ux * line_extra_left, ex2 + ux * line_extra_right],
             [ey1 - uy * line_extra_left, ey2 + uy * line_extra_right], "k-", lw=render_style.dim_line_width, solid_capstyle="butt")
-    
+
     # Draw arrowheads with tips at extension line positions (pointing outward)
     _draw_arrowhead(ax, ex1, ey1, ex1 - ux * render_style.arrow_length, ey1 - uy * render_style.arrow_length, render_style)
     _draw_arrowhead(ax, ex2, ey2, ex2 + ux * render_style.arrow_length, ey2 + uy * render_style.arrow_length, render_style)
-    
+
     if abs(ex2 - ex1) >= abs(ey2 - ey1):
         tx = max(ex1, ex2) + render_style.outside_text_dist * render_style.outside_text_offset_ratio
         ty = max(ey1, ey2) + render_style.text_gap_from_dim_line
-        ax.text(tx, ty, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style))
+        ax.text(tx, ty, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style, cn_font=cn_font))
     else:
         tx = min(ex1, ex2) - render_style.text_gap_from_dim_line
         ty = (ey1 + ey2) / 2
-        ax.text(tx, ty, text, color=render_style.text_color, ha="right", va="center", rotation=90, **_dim_text_kwargs(render_style))
+        ax.text(tx, ty, text, color=render_style.text_color, ha="right", va="center", rotation=90, **_dim_text_kwargs(render_style, cn_font=cn_font))
 
 
 def draw_pointer(ax, p_target, p_text, text, render_style, cn_font=None):
@@ -538,7 +584,7 @@ def draw_pointer(ax, p_target, p_text, text, render_style, cn_font=None):
     text = _format_dim_text(text, render_style)
     tx, ty = p_text
     px, py = p_target
-    
+
     if render_style.is_pdf:
         PAPER_OFFSET_MULT = 2.5
         dx = tx - px
@@ -557,6 +603,7 @@ def draw_pointer(ax, p_target, p_text, text, render_style, cn_font=None):
             va="center",
             bbox=dict(facecolor="#ffffff", edgecolor="none", pad=0.5),
             fontsize=9,
+            fontproperties=cn_font or getattr(render_style, "font_properties", None),
         )
         return
 
@@ -571,14 +618,14 @@ def draw_pointer(ax, p_target, p_text, text, render_style, cn_font=None):
 
     # Draw leader line (stops before arrow)
     ax.plot([tx, px - ux * render_style.arrow_length], [ty, py - uy * render_style.arrow_length], "k-", lw=render_style.dim_line_width)
-    
+
     # Draw arrowhead with tip at target (touching profile)
     _draw_arrowhead(ax, px, py, px - ux * render_style.arrow_length, py - uy * render_style.arrow_length, render_style)
-    
+
     side = 1.0 if tx >= px else -1.0
     shelf_end_x = tx + side * render_style.pointer_shelf_length
     ax.plot([tx, shelf_end_x], [ty, ty], "k-", lw=render_style.dim_line_width)
-    ax.text((tx + shelf_end_x) / 2, ty + render_style.text_gap_from_dim_line, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style))
+    ax.text((tx + shelf_end_x) / 2, ty + render_style.text_gap_from_dim_line, text, color=render_style.text_color, ha="center", va="bottom", **_dim_text_kwargs(render_style, cn_font=cn_font))
 
 
 def get_circle_contour(radius, density=300):
@@ -695,7 +742,7 @@ def apply_1d_groove(x_1d, z_surf, cfg, edge_rad):
 def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
     """
     Render 2D tablet drawing.
-    
+
     Args:
         mesh_data: Mesh data from generate_mesh()
         params: Parameters dict
@@ -704,7 +751,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
         lang: Language code for dimension labels ('en', 'ru', 'cn')
     """
     from core.i18n import t
-    
+
     # Configure Chinese font if needed
     cn_font = None
     if lang == "cn":
@@ -722,7 +769,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
                     break
                 except Exception:
                     continue
-        
+
         if cn_font is None:
             # Try system Chinese fonts as fallback
             for font_name in ["Microsoft YaHei", "SimHei", "SimSun"]:
@@ -734,13 +781,13 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
                         break
                 except Exception:
                     continue
-        
+
         if cn_font is not None:
             # Set font globally for this figure
             plt.rcParams['font.sans-serif'] = [cn_font.get_name()] + plt.rcParams['font.sans-serif']
             plt.rcParams['axes.unicode_minus'] = False
-    
-    render_style = RenderStyle(params)
+
+    render_style = RenderStyle(params, lang=lang, font_properties=cn_font)
 
     if render_style.is_pdf:
         poly_fill_color = params.get("pdf_2d_fill_color", "#dec9bd")
@@ -755,12 +802,12 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
     dc = cfg.Dc
     tt = cfg.Tt
     profile = cfg.profile
-    
+
     if render_style.is_pdf:
         render_2d_shaded = bool(params.get("pdf_2d_shaded", True))
     else:
         render_2d_shaded = bool(params.get("render_2d_shaded", False))
-        
+
     b_type = cfg.b_type
     b_depth = cfg.b_depth
     b_double_sided = bool(cfg.b_double_sided)
@@ -1093,7 +1140,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
                     d_inset_caps = (dc - r_blend_caps) / tan_caps + r_blend_caps / sin_caps
                     capsule_r_flat = max(0.0, r_c_caps - d_inset_caps)
                     ref_flat_side = l_flat + 2 * capsule_r_flat
-        draw_ext(ax, cx_side + hb / 2 + dc, cy_side + ref_flat_side / 2, cx_side + hb / 2 + dc, cy_side - ref_flat_side / 2, 4.5, 0, _get_dim_label("ref_flat", lang, ref_flat_side), render_style)
+        draw_ext(ax, cx_side + hb / 2 + dc, cy_side + ref_flat_side / 2, cx_side + hb / 2 + dc, cy_side - ref_flat_side / 2, 4.5, 0, _get_ref_flat_label(shape, profile, is_modified, lang, ref_flat_side), render_style)
     if shape == "oval" and profile in ("ffre", "ffbe") and oval_ref_flat_side is not None and oval_ref_flat_side > 0:
         draw_ext(
             ax,
@@ -1103,17 +1150,19 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
             cy_side - oval_ref_flat_side / 2,
             4.5,
             0,
-            _get_dim_label("ref_flat", lang, oval_ref_flat_side),
+            _get_ref_flat_label(shape, profile, is_modified, lang, oval_ref_flat_side),
             render_style,
         )
 
     if shape == "oval" and profile not in ("compound", "modified_oval", "ffbe", "ffre"):
+        # Oval Concave / CBE
         rc_maj = cfg.Rc_maj
         p_idx = np.argmin(np.abs(x_maj - (-l_side / 4)))
         pt_surf = z_up_maj[p_idx] + hb / 2
         pt_len = x_maj[p_idx]
-        draw_pointer(ax, (pt_surf + cx_side, pt_len + cy_side), (pt_surf + cx_side + 4, pt_len + cy_side - l_side / 4), _get_dim_label("cup_radius_major", lang, rc_maj), render_style)
+        draw_pointer(ax, (pt_surf + cx_side, pt_len + cy_side), (pt_surf + cx_side + 4, pt_len + cy_side - l_side / 4), _get_dim_label("oval_cup_radius_major", lang, rc_maj), render_style)
     elif shape == "oval" and profile in ("modified_oval", "compound"):
+        # Oval Modified / Compound
         r_maj_maj = cfg.R_maj_maj
         r_maj_min = cfg.R_maj_min
         l_c = max(0.001, l_val / 2 - land)
@@ -1123,13 +1172,13 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
         z_maj_pt = get_compound_profile(np.array([x_maj_pt]), r_maj_maj, r_maj_min, dc, l_c)[0]
         target_maj = (cx_side + hb / 2 + z_maj_pt, cy_side + x_maj_pt)
         text_maj = (cx_side + hb / 2 + z_maj_pt + leader_offset, cy_side + x_maj_pt + 2)
-        draw_pointer(ax, target_maj, text_maj, _get_dim_label("major_major_radius", lang, r_maj_maj), render_style)
+        draw_pointer(ax, target_maj, text_maj, _get_dim_label("oval_major_major_radius", lang, r_maj_maj), render_style)
 
         x_min_pt = l_c * 0.85
         z_min_pt = get_compound_profile(np.array([x_min_pt]), r_maj_maj, r_maj_min, dc, l_c)[0]
         target_min = (cx_side + hb / 2 + z_min_pt, cy_side - x_min_pt)
         text_min = (cx_side + hb / 2 + z_min_pt + leader_offset, cy_side - x_min_pt + 2.5)
-        draw_pointer(ax, target_min, text_min, _get_dim_label("major_minor_radius", lang, r_maj_min), render_style)
+        draw_pointer(ax, target_min, text_min, _get_dim_label("oval_major_minor_radius", lang, r_maj_min), render_style)
 
     span_front = max(0.001, w_val / 2 - land)
     y_min_cup = np.linspace(-span_front, span_front, 400)
@@ -1183,7 +1232,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
 
     if land > 0:
         l_land_coord = span_front
-        
+
         if not render_style.is_pdf:
             # Original web style
             ax.plot([cx_front + l_land_coord, cx_front + l_land_coord], [cy_front + tt / 2, cy_front + tt / 2 + 2.5], "k-", lw=render_style.dim_line_width)
@@ -1224,18 +1273,18 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
             y_dim = cy_front + tt / 2 + land_dy
             x_left = cx_front + l_land_coord
             x_right = cx_front + w_val / 2
-            
+
             # Tail lengths (right tail longer for text support)
             tail_left = render_style.arrow_length + render_style.ext_line_overrun if render_style.is_pdf else 2.0
             tail_right = render_style.outside_text_dist
-            
+
             # Dimension line with tails
             ax.plot([x_left - tail_left, x_right + tail_right], [y_dim, y_dim], "k-", lw=render_style.dim_line_width)
-            
+
             # Arrows pointing outward
             _draw_arrowhead(ax, x_left, y_dim, x_left - render_style.arrow_length, y_dim, render_style)
             _draw_arrowhead(ax, x_right, y_dim, x_right + render_style.arrow_length, y_dim, render_style)
-            
+
             ax.text(
                 cx_front + w_val / 2 + render_style.outside_text_dist * render_style.outside_text_offset_ratio,
                 y_dim + render_style.text_gap_from_dim_line,
@@ -1250,19 +1299,19 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
         alpha_rad = np.radians(bev_a)
         pt_x = cx_front + span_front
         pt_y = cy_front + hb / 2
-        
+
         if render_style.is_pdf:
             ext_len = max(w_val / 5.0, 8.0 / render_style.pdf_scale_ratio)
         else:
             ext_len = w_val / 4.0
-            
+
         # Horizontal guide to the right.
         ax.plot([pt_x, pt_x + ext_len], [pt_y, pt_y], "k-", lw=render_style.dim_line_width)
         # Bevel guide down-right.
         dx = ext_len * np.cos(alpha_rad)
         dy = -ext_len * np.sin(alpha_rad)
         ax.plot([pt_x, pt_x + dx], [pt_y, pt_y + dy], "k-", lw=render_style.dim_line_width)
-        
+
         # Angle arc.
         if render_style.is_pdf:
             arc_r = 6.0 / render_style.pdf_scale_ratio
@@ -1270,14 +1319,25 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
         else:
             arc_r = min(3.0, ext_len * 0.8)
             text_offset = 1.2
-            
+
         t_arc = np.linspace(-alpha_rad, 0, 20)
         ax.plot(pt_x + arc_r * np.cos(t_arc), pt_y + arc_r * np.sin(t_arc), "k-", lw=render_style.dim_line_width)
         mid_ang = -alpha_rad / 2.0
+
+        # Get localized angle label
+        from core.i18n import t
+        label = t("dim2d.angle", lang)
+
+        # Original position for the value (same as before)
+        base_x = pt_x + (arc_r + text_offset) * np.cos(mid_ang)
+        base_y = pt_y + (arc_r + text_offset) * np.sin(mid_ang)
+
+        # Draw value at original position (centered)
+        angle_str = f"{bev_a:g}\N{DEGREE SIGN}"
         ax.text(
-            pt_x + (arc_r + text_offset) * np.cos(mid_ang),
-            pt_y + (arc_r + text_offset) * np.sin(mid_ang),
-            f"{bev_a:g}\N{DEGREE SIGN}",
+            base_x,
+            base_y,
+            angle_str,
             color=render_style.text_color,
             ha="center",
             va="center",
@@ -1285,23 +1345,39 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
             **_dim_text_kwargs(render_style),
         )
 
+        # Draw label to the right (horizontal offset only, same Y)
+        gap = 1.0  # Gap in mm
+        label_x = base_x + gap
+        label_y = base_y
+        ax.text(
+            label_x,
+            label_y,
+            label,
+            color=render_style.text_color,
+            ha="left",
+            va="center",
+            **_dim_text_kwargs(render_style),
+        )
+
     if profile == "modified_oval" and shape == "oval":
+        # Oval Modified
         rc_min = cfg.Rc_min
-        draw_pointer(ax, (cx_front, cy_front + tt / 2), (cx_front - w_val / 4, cy_front + tt / 2 + 4), _get_dim_label("cup_radius_minor", lang, rc_min), render_style)
+        draw_pointer(ax, (cx_front, cy_front + tt / 2), (cx_front - w_val / 4, cy_front + tt / 2 + 4), _get_dim_label("oval_cup_radius_minor", lang, rc_min), render_style)
     elif profile == "compound" and shape == "oval":
+        # Oval Compound
         r_min_maj = cfg.R_min_maj
         r_min_min = cfg.R_min_min
         x_min_maj_pt = span_front * 0.10
         z_min_maj_pt = get_compound_profile(np.array([x_min_maj_pt]), r_min_maj, r_min_min, dc, span_front)[0]
         targ_front_maj = (cx_front + x_min_maj_pt, cy_front + hb / 2 + z_min_maj_pt)
         txt_front_maj = (cx_front + x_min_maj_pt + 1.0, cy_front + hb / 2 + z_min_maj_pt + 4.5)
-        draw_pointer(ax, targ_front_maj, txt_front_maj, _get_dim_label("minor_major_radius", lang, r_min_maj), render_style)
+        draw_pointer(ax, targ_front_maj, txt_front_maj, _get_dim_label("oval_minor_major_radius", lang, r_min_maj), render_style)
 
         x_min_min_pt = span_front * 0.80
         z_min_min_pt = get_compound_profile(np.array([x_min_min_pt]), r_min_maj, r_min_min, dc, span_front)[0]
         targ_front_min = (cx_front - x_min_min_pt, cy_front + hb / 2 + z_min_min_pt)
         txt_front_min = (cx_front - x_min_min_pt - 2.5, cy_front + hb / 2 + z_min_min_pt + 4.5)
-        draw_pointer(ax, targ_front_min, txt_front_min, _get_dim_label("minor_minor_radius", lang, r_min_min), render_style)
+        draw_pointer(ax, targ_front_min, txt_front_min, _get_dim_label("oval_minor_minor_radius", lang, r_min_min), render_style)
     elif profile in ("compound",) and shape == "round":
         r_maj_maj = cfg.R_maj_maj
         r_maj_min = cfg.R_maj_min
@@ -1331,7 +1407,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
                             cy_front - hb / 2 - dc,
                             0,
                             -3,
-                            _get_dim_label("ref_flat", lang, 2 * round_r_flat),
+                            _get_ref_flat_label(shape, profile, is_modified, lang, 2 * round_r_flat),
                             render_style,
                         )
                 w_target_val = -(span_front - d_inset + (r_blend * sin_a) / 2.0)
@@ -1357,7 +1433,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
                     cy_front - hb / 2 - dc,
                     0,
                     -3,
-                    _get_dim_label("ref_flat", lang, 2 * round_r_flat),
+                    _get_ref_flat_label(shape, profile, is_modified, lang, 2 * round_r_flat),
                     render_style,
                 )
         if shape == "capsule":
@@ -1371,7 +1447,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
                     cy_front - hb / 2 - dc,
                     0,
                     -3,
-                    _get_dim_label("ref_flat", lang, 2 * capsule_r_flat),
+                            _get_ref_flat_label(shape, profile, is_modified, lang, 2 * capsule_r_flat),
                     render_style,
                 )
         w_target_val = -(r_c - dx_curve * 0.5)
@@ -1392,7 +1468,7 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
             cy_front - hb / 2 - dc,
             0,
             -3,
-            _get_dim_label("ref_flat", lang, oval_ref_flat_front),
+            _get_ref_flat_label(shape, profile, is_modified, lang, oval_ref_flat_front),
             render_style,
         )
     if profile == "ffbe" and shape == "capsule":
@@ -1415,12 +1491,14 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
                 cy_front - hb / 2 - dc,
                 0,
                 -3,
-                _get_dim_label("ref_flat", lang, 2 * capsule_r_flat),
+                _get_ref_flat_label(shape, profile, is_modified, lang, 2 * capsule_r_flat),
                 render_style,
             )
     if profile in ("concave", "cbe"):
         rc_min = cfg.Rc_min
-        draw_pointer(ax, (cx_front, cy_front + hb / 2 + dc), (cx_front - w_val / 4, cy_front + hb / 2 + dc + 4), _get_dim_label("cup_radius", lang, rc_min), render_style)
+        # Use oval-specific label for Oval shape
+        label_key = "oval_cup_radius_minor" if shape == "oval" else "cup_radius"
+        draw_pointer(ax, (cx_front, cy_front + hb / 2 + dc), (cx_front - w_val / 4, cy_front + hb / 2 + dc + 4), _get_dim_label(label_key, lang, rc_min), render_style)
 
     def _compute_annotated_data_bounds():
         """Bounds in data units using geometry + dimension texts."""
