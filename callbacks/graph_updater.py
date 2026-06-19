@@ -145,7 +145,6 @@ def _pick_iso_scale_from_bounds(bounds, zone_w_mm, zone_h_mm, geom_w=0, geom_h=0
         State("input-density", "value"),
         State("input-tip-force-steel", "value"),
         State("app-settings-store", "data"),
-        State("lang-store", "data"),
         State("user-token-store", "data"),
     ],
     prevent_initial_call=True,
@@ -183,7 +182,6 @@ def export_pdf_callback(
     density,
     tip_force_steel,
     app_settings,
-    lang,
     user_token,
 ):
     if not n_clicks:
@@ -266,7 +264,7 @@ def export_pdf_callback(
         prev_view_w = None
         for _ in range(5):
             params_2d["render_2d_pdf_scale_ratio"] = iso_scale_ratio
-            drawing_2d_b64 = render_tablet(mesh_data, params_2d, dpi=300, lang=lang or "en")
+            drawing_2d_b64 = render_tablet(mesh_data, params_2d, dpi=300)
             
             bounds = params_2d.get("_render_2d_bounds")
             view_w = (bounds["view_xmax"] - bounds["view_xmin"]) if bounds else 0

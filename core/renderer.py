@@ -94,8 +94,8 @@ class RenderStyle:
     def __init__(self, params, lang=None, font_properties=None):
         style_name = str(params.get("render_2d_style", "web")).lower()
         self.is_pdf = style_name == "iso_pdf"
-        self.lang = str(lang or "en")
-        self.font_properties = font_properties
+        self.lang = "en" if self.is_pdf else str(lang or "en")
+        self.font_properties = None if self.is_pdf else font_properties
 
         if self.is_pdf:
             style = ISO_PDF_STYLE
@@ -751,6 +751,9 @@ def render_tablet(mesh_data, params, dpi=120, output_format=None, lang="en"):
         lang: Language code for dimension labels ('en', 'ru', 'cn')
     """
     from core.i18n import t
+
+    if str(params.get("render_2d_style", "web")).lower() == "iso_pdf":
+        lang = "en"
 
     # Configure Chinese font if needed
     cn_font = None

@@ -970,11 +970,11 @@
 
   /* Stop shrinking side columns once RU long labels no longer fit. */
   .app-col-left {
-    min-width: 360px;
+    min-width: 375px;
   }
 
   .app-col-right {
-    min-width: 360px;
+    min-width: 375px;
   }
 
   /*
