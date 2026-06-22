@@ -1038,6 +1038,7 @@ def update_calc_panel_live(
         State("input-b-ri", "value"),
         State("bisect-cruciform", "value"),
         State("bisect-double-sided", "value"),
+        State("user-token-store", "data"),
     ],
     prevent_initial_call=True,
 )

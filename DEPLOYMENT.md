@@ -57,10 +57,11 @@ Required DNS records:
 A @   -> 185.26.121.36
 A www -> 185.26.121.36
 ```
+Note: If using Cloudflare in the future, ensure Anti-DDoS protections on the hosting provider do not block Cloudflare's IP addresses, as this causes HTTP/2 Protocol Errors.
 
 ## Nginx
 
-Nginx proxies the domain to the Dash app.
+Nginx is configured to serve static assets directly from the disk (bypassing Gunicorn) to heavily optimize memory usage and response times. Dynamic requests are proxied to the Dash app.
 
 Config file:
 
@@ -75,29 +76,9 @@ server {
     server_name tabcad.ru www.tabcad.ru;
 
     location /assets/ {
-        proxy_pass http://127.0.0.1:8050;
-        proxy_http_version 1.1;
-
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
+        root /opt/tabcad;
         expires 30d;
         add_header Cache-Control "public, max-age=2592000";
-    }
-
-    location /_dash-component-suites/ {
-        proxy_pass http://127.0.0.1:8050;
-        proxy_http_version 1.1;
-
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        expires 365d;
-        add_header Cache-Control "public, max-age=31536000, immutable";
     }
 
     location / {
@@ -109,33 +90,32 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+        proxy_busy_buffers_size 256k;
+
+        proxy_read_timeout 180s;
+        proxy_send_timeout 180s;
     }
 
-    listen 443 ssl; # managed by Certbot
-    ssl_certificate /etc/letsencrypt/live/tabcad.ru/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/tabcad.ru/privkey.pem; # managed by Certbot
-    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+    listen 443 ssl http2;
+    ssl_certificate /etc/letsencrypt/live/tabcad.ru/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/tabcad.ru/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 }
-```
 
-HTTP server block redirects to HTTPS and is managed by Certbot:
-
-```nginx
 server {
-    if ($host = www.tabcad.ru) {
-        return 301 https://$host$request_uri;
-    } # managed by Certbot
-
-    if ($host = tabcad.ru) {
-        return 301 https://$host$request_uri;
-    } # managed by Certbot
-
     listen 80;
     server_name tabcad.ru www.tabcad.ru;
-    return 404; # managed by Certbot
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
 ```
 
@@ -161,23 +141,63 @@ Global config file:
 Recommended gzip block inside `http { ... }`:
 
 ```nginx
-gzip on;
-gzip_vary on;
-gzip_proxied any;
-gzip_comp_level 5;
-gzip_buffers 16 8k;
-gzip_http_version 1.1;
-gzip_min_length 1024;
-gzip_types
-    text/plain
-    text/css
-    text/xml
-    text/javascript
-    application/json
-    application/javascript
-    application/xml
-    application/xml+rss
-    image/svg+xml;
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+error_log /var/log/nginx/error.log;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+        worker_connections 768;
+        # multi_accept on;
+}
+
+http {
+
+        # Basic Settings
+
+        sendfile on;
+        tcp_nopush on;
+        types_hash_max_size 2048;
+        server_tokens off;
+
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        # SSL Settings
+
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_prefer_server_ciphers on;
+
+        # Logging Settings
+
+        access_log /var/log/nginx/access.log;
+
+        # Gzip Settings
+
+        gzip on;
+        gzip_vary on;
+        gzip_proxied any;
+        gzip_comp_level 5;
+        gzip_buffers 16 8k;
+        gzip_http_version 1.1;
+        gzip_min_length 1024;
+        gzip_types
+                text/plain
+                text/css
+                text/xml
+                text/javascript
+                application/json
+                application/javascript
+                application/xml
+                application/xml+rss
+                image/svg+xml;
+
+        # Virtual Host Configs
+
+        include /etc/nginx/conf.d/*.conf;
+        include /etc/nginx/sites-enabled/*;
+}
 ```
 
 After nginx changes:
