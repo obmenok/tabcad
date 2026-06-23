@@ -11,9 +11,37 @@ APP_DESCRIPTION = (
     "and 2D/3D visualization. Export PDF specifications and STL models."
 )
 
+# Google Analytics 4 Tag (G-15NPY4DP52)
+GA_TAG_ID = "G-15NPY4DP52"
+
 app = dash.Dash(
     __name__,
     suppress_callback_exceptions=True,
+    index_string="""<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-15NPY4DP52"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-15NPY4DP52');
+        </script>
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>""",
     meta_tags=[
         {"name": "description", "content": APP_DESCRIPTION},
         {
